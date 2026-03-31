@@ -11,6 +11,10 @@ import com.example.myapplication.R
 class MainActivity : ComponentActivity(), Callbacks {
     lateinit var myStomp: MyStomp
     lateinit var response: TextView
+
+    private val dice = Dice()
+    private var lastDiceValue: Int = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         myStomp = MyStomp(this)
 
@@ -18,10 +22,14 @@ class MainActivity : ComponentActivity(), Callbacks {
         enableEdgeToEdge()
         setContentView(R.layout.fragment_fullscreen)
 
-        findViewById<Button>(R.id.connectbtn).setOnClickListener { myStomp.connect() }
-        findViewById<Button>(R.id.hellobtn).setOnClickListener { myStomp.sendHello() }
-        findViewById<Button>(R.id.jsonbtn).setOnClickListener { myStomp.sendJson() }
         response = findViewById(R.id.response_view)
+
+        findViewById<Button>(R.id.connectbtn).setOnClickListener { myStomp.connect() }
+        findViewById<Button>(R.id.hellobtn).setOnClickListener {
+            lastDiceValue = dice.roll()
+            response.text = "Würfelergebnis: $lastDiceValue"
+        }
+        findViewById<Button>(R.id.jsonbtn).setOnClickListener { myStomp.sendJson() }
     }
 
     override fun onResponse(res: String) {
