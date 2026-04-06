@@ -37,7 +37,7 @@ class MyStomp(val callbacks: Callbacks) {
                 val activeSession = client.connect(WEBSOCKET_URI)
                 session = activeSession
 
-                // connect to topic
+                //Abonnment für einfache Textnachrichten vom Server
                 topicFlow = activeSession.subscribeText("/topic/hello-response")
                 collector = scope.launch {
                     topicFlow?.collect { msg ->
@@ -64,6 +64,7 @@ class MyStomp(val callbacks: Callbacks) {
     }
 
     private fun callback(msg: String) {
+        //UI Updates müssen im Main Thread erfolgen
         Handler(Looper.getMainLooper()).post {
             callbacks.onResponse(msg)
         }

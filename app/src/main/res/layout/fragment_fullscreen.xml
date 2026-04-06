@@ -9,6 +9,7 @@
     android:background="@drawable/bg_world_gradient"
     tools:context=".FullscreenFragment">
 
+    <!--Temporärer Würfel Button basierend auf dem aktuellen UI Sketch-->
     <LinearLayout
         android:id="@+id/rollDiceBtn"
         android:layout_width="160dp"
@@ -43,6 +44,7 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!--Anzeige des aktuellen Würfelergebnisses-->
     <TextView
         android:id="@+id/diceResult"
         android:layout_width="wrap_content"
