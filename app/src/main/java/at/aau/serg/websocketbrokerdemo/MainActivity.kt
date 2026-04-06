@@ -1,12 +1,13 @@
 package at.aau.serg.websocketbrokerdemo
 
-import MyStomp
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import com.example.myapplication.R
+import android.widget.LinearLayout
+import android.view.View
 
 class MainActivity : ComponentActivity(), Callbacks {
     lateinit var myStomp: MyStomp
@@ -22,14 +23,16 @@ class MainActivity : ComponentActivity(), Callbacks {
         enableEdgeToEdge()
         setContentView(R.layout.fragment_fullscreen)
 
-        response = findViewById(R.id.response_view)
+        myStomp.connect()
 
-        findViewById<Button>(R.id.connectbtn).setOnClickListener { myStomp.connect() }
-        findViewById<Button>(R.id.hellobtn).setOnClickListener {
+        response = findViewById(R.id.diceResult)
+
+        findViewById<View>(R.id.rollDiceBtn).setOnClickListener {
             lastDiceValue = dice.roll()
             response.text = "Würfelergebnis: $lastDiceValue"
+
+            myStomp.sendDiceValue(lastDiceValue)
         }
-        findViewById<Button>(R.id.jsonbtn).setOnClickListener { myStomp.sendJson() }
     }
 
     override fun onResponse(res: String) {

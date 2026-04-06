@@ -1,3 +1,5 @@
+package at.aau.serg.websocketbrokerdemo
+
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -13,6 +15,7 @@ import org.hildan.krossbow.stomp.sendText
 import org.hildan.krossbow.stomp.subscribeText
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
+
 
 private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
 
@@ -95,5 +98,10 @@ class MyStomp(val callbacks: Callbacks) {
                 Log.e("MyStomp", "Send JSON failed", e)
             }
         }
+    }
+
+    fun sendDiceValue(value: Int) {
+        //später echte Serverlogik einbauen
+        Log.d("MyStomp", "Dice value to send later: $value")
     }
 }
