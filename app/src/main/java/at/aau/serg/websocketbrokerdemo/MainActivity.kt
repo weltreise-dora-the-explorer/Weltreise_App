@@ -1,7 +1,6 @@
 package at.aau.serg.websocketbrokerdemo
 
 import android.os.Bundle
-import android.widget.Button
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
@@ -10,7 +9,8 @@ import android.view.View
 
 class MainActivity : ComponentActivity(), Callbacks {
     lateinit var myStomp: MyStomp
-    lateinit var response: TextView
+    lateinit var responseView: TextView
+    lateinit var diceResultView: TextView
 
     private val dice = Dice()
     private var lastDiceValue: Int = 0
@@ -25,14 +25,15 @@ class MainActivity : ComponentActivity(), Callbacks {
         //Verbindung zum Backend beim Start der Activity herstellen
         myStomp.connect()
 
-        //TextView zur Anzeige des Würfelergebnisses oder Server-Responses
-        response = findViewById(R.id.diceResult)
+        //TextView zur Anzeige des Würfelergebnisses und Server-Responses
+        responseView = findViewById(R.id.responseView)
+        diceResultView = findViewById(R.id.diceResult)
 
         findViewById<View>(R.id.rollDiceBtn).setOnClickListener {
             //Würfel lokal werfen und Wert speichern
             lastDiceValue = dice.roll()
             //Ergebnis direkt in der UI anzeigen
-            response.text = "Würfelergebnis: $lastDiceValue"
+            diceResultView.text = "Würfelergebnis: $lastDiceValue"
 
             //Vorbereitung: Wert später an den Server senden
             myStomp.sendDiceValue(lastDiceValue)
@@ -41,7 +42,7 @@ class MainActivity : ComponentActivity(), Callbacks {
 
     override fun onResponse(res: String) {
         //Nachricht vom Server in der UI anzeigen
-        response.text = res
+        responseView.text = res
     }
 
 

@@ -58,4 +58,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/rollDiceBtn" />
 
+    <!--Anzeige von Nachrichten vom Server-->
+    <TextView
+        android:id="@+id/responseView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="16dp"
+        android:text="Server-Antwort: -"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/diceResult"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
