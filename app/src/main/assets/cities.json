@@ -1,0 +1,30 @@
+[
+  {
+    "id": "berlin",
+    "name": "Berlin",
+    "continent": "EUROPE",
+    "trainConnections": ["paris"],
+    "flightConnections": ["newyork"]
+  },
+  {
+    "id": "paris",
+    "name": "Paris",
+    "continent": "EUROPE",
+    "trainConnections": ["berlin"],
+    "flightConnections": []
+  },
+  {
+    "id": "newyork",
+    "name": "New York",
+    "continent": "NORTH_AMERICA",
+    "trainConnections": ["chicago"],
+    "flightConnections": ["berlin"]
+  },
+  {
+    "id": "chicago",
+    "name": "Chicago",
+    "continent": "NORTH_AMERICA",
+    "trainConnections": ["newyork"],
+    "flightConnections": []
+  }
+]
