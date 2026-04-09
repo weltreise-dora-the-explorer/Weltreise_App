@@ -1,1 +1,8 @@
 /build
+# IDE & System Files
+.idea/
+.gradle/
+local.properties
+*.iml
+build/
+*.log
