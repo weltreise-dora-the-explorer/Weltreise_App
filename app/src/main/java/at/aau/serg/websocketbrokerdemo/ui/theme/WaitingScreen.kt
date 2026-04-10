@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun WaitingScreen() {
-    // Der Farbverlauf aus deinem Entwurf (Dunkelblau zu Hellblau/Gelb)
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -40,7 +39,7 @@ fun WaitingScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- HEADER BEREICH ---
+            //Kopfzeile
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
@@ -80,7 +79,7 @@ fun WaitingScreen() {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- SPIELER BEREICH ---
+            //Spieler
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -98,7 +97,7 @@ fun WaitingScreen() {
 
             Spacer(modifier = Modifier.weight(1f)) // Schiebt den Button nach unten
 
-            // --- WAITING BUTTON ---
+            //Warten - Anzeige
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
@@ -120,11 +119,11 @@ fun WaitingScreen() {
     }
 }
 
-// Eine kleine Hilfs-Funktion für die Spieler-Avatare
+// Eine kleine Hilfs-Funktion für die Spieler-Avatare (KI)
 @Composable
 fun TravellerItem(name: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        // HIER KOMMEN SPÄTER DEINE ECHTEN BILDER REIN (Image statt Box)
+
         Box(
             modifier = Modifier
                 .size(100.dp)
