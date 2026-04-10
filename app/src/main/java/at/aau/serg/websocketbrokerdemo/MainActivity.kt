@@ -2,7 +2,6 @@ package at.aau.serg.websocketbrokerdemo
 
 import MyStomp
 import android.os.Bundle
-import android.widget.Button
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,12 +10,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import at.aau.serg.websocketbrokerdemo.ui.theme.GameScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.LobbyScreen
-import com.example.myapplication.R
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import at.aau.serg.websocketbrokerdemo.ui.theme.HostScreen
+import at.aau.serg.websocketbrokerdemo.ui.theme.LoginScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.WaitingScreen
 
 class MainActivity : ComponentActivity(), Callbacks {
