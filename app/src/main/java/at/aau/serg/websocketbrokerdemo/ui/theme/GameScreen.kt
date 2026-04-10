@@ -32,7 +32,7 @@ import androidx.compose.ui.zIndex
 fun GameScreen() {
     val context = LocalContext.current
 
-    // --- BILDER LADEN ---
+    //Bilder
     val mapBitmap = loadAssetBitmap(context, "world_map_klein.png")
     val diceBitmap = loadAssetBitmap(context, "dice_icon.png")
     val bucketBitmap = loadAssetBitmap(context, "bucket_list_icon.png")
@@ -42,17 +42,17 @@ fun GameScreen() {
     val avatarCaptain = loadAssetBitmap(context, "avatar_bear.png")
     val avatarPig = loadAssetBitmap(context, "avatar_pig.png")
 
-    // --- ZUSTÄNDE (MERK-VARIABLEN) ---
+    //Bucketlist offen? Default false
     var showBucketListDialog by remember { mutableStateOf(false) }
 
-    // Eine Box hält alles übereinander
+    // Box (Schichten-Design)
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF003366)) // Tiefblauer Hintergrund
     ) {
 
-        // 1. SCHICHT: Die Weltkarte
+        // Weltkarte
         if (mapBitmap != null) {
             Image(
                 bitmap = mapBitmap,
@@ -62,7 +62,7 @@ fun GameScreen() {
             )
         }
 
-        // 2. SCHICHT: Top Bar (Mitspielerleiste)
+        //Mitspieler
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -75,13 +75,13 @@ fun GameScreen() {
             PlayerCard("LostInPacific", 6, avatarPig, isActive = false)
         }
 
-        // 3. SCHICHT: Linkes Menü (Die großen Buttons)
+        //Actionbuttons
         Column(
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .padding(start = 24.dp)
         ) {
-            // WÜRFEL BUTTON
+            //Roll Dice
             GameButton(
                 text = "ROLL DICE",
                 imageBitmap = diceBitmap,
@@ -92,7 +92,7 @@ fun GameScreen() {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // BUCKET LIST BUTTON
+            //Bucket List
             GameButton(
                 text = "BUCKET LIST",
                 imageBitmap = bucketBitmap,
@@ -103,7 +103,7 @@ fun GameScreen() {
         }
     }
 
-    // --- DAS POP-UP FENSTER FÜR DIE BUCKET LIST ---
+    //Pop Up Bucket List
     if (showBucketListDialog) {
         AlertDialog(
             onDismissRequest = { showBucketListDialog = false },
@@ -115,7 +115,7 @@ fun GameScreen() {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
-                    Text("Your Destinations:")
+                    Text("Your Destinations:") //Beispiel STädte die für Sprint 1 nicht existieren!
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("📍 Hometown: Berlin", fontWeight = FontWeight.Bold)
                     Text("Paris")
@@ -144,7 +144,7 @@ fun GameScreen() {
 }
 
 
-// HILFS-BAUSTEINE
+//Hilfe damit App nicht abstürzt (bsp. derzeit noch fehlende Bilder)
 
 @Composable
 fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActive: Boolean) {
