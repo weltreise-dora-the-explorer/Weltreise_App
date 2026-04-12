@@ -6,3 +6,10 @@ local.properties
 *.iml
 build/
 *.log
+# Android Studio / Gradle Cache
+.gradle/
+.idea/
+build/
+app/build/
+local.properties
+*.iml
