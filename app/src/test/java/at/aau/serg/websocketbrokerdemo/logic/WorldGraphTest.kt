@@ -3,7 +3,6 @@ package at.aau.serg.websocketbrokerdemo.logic
 import at.aau.serg.websocketbrokerdemo.models.CityColor
 import at.aau.serg.websocketbrokerdemo.models.Continent
 import at.aau.serg.websocketbrokerdemo.models.ConnectionType
-import com.example.weltreise.logic.data.WorldGraph
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

@@ -1,4 +1,5 @@
-package com.example.weltreise.logic.data
+package at.aau.serg.websocketbrokerdemo.logic
+
 
 import at.aau.serg.websocketbrokerdemo.models.City
 import at.aau.serg.websocketbrokerdemo.models.CityColor
