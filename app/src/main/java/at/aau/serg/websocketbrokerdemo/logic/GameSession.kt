@@ -1,11 +1,12 @@
 package at.aau.serg.websocketbrokerdemo.logic
 
 import at.aau.serg.websocketbrokerdemo.models.City
+import at.aau.serg.websocketbrokerdemo.models.GameMode
 import at.aau.serg.websocketbrokerdemo.models.Player
 
 class GameSession(
     val player: Player,
-    private val requiredTargetsCount: Int // Definiert die Anzahl der Pflichtziele (z.B. 9 für Standard)
+    val mode: GameMode,
 ) {
 
     /**
@@ -39,7 +40,8 @@ class GameSession(
      * 2. Die aktuelle Position muss der startCity entsprechen.
      */
     fun isVictory(): Boolean {
-        val allTargetsDone = player.visitedCities.size >= requiredTargetsCount
+        // Wir greifen auf den Wert im Enum zu
+        val allTargetsDone = player.visitedCities.size >= mode.requiredTargets
         val backAtHome = player.currentCity?.id == player.startCity?.id
 
         return allTargetsDone && backAtHome

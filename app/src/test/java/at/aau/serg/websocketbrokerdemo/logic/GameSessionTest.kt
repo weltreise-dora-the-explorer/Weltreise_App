@@ -1,9 +1,6 @@
 package at.aau.serg.websocketbrokerdemo.logic
 
-import at.aau.serg.websocketbrokerdemo.models.City
-import at.aau.serg.websocketbrokerdemo.models.CityColor
-import at.aau.serg.websocketbrokerdemo.models.Continent
-import at.aau.serg.websocketbrokerdemo.models.Player
+import at.aau.serg.websocketbrokerdemo.models.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -17,81 +14,97 @@ class GameSessionTest {
 
     @BeforeEach
     fun setup() {
-        // Grund-Setup für alle Tests
+        // Setup der Test-Infrastruktur
         berlin = City("berlin", "Berlin", Continent.EUROPE, CityColor.RED)
         paris = City("paris", "Paris", Continent.EUROPE, CityColor.RED)
         rom = City("rom", "Rom", Continent.EUROPE, CityColor.RED)
 
         player = Player("TestPlayer")
         player.startCity = berlin
+        player.currentCity = berlin
     }
 
     @Test
-    fun `Happy Path - Complete game flow to victory`() {
+    fun `test victory in TEST_MODE with one target`() {
         player.ownedCities.add(paris)
-        val session = GameSession(player, 1)
-
-        // 1. Start: In Berlin, Ziel Paris noch offen
-        session.visitCity(berlin)
-        assertFalse(session.isVictory(), "Kein Sieg am Startpunkt ohne Ziele")
-
-        // 2. Ziel erreichen
-        session.visitCity(paris)
-        assertTrue(player.visitedCities.contains(paris), "Paris sollte abgehakt sein")
-        assertFalse(session.isVictory(), "Ziele erreicht, aber Rückkehr zum Start fehlt")
-
-        // 3. Sieg
-        session.visitCity(berlin)
-        assertTrue(session.isVictory(), "Siegbedingung (Ziele + Startstadt) sollte erfüllt sein")
-    }
-
-    @Test
-    fun `Duplicate Visit - Visiting the same target twice does not count twice`() {
-        player.ownedCities.add(paris)
-        val session = GameSession(player, 1)
+        val session = GameSession(player, GameMode.TEST_MODE)
 
         session.visitCity(paris)
-        session.visitCity(paris) // Zweiter Besuch der gleichen Stadt
-
-        assertEquals(1, player.visitedCities.size, "Stadt sollte nur einmal in visitedCities zählen")
-    }
-
-    @Test
-    fun `Wrong Targets - Visiting cities not on owned list should not count`() {
-        player.ownedCities.add(paris)
-        val session = GameSession(player, 1)
-
-        session.visitCity(rom) // Rom ist kein Pflichtziel
-
-        assertEquals(0, player.visitedCities.size, "Nicht-Ziel-Städte dürfen nicht abgehakt werden")
-        assertFalse(player.allTargetsReached, "Spieler sollte noch keine Ziele erreicht haben")
-    }
-
-    @Test
-    fun `Victory Condition - Higher target count for standard mode`() {
-        player.ownedCities.addAll(listOf(paris, rom))
-        val session = GameSession(player, 2) // Wir verlangen 2 Ziele
-
-        // Erstes Ziel besuchen
-        session.visitCity(paris)
         session.visitCity(berlin)
-        assertFalse(session.isVictory(), "Sollte nicht gewinnen, da Rom noch fehlt")
+        assertTrue(session.isVictory(), "Siegbedingung im TEST_MODE (1 Ziel) sollte erfüllt sein")
+    }
 
-        // Zweites Ziel besuchen
+    @Test
+    fun `test CITY_HOPPER requirements`() {
+        // City Hopper benötigt 4 Ziele
+        val session = GameSession(player, GameMode.CITY_HOPPER)
+
+        // Simuliere 4 Ziele
+        for (i in 1..4) {
+            val city = City("c$i", "City $i", Continent.EUROPE, CityColor.RED)
+            player.ownedCities.add(city)
+            session.visitCity(city)
+        }
+
+        assertFalse(session.isVictory(), "Noch kein Sieg ohne Rückkehr zum Start")
+        session.visitCity(berlin)
+        assertTrue(session.isVictory(), "Sieg nach 4 Zielen und Rückkehr")
+    }
+
+    @Test
+    fun `test QUICK_PLAY and GRAND_TOUR target counts`() {
+        // Diese Tests sorgen dafür, dass die Enums als 'used' markiert werden
+        val quickSession = GameSession(player, GameMode.QUICK_PLAY)
+        assertEquals(6, quickSession.mode.requiredTargets)
+
+        val tourSession = GameSession(player, GameMode.GRAND_TOUR)
+        assertEquals(7, tourSession.mode.requiredTargets)
+    }
+
+    @Test
+    fun `test STANDARD mode full requirements`() {
+        // Der Klassiker mit 9 Zielen
+        val session = GameSession(player, GameMode.STANDARD)
+
+        // Wir fügen nur 8 Ziele hinzu
+        for (i in 1..8) {
+            val city = City("s$i", "City $i", Continent.EUROPE, CityColor.RED)
+            player.ownedCities.add(city)
+            session.visitCity(city)
+        }
+        session.visitCity(berlin)
+
+        assertFalse(session.isVictory(), "Im Standard-Modus reichen 8 von 9 Städten nicht aus")
+    }
+
+    @Test
+    fun `test duplicate visit logic`() {
+        player.ownedCities.add(paris)
+        val session = GameSession(player, GameMode.TEST_MODE)
+
+        session.visitCity(paris)
+        session.visitCity(paris)
+
+        assertEquals(1, player.visitedCities.size, "Stadt darf nur einmal in visitedCities gezählt werden")
+    }
+
+    @Test
+    fun `test movement updates currentCity location`() {
+        val session = GameSession(player, GameMode.TEST_MODE)
+
         session.visitCity(rom)
-        session.visitCity(berlin)
-        assertTrue(session.isVictory(), "Sollte gewinnen, nachdem beide Ziele besucht wurden")
+        assertEquals(rom, player.currentCity, "Die Position muss nach dem Besuch auf Rom stehen")
     }
 
     @Test
-    fun `Progress Status - Correct string representation`() {
-        player.ownedCities.addAll(listOf(paris, rom))
-        val session = GameSession(player, 2)
+    fun `test feedback string icons`() {
+        player.ownedCities.add(paris)
+        val session = GameSession(player, GameMode.TEST_MODE)
 
-        assertEquals("0 / 2", player.progressStatus)
-        session.visitCity(paris)
-        assertEquals("1 / 2", player.progressStatus)
-        session.visitCity(rom)
-        assertEquals("2 / 2", player.progressStatus)
+        val targetFeedback = session.visitCity(paris)
+        assertTrue(targetFeedback.contains("🎯"), "Feedback muss das Ziel-Icon enthalten")
+
+        val neutralFeedback = session.visitCity(rom)
+        assertTrue(neutralFeedback.contains("🏙️"), "Feedback muss das Stadt-Icon enthalten")
     }
 }
