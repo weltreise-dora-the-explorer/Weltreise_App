@@ -34,7 +34,7 @@ fun GameScreen(diceValue: Int, onRollDiceClick: () -> Unit) {
 
     //Bilder
     val mapBitmap = loadAssetBitmap(context, "world_map_klein.png")
-    val diceBitmap = loadAssetBitmap(context, "dice_icon.png")
+    val diceBitmap = loadAssetBitmap(context, "dice_iconklein.png")
     val bucketBitmap = loadAssetBitmap(context, "bucket_list_icon.png")
 
     val avatarDora = loadAssetBitmap(context, "turtle_with_luggage_loginscreen.png")
@@ -202,7 +202,7 @@ fun GameButton(text: String, imageBitmap: ImageBitmap?, onClick: () -> Unit) {
             .size(120.dp)
             .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(16.dp))
             .clickable { onClick() }
-            .padding(12.dp),
+            .padding(4.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -210,7 +210,7 @@ fun GameButton(text: String, imageBitmap: ImageBitmap?, onClick: () -> Unit) {
                 Image(
                     bitmap = imageBitmap,
                     contentDescription = text,
-                    modifier = Modifier.size(60.dp),
+                    modifier = Modifier.size(110.dp),
                     contentScale = ContentScale.Fit
                 )
             } else {
