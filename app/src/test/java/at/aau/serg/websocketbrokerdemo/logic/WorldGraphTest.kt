@@ -1,6 +1,6 @@
 package at.aau.serg.websocketbrokerdemo.logic
 
-
+import at.aau.serg.websocketbrokerdemo.models.CityColor
 import at.aau.serg.websocketbrokerdemo.models.Continent
 import at.aau.serg.websocketbrokerdemo.models.ConnectionType
 import com.example.weltreise.logic.data.WorldGraph
@@ -12,29 +12,45 @@ class WorldGraphTest {
 
     private lateinit var worldGraph: WorldGraph
 
-    // Ein kleiner Test-JSON-String, der exakt wie die json Datei aufgebaut ist
+    // Ein kleiner Test-JSON-String, der exakt wie die json Datei aufgebaut ist.
+    // Inklusive Koordinaten und kleingeschriebenen Farben zum Testen der .uppercase() Logik.
     private val testJson = """
         [
           {
             "id": "berlin",
             "name": "Berlin",
             "continent": "EUROPE",
+            "color": "red",
             "trainConnections": ["paris"],
-            "flightConnections": ["newyork"]
+            "flightConnections": ["newyork"],
+            "x": 100.0,
+            "y": 100.0,
+            "x_relativ": 0.1,
+            "y_relativ": 0.1
           },
           {
             "id": "paris",
             "name": "Paris",
             "continent": "EUROPE",
+            "color": "red",
             "trainConnections": ["berlin"],
-            "flightConnections": []
+            "flightConnections": [],
+            "x": 150.0,
+            "y": 150.0,
+            "x_relativ": 0.15,
+            "y_relativ": 0.15
           },
           {
             "id": "newyork",
             "name": "New York",
             "continent": "NORTH_AMERICA",
+            "color": "orange",
             "trainConnections": [],
-            "flightConnections": ["berlin"]
+            "flightConnections": ["berlin"],
+            "x": 200.0,
+            "y": 200.0,
+            "x_relativ": 0.2,
+            "y_relativ": 0.2
           }
         ]
     """.trimIndent()
@@ -57,6 +73,8 @@ class WorldGraphTest {
         assertNotNull(berlin, "Berlin sollte im Graphen existieren")
         assertEquals("Berlin", berlin?.name)
         assertEquals(Continent.EUROPE, berlin?.continent)
+        // Prüft, ob aus dem "red" im JSON erfolgreich das Enum CityColor.RED wurde
+        assertEquals(CityColor.RED, berlin?.color, "Die Farbe sollte korrekt als Enum erkannt werden")
     }
 
     @Test

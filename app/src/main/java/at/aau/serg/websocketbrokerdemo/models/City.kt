@@ -3,7 +3,8 @@ package at.aau.serg.websocketbrokerdemo.models
 data class City(
     val id: String,
     val name: String,
-    val continent: Continent
+    val continent: Continent,
+    val color: CityColor
 ){
     // Hier speichern wir alle abgehenden Linien (Zug oder Flug)
     val connections = mutableListOf<Connection>()

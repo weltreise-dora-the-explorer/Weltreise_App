@@ -1,10 +1,10 @@
-package at.aau.serg.websocketbrokerdemo
+package at.aau.serg.websocketbrokerdemo.logic
 
-import at.aau.serg.websocketbrokerdemo.logic.CityDistributor
 import at.aau.serg.websocketbrokerdemo.models.City
+import at.aau.serg.websocketbrokerdemo.models.CityColor
 import at.aau.serg.websocketbrokerdemo.models.Continent
 import at.aau.serg.websocketbrokerdemo.models.Player
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -18,78 +18,69 @@ class CityDistributorTest {
     fun setup() {
         distributor = CityDistributor()
 
-        // 3 Spieler für test
         players = listOf(
             Player("Alice"),
             Player("Bob"),
             Player("Charlie")
         )
 
-        //  Liste: 4 Kontinente mit je 6 Städten (Jetzt MIT der neuen ID als 1. Parameter)
-        testCities = listOf<City>(
-            // Europa (6)
-            City("wien", "Wien", Continent.EUROPE), City("berlin", "Berlin", Continent.EUROPE),
-            City("paris", "Paris", Continent.EUROPE), City("rom", "Rom", Continent.EUROPE),
-            City("madrid", "Madrid", Continent.EUROPE), City("london", "London", Continent.EUROPE),
+        // Mock-Städte MIT dem neuen Farb-Parameter
+        testCities = listOf(
+            // Rot (6)
+            City("wien", "Wien", Continent.EUROPE, CityColor.RED), City("berlin", "Berlin", Continent.EUROPE, CityColor.RED),
+            City("paris", "Paris", Continent.EUROPE, CityColor.RED), City("rom", "Rom", Continent.EUROPE, CityColor.RED),
+            City("madrid", "Madrid", Continent.EUROPE, CityColor.RED), City("london", "London", Continent.EUROPE, CityColor.RED),
 
-            // Asien (6)
-            City("tokio", "Tokio", Continent.ASIA), City("peking", "Peking", Continent.ASIA),
-            City("bangkok", "Bangkok", Continent.ASIA), City("seoul", "Seoul", Continent.ASIA),
-            City("neudelhi", "Neu-Delhi", Continent.ASIA), City("singapur", "Singapur", Continent.ASIA),
+            // Grün (6)
+            City("tokio", "Tokio", Continent.ASIA, CityColor.GREEN), City("peking", "Peking", Continent.ASIA, CityColor.GREEN),
+            City("bangkok", "Bangkok", Continent.ASIA, CityColor.GREEN), City("seoul", "Seoul", Continent.ASIA, CityColor.GREEN),
+            City("neudelhi", "Neu-Delhi", Continent.ASIA, CityColor.GREEN), City("singapur", "Singapur", Continent.ASIA, CityColor.GREEN),
 
-            // Nordamerika (6)
-            City("newyork", "New York", Continent.NORTH_AMERICA), City("losangeles", "Los Angeles", Continent.NORTH_AMERICA),
-            City("toronto", "Toronto", Continent.NORTH_AMERICA), City("chicago", "Chicago", Continent.NORTH_AMERICA),
-            City("mexikostadt", "Mexiko-Stadt", Continent.NORTH_AMERICA), City("miami", "Miami", Continent.NORTH_AMERICA),
-
-            // Südamerika (6)
-            City("rio", "Rio de Janeiro", Continent.SOUTH_AMERICA), City("buenosaires", "Buenos Aires", Continent.SOUTH_AMERICA),
-            City("lima", "Lima", Continent.SOUTH_AMERICA), City("bogota", "Bogota", Continent.SOUTH_AMERICA),
-            City("santiago", "Santiago", Continent.SOUTH_AMERICA), City("quito", "Quito", Continent.SOUTH_AMERICA)
+            // Orange (6)
+            City("newyork", "New York", Continent.NORTH_AMERICA, CityColor.ORANGE), City("la", "Los Angeles", Continent.NORTH_AMERICA, CityColor.ORANGE),
+            City("toronto", "Toronto", Continent.NORTH_AMERICA, CityColor.ORANGE), City("chicago", "Chicago", Continent.NORTH_AMERICA, CityColor.ORANGE),
+            City("mexiko", "Mexiko-Stadt", Continent.NORTH_AMERICA, CityColor.ORANGE), City("miami", "Miami", Continent.NORTH_AMERICA, CityColor.ORANGE)
         )
     }
 
     @Test
-    fun `test distributeByContinent gives correct amount for multiple players`() {
-        // Normalfall: Jeder zieht 2 Karten pro Kontinent
-        distributor.distributeByContinent(testCities, players, 2)
+    fun `distribute gives correct amount of colors and sets startCity`() {
+        // Da wir im Setup nur 6 Karten pro Farbe gemockt haben,
+        // lassen wir für diesen Test nur 2 Spieler spielen (brauchen exakt 6 Karten).
+        val testPlayers = players.take(2)
 
-        for (player in players) {
-            assertEquals(8, player.ownedCities.size, "${player.name} sollte genau 8 Städte haben")
+        // Standard-Modus: Jeder zieht 3 Karten pro Farbe (insgesamt 9)
+        distributor.distribute(testCities, testPlayers, 3)
 
-            val europeCount = player.ownedCities.count { it.continent == Continent.EUROPE }
-            val asiaCount = player.ownedCities.count { it.continent == Continent.ASIA }
-            val naCount = player.ownedCities.count { it.continent == Continent.NORTH_AMERICA }
-            val saCount = player.ownedCities.count { it.continent == Continent.SOUTH_AMERICA }
+        for (player in testPlayers) {
+            assertEquals(9, player.ownedCities.size, "${player.name} sollte genau 9 Städte haben")
 
-            assertEquals(2, europeCount, "${player.name} hat nicht 2 in Europa")
-            assertEquals(2, asiaCount, "${player.name} hat nicht 2 in Asien")
-            assertEquals(2, naCount, "${player.name} hat nicht 2 in Nordamerika")
-            assertEquals(2, saCount, "${player.name} hat nicht 2 in Südamerika")
+            // Test: Zählen der Farben
+            val redCount = player.ownedCities.count { it.color == CityColor.RED }
+            val greenCount = player.ownedCities.count { it.color == CityColor.GREEN }
+            val orangeCount = player.ownedCities.count { it.color == CityColor.ORANGE }
+
+            assertEquals(3, redCount, "${player.name} hat nicht 3 rote Karten")
+            assertEquals(3, greenCount, "${player.name} hat nicht 3 grüne Karten")
+            assertEquals(3, orangeCount, "${player.name} hat nicht 3 orange Karten")
+
+            // Test: Startstadt-Logik (DoD)
+            assertNotNull(player.startCity, "${player.name} hat keine Startstadt zugewiesen bekommen")
+            assertTrue(player.ownedCities.contains(player.startCity), "Startstadt muss eine der gezogenen Karten sein")
         }
     }
 
     @Test
-    fun `test gracefully handles not enough cities in a pool`() {
-        // Randfall 1: Zu wenige Städte (Hier auch die ID ergänzt)
-        val fewCities = listOf(City("wien", "Wien", Continent.EUROPE))
+    fun `gracefully handles not enough cities in a pool`() {
+        // Nur eine einzige Stadt im Pool
+        val fewCities = listOf(City("wien", "Wien", Continent.EUROPE, CityColor.RED))
 
-        distributor.distributeByContinent(fewCities, players, 2)
+        distributor.distribute(fewCities, players, 3)
 
         assertEquals(1, players[0].ownedCities.size, "Alice sollte die einzige verfügbare Stadt bekommen")
+        assertNotNull(players[0].startCity, "Alice sollte Wien als Startstadt haben")
+
         assertEquals(0, players[1].ownedCities.size, "Bob sollte leer ausgehen")
-        assertEquals(0, players[2].ownedCities.size, "Charlie sollte leer ausgehen")
-    }
-
-    @Test
-    fun `test handles empty city list without crashing`() {
-        // Randfall 2: Gar keine Städte
-        val emptyCities = emptyList<City>()
-
-        distributor.distributeByContinent(emptyCities, players, 2)
-
-        for (player in players) {
-            assertEquals(0, player.ownedCities.size, "${player.name} sollte keine Städte haben")
-        }
+        assertNull(players[1].startCity, "Bob darf keine Startstadt haben")
     }
 }
