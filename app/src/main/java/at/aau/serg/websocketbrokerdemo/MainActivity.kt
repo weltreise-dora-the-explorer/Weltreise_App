@@ -1,6 +1,7 @@
 package at.aau.serg.websocketbrokerdemo
 
 import MyStomp
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
@@ -22,6 +23,14 @@ class MainActivity : ComponentActivity(), Callbacks {
         findViewById<Button>(R.id.hellobtn).setOnClickListener { myStomp.sendHello() }
         findViewById<Button>(R.id.jsonbtn).setOnClickListener { myStomp.sendJson() }
         response = findViewById(R.id.response_view)
+
+        // ---> HIER KOMMT DEIN NEUER BUTTON REIN <---
+        val btnTest: Button = findViewById(R.id.btnTestConsole)
+        btnTest.setOnClickListener {
+            // Dieser Code ist die "Verlinkung", die dich zur Konsole bringt!
+            val intent = Intent(this, FakeConsoleActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     override fun onResponse(res: String) {
