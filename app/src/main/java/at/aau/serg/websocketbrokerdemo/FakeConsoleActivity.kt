@@ -6,7 +6,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import at.aau.serg.websocketbrokerdemo.logic.GameController
 import at.aau.serg.websocketbrokerdemo.logic.GameSession
 import at.aau.serg.websocketbrokerdemo.logic.WorldGraph

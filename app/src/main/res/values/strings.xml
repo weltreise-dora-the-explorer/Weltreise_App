@@ -5,4 +5,9 @@
     <string name="title_activity_connection_view">ConnectionView</string>
     <string name="title_activity_view">view</string>
     <string name="title_activity_main2">MainActivity2</string>
+    <string name="btn_connect">Connect</string>
+    <string name="btn_send_hello">Send hello</string>
+    <string name="btn_send_json">Send Json</string>
+    <string name="tv_response">response</string>
+    <string name="btn_starte_konsole">Starte Konsole</string>
 </resources>

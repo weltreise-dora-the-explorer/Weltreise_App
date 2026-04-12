@@ -1,19 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/frameLayout2"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/fullscreenBackgroundColor"
-    android:theme="@style/ThemeOverlay.MyApplication.FullscreenContainer"
-    tools:context=".FullscreenFragment">
+    android:theme="@style/ThemeOverlay.MyApplication.FullscreenContainer">
 
     <Button
         android:id="@+id/connectbtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Connect"
+        android:text="@string/btn_connect"
         app:layout_constraintBottom_toTopOf="@+id/hellobtn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -24,7 +22,7 @@
         android:id="@+id/hellobtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Send hello"
+        android:text="@string/btn_send_hello"
         app:layout_constraintBottom_toTopOf="@+id/jsonbtn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -35,7 +33,7 @@
         android:id="@+id/jsonbtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Send Json"
+        android:text="@string/btn_send_json"
         app:layout_constraintBottom_toTopOf="@+id/response_view"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -46,7 +44,7 @@
         android:id="@+id/response_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="response"
+        android:text="@string/tv_response"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -57,5 +55,7 @@
         android:id="@+id/btnTestConsole"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Starte Konsole" />
+        android:text="@string/btn_starte_konsole"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
