@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 
 @Composable
-fun GameScreen() {
+fun GameScreen(diceValue: Int, onRollDiceClick: () -> Unit) {
     val context = LocalContext.current
 
     //Bilder
@@ -86,11 +86,21 @@ fun GameScreen() {
                 text = "ROLL DICE",
                 imageBitmap = diceBitmap,
                 onClick = {
-                    println("WÜRFEL WURDE GEKLICKT!")
+                    onRollDiceClick()
                 }
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(1.dp))
+
+            Text(
+                text = if(diceValue == 0) "Würfelergebnis: -" else "Würfelergebnis: $diceValue",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             //Bucket List
             GameButton(
@@ -101,6 +111,7 @@ fun GameScreen() {
                 }
             )
         }
+
     }
 
     //Pop Up Bucket List

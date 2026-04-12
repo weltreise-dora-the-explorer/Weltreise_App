@@ -96,4 +96,8 @@ class MyStomp(val callbacks: Callbacks) {
             }
         }
     }
+
+    fun sendDiceValue(value: Int) {
+        android.util.Log.d("MyStomp", "Dice value to send later: $value")
+    }
 }

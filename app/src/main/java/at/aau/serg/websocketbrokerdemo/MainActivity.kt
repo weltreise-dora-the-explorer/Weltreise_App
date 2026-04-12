@@ -16,12 +16,21 @@ import androidx.compose.runtime.setValue
 import at.aau.serg.websocketbrokerdemo.ui.theme.HostScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.LoginScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.WaitingScreen
+import androidx.compose.runtime.mutableIntStateOf
 
 class MainActivity : ComponentActivity(), Callbacks {
     lateinit var myStomp: MyStomp
     lateinit var response: TextView
+
+    private val dice = Dice()
+
+    companion object {
+        var lastDiceValue by mutableIntStateOf(0)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         myStomp = MyStomp(this)
+        myStomp.connect()
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -61,7 +70,14 @@ class MainActivity : ComponentActivity(), Callbacks {
                         WaitingScreen()
                     }
                     "game" -> {
-                        GameScreen()
+                        GameScreen(
+                            diceValue = lastDiceValue,
+                            onRollDiceClick = {
+                                val rolledValue = dice.roll()
+                                lastDiceValue = rolledValue
+                                myStomp.sendDiceValue(rolledValue)
+                            }
+                        )
                     }
                 }
 
@@ -70,7 +86,7 @@ class MainActivity : ComponentActivity(), Callbacks {
     }
 
     override fun onResponse(res: String) {
-        response.text = res
+        //Serverantwort wird aktuell nicht im UI angezeigt
     }
 
 
