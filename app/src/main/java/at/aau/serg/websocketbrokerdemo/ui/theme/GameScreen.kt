@@ -27,20 +27,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import at.aau.serg.websocketbrokerdemo.AppViewModel
 
 @Composable
-fun GameScreen() {
+fun GameScreen(viewModel: AppViewModel) {
     val context = LocalContext.current
+    val playersList by viewModel.playersList.collectAsState()
+    val currentPlayerName by viewModel.playerName.collectAsState()
 
     //Bilder
     val mapBitmap = loadAssetBitmap(context, "world_map_klein.png")
     val diceBitmap = loadAssetBitmap(context, "dice_icon.png")
     val bucketBitmap = loadAssetBitmap(context, "bucket_list_icon.png")
 
-    val avatarDora = loadAssetBitmap(context, "turtle_with_luggage_loginscreen.png")
-    val avatarJerry = loadAssetBitmap(context, "avatar_duck.png")
-    val avatarCaptain = loadAssetBitmap(context, "avatar_bear.png")
-    val avatarPig = loadAssetBitmap(context, "avatar_pig.png")
+    // Avatar-Liste für verschiedene Spieler
+    val avatars = listOf(
+        loadAssetBitmap(context, "turtle_with_luggage_loginscreen.png"),
+        loadAssetBitmap(context, "avatar_duck.png"),
+        loadAssetBitmap(context, "avatar_bear.png"),
+        loadAssetBitmap(context, "avatar_pig.png")
+    )
 
     //Bucketlist offen? Default false
     var showBucketListDialog by remember { mutableStateOf(false) }
@@ -62,17 +68,24 @@ fun GameScreen() {
             )
         }
 
-        //Mitspieler
+        //Mitspieler - dynamisch aus dem ViewModel
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 24.dp, start = 16.dp, end = 16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            PlayerCard("DoraTheExplorer (Host)", 7, avatarDora, isActive = false)
-            PlayerCard("JetLagJerry", 5, avatarJerry, isActive = true)
-            PlayerCard("CaptainCooked", 5, avatarCaptain, isActive = false)
-            PlayerCard("LostInPacific", 6, avatarPig, isActive = false)
+            playersList.forEachIndexed { index, playerName ->
+                val avatar = avatars.getOrNull(index % avatars.size)
+                val isFirstPlayer = index == 0
+                val displayName = if (isFirstPlayer) "$playerName (Host)" else playerName
+                PlayerCard(
+                    name = displayName,
+                    bucketListCount = 8, // TODO: Später vom Server holen
+                    avatar = avatar,
+                    isActive = playerName == currentPlayerName
+                )
+            }
         }
 
         //Actionbuttons

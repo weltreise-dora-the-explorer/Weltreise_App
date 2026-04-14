@@ -15,8 +15,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import at.aau.serg.websocketbrokerdemo.AppViewModel
+
 @Composable
-fun WaitingScreen() {
+fun WaitingScreen(viewModel: AppViewModel) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -44,6 +48,7 @@ fun WaitingScreen() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
+                val pin by viewModel.lobbyId.collectAsState()
                 Text(
                     text = "GAME PIN:",
                     fontSize = 32.sp,
@@ -52,7 +57,7 @@ fun WaitingScreen() {
                 )
                 Spacer(modifier = Modifier.width(32.dp))
                 Text(
-                    text = "#2222",
+                    text = "#$pin",
                     fontSize = 32.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
@@ -85,14 +90,10 @@ fun WaitingScreen() {
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.Bottom
             ) {
-                // Spieler 1 (Host)
-                TravellerItem("DoraTheExplorer\n(Host)")
-                // Spieler 2
-                TravellerItem("JetLagJerry")
-                // Spieler 3
-                TravellerItem("CaptainCooked")
-                // Spieler 4
-                TravellerItem("LostInPacific")
+                val playersList by viewModel.playersList.collectAsState()
+                playersList.forEach { playerName ->
+                    TravellerItem(playerName)
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f)) // Schiebt den Button nach unten
@@ -139,10 +140,7 @@ fun TravellerItem(name: String) {
     }
 }
 
-@Preview(showBackground = true, widthDp = 850, heightDp = 480)
-@Composable
-fun WaitingScreenPreview() {
-    MaterialTheme {
-        WaitingScreen()
-    }
-}
+// @Preview(showBackground = true, widthDp = 850, heightDp = 480)
+// @Composable
+// fun WaitingScreenPreview() {
+// }

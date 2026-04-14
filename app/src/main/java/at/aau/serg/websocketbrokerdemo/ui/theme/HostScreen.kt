@@ -17,8 +17,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import at.aau.serg.websocketbrokerdemo.AppViewModel
+
 @Composable
-fun HostScreen(onStartClick: () -> Unit = {}) {
+fun HostScreen(viewModel: AppViewModel) {
     // SpielModus
     var selectedTour by remember { mutableStateOf("Grand Tour") }
 
@@ -46,6 +48,7 @@ fun HostScreen(onStartClick: () -> Unit = {}) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
+                val pin by viewModel.lobbyId.collectAsState()
                 Text(
                     text = "GAME PIN:    ",
                     fontSize = 36.sp,
@@ -53,7 +56,7 @@ fun HostScreen(onStartClick: () -> Unit = {}) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "#2222",
+                    text = "#$pin",
                     fontSize = 36.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
@@ -104,7 +107,7 @@ fun HostScreen(onStartClick: () -> Unit = {}) {
 
                     // Start Button
                     Button(
-                        onClick = onStartClick,
+                        onClick = { viewModel.startGame() },
                         modifier = Modifier
                             .fillMaxWidth(0.8f)
                             .height(60.dp),
@@ -135,17 +138,12 @@ fun HostScreen(onStartClick: () -> Unit = {}) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Hier werden die Platzhalter-Bilder aufgerufen (Namen später anpassen!)
-                    //TravellerCard("DoraTheExplorer (Host)", R.drawable.avatar_turtle)
-                    //Spacer(modifier = Modifier.height(12.dp))
-
-                    //TravellerCard("JetLagJerry", R.drawable.avatar_duck)
-                    //Spacer(modifier = Modifier.height(12.dp))
-
-                    //TravellerCard("CaptainCooked", R.drawable.avatar_bear)
-                   // Spacer(modifier = Modifier.height(12.dp))
-
-                   // TravellerCard("LostInPacific", R.drawable.avatar_pig)
+                    // Dynamically render players
+                    val playersList by viewModel.playersList.collectAsState()
+                    playersList.forEach { playerName ->
+                        TravellerCard("$playerName", android.R.drawable.ic_menu_myplaces) // using stock android icon as placeholder
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
             }
         }
@@ -213,10 +211,7 @@ fun TravellerCard(name: String, avatarResId: Int) {
     }
 }
 
-@Preview(showBackground = true, widthDp = 850, heightDp = 480)
-@Composable
-fun HostScreenPreview() {
-    MaterialTheme {
-        HostScreen()
-    }
-}
+// @Preview(showBackground = true, widthDp = 850, heightDp = 480)
+// @Composable
+// fun HostScreenPreview() {
+// }
