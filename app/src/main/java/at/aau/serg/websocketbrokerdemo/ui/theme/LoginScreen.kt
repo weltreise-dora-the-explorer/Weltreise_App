@@ -17,7 +17,7 @@ import androidx.compose.material3.MaterialTheme
 
 
 @Composable
-fun LoginScreen(onHostClick: () -> Unit = {}, onJoinClick: () -> Unit = {}
+fun LoginScreen(onHostClick: (String) -> Unit = {}, onJoinClick: (String) -> Unit = {}
 ){
     var playerName by remember { mutableStateOf("")}
     val isJoining = remember {mutableStateOf(false)}
@@ -76,7 +76,10 @@ fun LoginScreen(onHostClick: () -> Unit = {}, onJoinClick: () -> Unit = {}
        Row(modifier = Modifier.fillMaxWidth(),
            horizontalArrangement = Arrangement.spacedBy(16.dp)){
            //Host Game Button
-           Button(onClick = onHostClick,
+           Button(onClick = { 
+               val name = if (playerName.isBlank()) "DoraTheExplorer" else playerName
+               onHostClick(name) 
+           },
            modifier = Modifier.weight(1f),
                shape = RoundedCornerShape(12.dp)
            ){
@@ -85,7 +88,10 @@ fun LoginScreen(onHostClick: () -> Unit = {}, onJoinClick: () -> Unit = {}
            }
 
            //Join Game Button
-           Button(onClick = onJoinClick,
+           Button(onClick = { 
+               val name = if (playerName.isBlank()) "DoraTheExplorer" else playerName
+               onJoinClick(name) 
+           },
                modifier = Modifier.weight(1f),
                shape = RoundedCornerShape(12.dp)
            ){

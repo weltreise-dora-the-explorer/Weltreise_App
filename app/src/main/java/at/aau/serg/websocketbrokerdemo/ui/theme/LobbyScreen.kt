@@ -17,10 +17,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import at.aau.serg.websocketbrokerdemo.AppViewModel
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LobbyScreen(onJoinGameClick: () -> Unit = {}) {
+fun LobbyScreen(viewModel: AppViewModel) {
     var gamePin by remember { mutableStateOf("") }
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    // Clear error when user starts typing
+    LaunchedEffect(gamePin) {
+        viewModel.clearError()
+    }
 
     // Hintergrund
     Box(
@@ -110,31 +119,56 @@ fun LobbyScreen(onJoinGameClick: () -> Unit = {}) {
 
                 // Join Button
                 Button(
-                    onClick = onJoinGameClick,
+                    onClick = { viewModel.joinLobby(gamePin) },
                     modifier = Modifier
                         .fillMaxWidth(0.8f)
                         .height(55.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF90B8D4) //hellblau
-                    )
+                    ),
+                    enabled = !isLoading && gamePin.isNotBlank()
                 ){
-                    Text(
-                        text = "Join Game",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White
+                        )
+                    } else {
+                        Text(
+                            text = "Join Game",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+
+                // Fehlermeldung anzeigen
+                if (errorMessage != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(0.8f),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFCDD2))
+                    ) {
+                        Text(
+                            text = errorMessage ?: "",
+                            color = Color(0xFFB71C1C),
+                            modifier = Modifier.padding(16.dp),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-@Preview(showBackground = true, widthDp = 850, heightDp = 480)
-@Composable
-fun LobbyScreenPreview() {
-    MaterialTheme {
-        LobbyScreen()
-    }
-}
+// Preview disabled due to ViewModel requirement
+// @Preview(showBackground = true, widthDp = 850, heightDp = 480)
+// @Composable
+// fun LobbyScreenPreview() {
+//     MaterialTheme {
+//         LobbyScreen()
+//     }
+// }
