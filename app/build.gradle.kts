@@ -45,6 +45,7 @@ android {
 
     testOptions {
         unitTests {
+            isReturnDefaultValues = true
             all {
                 it.useJUnitPlatform()
                 it.finalizedBy(tasks.named("jacocoTestReport"))
@@ -127,6 +128,9 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.json)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     androidTestImplementation(libs.androidx.junit)
