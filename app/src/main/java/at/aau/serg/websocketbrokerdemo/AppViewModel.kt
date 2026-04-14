@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONObject
 
-class AppViewModel : ViewModel(), Callbacks {
-    val stomp = MyStomp(this)
+open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks {
+    open val stomp: MyStomp = stompInstance ?: MyStomp(this)
 
     private val _currentScreen = MutableStateFlow("login")
     val currentScreen: StateFlow<String> = _currentScreen.asStateFlow()
@@ -33,8 +33,10 @@ class AppViewModel : ViewModel(), Callbacks {
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     init {
-        // Verbinde sofort mit dem Server beim Startfenster
-        stomp.connect()
+        // Verbinde sofort mit dem Server beim Startfenster (nur wenn kein Mock injiziert)
+        if (stompInstance == null) {
+            stomp.connect()
+        }
     }
 
     fun clearError() {

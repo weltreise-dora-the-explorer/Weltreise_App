@@ -13,6 +13,9 @@ lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
 composeBom = "2026.03.00"
 constraintlayout = "2.2.1"
+mockk = "1.13.13"
+coroutinesTest = "1.9.0"
+json = "20240303"
 
 [libraries]
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junitJupiterApi" }
@@ -36,6 +39,9 @@ krossbow-stomp-core = { module = "org.hildan.krossbow:krossbow-stomp-core", vers
 krossbow-websocket-builtin = { module = "org.hildan.krossbow:krossbow-websocket-builtin", version.ref = "krossbowWebsocketBuiltin" }
 krossbow-websocket-okhttp = { module = "org.hildan.krossbow:krossbow-websocket-okhttp", version.ref = "krossbowWebsocketOkhttp" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junitJupiterApi" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+json = { module = "org.json:json", version.ref = "json" }
 
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
