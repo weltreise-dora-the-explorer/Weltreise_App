@@ -32,6 +32,13 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _gameMode = MutableStateFlow("Grand Tour")
+    val gameMode: StateFlow<String> = _gameMode.asStateFlow()
+
+    fun setGameMode(mode: String) {
+        _gameMode.value = mode
+    }
+
     init {
         // Verbinde sofort mit dem Server beim Startfenster (nur wenn kein Mock injiziert)
         if (stompInstance == null) {
@@ -72,7 +79,12 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
     }
 
     fun startGame() {
-        stomp.startGameCmd(_lobbyId.value)
+        val stops = when (_gameMode.value) {
+            "City Hopper" -> 6
+            "Epic Voyage" -> 18
+            else -> 12
+        }
+        stomp.startGameCmd(_lobbyId.value, stops)
     }
 
     override fun onResponse(res: String) {

@@ -21,8 +21,7 @@ import at.aau.serg.websocketbrokerdemo.AppViewModel
 
 @Composable
 fun HostScreen(viewModel: AppViewModel) {
-    // SpielModus
-    var selectedTour by remember { mutableStateOf("Grand Tour") }
+    val selectedTour by viewModel.gameMode.collectAsState()
 
     Box(
         modifier = Modifier
@@ -89,17 +88,17 @@ fun HostScreen(viewModel: AppViewModel) {
                         TourButton(
                             text = "City Hopper\n(6)",
                             isSelected = selectedTour == "City Hopper",
-                            onClick = { selectedTour = "City Hopper" }
+                            onClick = { viewModel.setGameMode("City Hopper") }
                         )
                         TourButton(
                             text = "Grand Tour\n(12)",
                             isSelected = selectedTour == "Grand Tour",
-                            onClick = { selectedTour = "Grand Tour" }
+                            onClick = { viewModel.setGameMode("Grand Tour") }
                         )
                         TourButton(
                             text = "Epic Voyage\n(18)",
                             isSelected = selectedTour == "Epic Voyage",
-                            onClick = { selectedTour = "Epic Voyage" }
+                            onClick = { viewModel.setGameMode("Epic Voyage") }
                         )
                     }
 
