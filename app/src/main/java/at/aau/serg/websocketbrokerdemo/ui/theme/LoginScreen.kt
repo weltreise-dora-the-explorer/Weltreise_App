@@ -3,13 +3,17 @@ package at.aau.serg.websocketbrokerdemo.ui.theme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,6 +25,7 @@ fun LoginScreen(onHostClick: (String) -> Unit = {}, onJoinClick: (String) -> Uni
 ){
     var playerName by remember { mutableStateOf("")}
     val isJoining = remember {mutableStateOf(false)}
+    val focusManager = LocalFocusManager.current
 
     //Hintergrund
     Box(modifier = Modifier
@@ -59,6 +64,8 @@ fun LoginScreen(onHostClick: (String) -> Unit = {}, onJoinClick: (String) -> Uni
            placeholder = { Text("DoraTheExplorer")},
            modifier = Modifier.fillMaxWidth(),
            singleLine = true,
+           keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+           keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White,
                unfocusedTextColor = Color.White,
            focusedBorderColor = Color.White,
@@ -76,24 +83,20 @@ fun LoginScreen(onHostClick: (String) -> Unit = {}, onJoinClick: (String) -> Uni
        Row(modifier = Modifier.fillMaxWidth(),
            horizontalArrangement = Arrangement.spacedBy(16.dp)){
            //Host Game Button
-           Button(onClick = { 
-               val name = if (playerName.isBlank()) "DoraTheExplorer" else playerName
-               onHostClick(name) 
-           },
+           Button(onClick = { onHostClick(playerName) },
            modifier = Modifier.weight(1f),
-               shape = RoundedCornerShape(12.dp)
+               shape = RoundedCornerShape(12.dp),
+               enabled = playerName.isNotBlank()
            ){
                Text("Host Game")
 
            }
 
            //Join Game Button
-           Button(onClick = { 
-               val name = if (playerName.isBlank()) "DoraTheExplorer" else playerName
-               onJoinClick(name) 
-           },
+           Button(onClick = { onJoinClick(playerName) },
                modifier = Modifier.weight(1f),
-               shape = RoundedCornerShape(12.dp)
+               shape = RoundedCornerShape(12.dp),
+               enabled = playerName.isNotBlank()
            ){
                Text("Join Game")
            }
