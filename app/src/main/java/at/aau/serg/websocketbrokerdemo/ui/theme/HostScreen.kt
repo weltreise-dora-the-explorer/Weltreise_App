@@ -8,9 +8,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,8 +24,14 @@ import at.aau.serg.websocketbrokerdemo.AppViewModel
 
 @Composable
 fun HostScreen(viewModel: AppViewModel) {
-    // SpielModus
-    var selectedTour by remember { mutableStateOf("Grand Tour") }
+    val selectedTour by viewModel.gameMode.collectAsState()
+    val context = LocalContext.current
+    val avatars = listOf(
+        loadAssetBitmap(context, "turtle_with_luggage_loginscreen.png"),
+        loadAssetBitmap(context, "avatar_duck.png"),
+        loadAssetBitmap(context, "avatar_bear.png"),
+        loadAssetBitmap(context, "avatar_pig.png")
+    )
 
     Box(
         modifier = Modifier
@@ -89,17 +98,17 @@ fun HostScreen(viewModel: AppViewModel) {
                         TourButton(
                             text = "City Hopper\n(6)",
                             isSelected = selectedTour == "City Hopper",
-                            onClick = { selectedTour = "City Hopper" }
+                            onClick = { viewModel.setGameMode("City Hopper") }
                         )
                         TourButton(
                             text = "Grand Tour\n(12)",
                             isSelected = selectedTour == "Grand Tour",
-                            onClick = { selectedTour = "Grand Tour" }
+                            onClick = { viewModel.setGameMode("Grand Tour") }
                         )
                         TourButton(
                             text = "Epic Voyage\n(18)",
                             isSelected = selectedTour == "Epic Voyage",
-                            onClick = { selectedTour = "Epic Voyage" }
+                            onClick = { viewModel.setGameMode("Epic Voyage") }
                         )
                     }
 
@@ -140,8 +149,8 @@ fun HostScreen(viewModel: AppViewModel) {
 
                     // Dynamically render players
                     val playersList by viewModel.playersList.collectAsState()
-                    playersList.forEach { playerName ->
-                        TravellerCard("$playerName", android.R.drawable.ic_menu_myplaces) // using stock android icon as placeholder
+                    playersList.forEachIndexed { index, playerName ->
+                        TravellerCard(playerName, avatars.getOrNull(index % avatars.size))
                         Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
@@ -177,17 +186,27 @@ fun TourButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
 
 // Helfer-Funktion für die Spieler-Karten rechts
 @Composable
-fun TravellerCard(name: String, avatarResId: Int) {
+fun TravellerCard(name: String, avatar: ImageBitmap? = null) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
     ) {
-        // Avatar Bild
-        Image(
-            painter = painterResource(id = avatarResId),
-            contentDescription = "Avatar",
-            modifier = Modifier.size(50.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(50.dp)
+                .clip(RoundedCornerShape(50))
+                .background(Color.Gray.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (avatar != null) {
+                Image(
+                    bitmap = avatar,
+                    contentDescription = name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.width(12.dp))
 

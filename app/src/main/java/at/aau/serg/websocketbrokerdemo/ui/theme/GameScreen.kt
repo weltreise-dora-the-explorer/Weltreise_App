@@ -34,6 +34,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val context = LocalContext.current
     val playersList by viewModel.playersList.collectAsState()
     val currentPlayerName by viewModel.playerName.collectAsState()
+    val gameMode by viewModel.gameMode.collectAsState()
 
     //Bilder
     val mapBitmap = loadAssetBitmap(context, "world_map_klein.png")
@@ -67,6 +68,19 @@ fun GameScreen(viewModel: AppViewModel) {
                 contentScale = ContentScale.Crop
             )
         }
+
+        // Game Mode Badge oben rechts
+        Text(
+            text = gameMode.uppercase(),
+            color = Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = androidx.compose.ui.Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 12.dp, end = 16.dp)
+                .background(Color(0x88000000), RoundedCornerShape(8.dp))
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+        )
 
         //Mitspieler - dynamisch aus dem ViewModel
         Row(

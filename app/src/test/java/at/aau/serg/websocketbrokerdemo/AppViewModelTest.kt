@@ -321,7 +321,7 @@ class AppViewModelTest {
 
         viewModel.startGame()
 
-        verify { mockStomp.startGameCmd(lobbyId) }
+        verify { mockStomp.startGameCmd(lobbyId, any()) }
     }
 
     // ========== HELPER ==========

@@ -9,18 +9,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import android.content.Context
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import at.aau.serg.websocketbrokerdemo.AppViewModel
 
 @Composable
 fun WaitingScreen(viewModel: AppViewModel) {
+    val context = LocalContext.current
+    val avatars = listOf(
+        loadAssetBitmap(context, "turtle_with_luggage_loginscreen.png"),
+        loadAssetBitmap(context, "avatar_duck.png"),
+        loadAssetBitmap(context, "avatar_bear.png"),
+        loadAssetBitmap(context, "avatar_pig.png")
+    )
+    val gameMode by viewModel.gameMode.collectAsState()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -67,7 +80,7 @@ fun WaitingScreen(viewModel: AppViewModel) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "TRAVELMODE: GRAND TOUR (12 STOPS)",
+                text = "TRAVELMODE: ${gameMode.uppercase()}",
                 fontSize = 14.sp,
                 color = Color.White.copy(alpha = 0.9f),
                 letterSpacing = 2.sp
@@ -91,8 +104,8 @@ fun WaitingScreen(viewModel: AppViewModel) {
                 verticalAlignment = Alignment.Bottom
             ) {
                 val playersList by viewModel.playersList.collectAsState()
-                playersList.forEach { playerName ->
-                    TravellerItem(playerName)
+                playersList.forEachIndexed { index, playerName ->
+                    TravellerItem(playerName, avatars.getOrNull(index % avatars.size))
                 }
             }
 
@@ -122,14 +135,23 @@ fun WaitingScreen(viewModel: AppViewModel) {
 
 // Eine kleine Hilfs-Funktion für die Spieler-Avatare (KI)
 @Composable
-fun TravellerItem(name: String) {
+fun TravellerItem(name: String, avatar: ImageBitmap? = null) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
         Box(
             modifier = Modifier
                 .size(100.dp)
-                .background(Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-        )
+                .background(Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(8.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (avatar != null) {
+                androidx.compose.foundation.Image(
+                    bitmap = avatar,
+                    contentDescription = name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = name,
