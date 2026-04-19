@@ -1,33 +1,56 @@
 package at.aau.serg.websocketbrokerdemo
 
-import MyStomp
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.myapplication.R
+import androidx.activity.viewModels
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import at.aau.serg.websocketbrokerdemo.ui.theme.GameScreen
+import at.aau.serg.websocketbrokerdemo.ui.theme.HostScreen
+import at.aau.serg.websocketbrokerdemo.ui.theme.LobbyScreen
+import at.aau.serg.websocketbrokerdemo.ui.theme.LoginScreen
+import at.aau.serg.websocketbrokerdemo.ui.theme.WaitingScreen
 
-class MainActivity : ComponentActivity(), Callbacks {
-    lateinit var myStomp: MyStomp
-    lateinit var response: TextView
+class MainActivity : ComponentActivity() {
+    
+    private val viewModel: AppViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        myStomp = MyStomp(this)
-
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.fragment_fullscreen)
 
-        findViewById<Button>(R.id.connectbtn).setOnClickListener { myStomp.connect() }
-        findViewById<Button>(R.id.hellobtn).setOnClickListener { myStomp.sendHello() }
-        findViewById<Button>(R.id.jsonbtn).setOnClickListener { myStomp.sendJson() }
-        response = findViewById(R.id.response_view)
+        setContent {
+            MaterialTheme {
+                val currentScreen by viewModel.currentScreen.collectAsState()
+                
+                when (currentScreen) {
+                    "login" -> {
+                        LoginScreen(
+                            onHostClick = { typedName -> viewModel.hostLobby(typedName) },
+                            onJoinClick = { typedName -> 
+                                viewModel.setPlayerName(typedName)
+                                viewModel.navigateTo("lobby") 
+                            }
+                        )
+                    }
+                    "host" -> {
+                        HostScreen(viewModel)
+                    }
+                    "lobby" -> {
+                        LobbyScreen(viewModel)
+                    }
+                    "waiting" -> {
+                        WaitingScreen(viewModel)
+                    }
+                    "game" -> {
+                        GameScreen(viewModel)
+                    }
+                }
+            }
+        }
     }
-
-    override fun onResponse(res: String) {
-        response.text = res
-    }
-
-
 }
 
