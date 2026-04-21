@@ -135,16 +135,19 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                     val phase = stateJson.optString("phase", "LOBBY")
 
                     when {
+                        commandType == "LOBBY_CLOSED" -> {
+                            _lobbyId.value = ""
+                            _playersList.value = emptyList()
+                            _isHost.value = false
+                            navigateTo("login")
+                        }
                         phase != "LOBBY" -> {
-                            // Spiel hat gestartet!
                             navigateTo("game")
                         }
                         commandType == "CREATE_LOBBY" -> {
-                            // Host hat Lobby erstellt
                             navigateTo("host")
                         }
                         commandType == "JOIN_LOBBY" && _currentScreen.value != "host" -> {
-                            // Spieler ist einer Lobby beigetreten
                             navigateTo("waiting")
                         }
                     }

@@ -460,6 +460,54 @@ class AppViewModelTest {
         assertEquals("waiting", viewModel.currentScreen.value)
     }
 
+    // ========== LOBBY CLOSED TESTS ==========
+
+    @Test
+    fun `onResponse with LOBBY_CLOSED navigates to login`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.navigateTo("waiting")
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"LOBBY_CLOSED","state":{"lobbyId":"1234","players":[],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("login", viewModel.currentScreen.value)
+    }
+
+    @Test
+    fun `onResponse with LOBBY_CLOSED clears playersList`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"JOIN_LOBBY","state":{"lobbyId":"1234","players":[{"playerId":"Host"},{"playerId":"Joiner"}],"phase":"LOBBY"}}""")
+
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"LOBBY_CLOSED","state":{"lobbyId":"1234","players":[],"phase":"LOBBY"}}""")
+
+        assertTrue(viewModel.playersList.value.isEmpty())
+    }
+
+    @Test
+    fun `onResponse with LOBBY_CLOSED clears lobbyId`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.joinLobby("1234")
+
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"LOBBY_CLOSED","state":{"lobbyId":"1234","players":[],"phase":"LOBBY"}}""")
+
+        assertEquals("", viewModel.lobbyId.value)
+    }
+
+    @Test
+    fun `onResponse with LOBBY_CLOSED navigates host to login`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.navigateTo("host")
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"LOBBY_CLOSED","state":{"lobbyId":"1234","players":[],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("login", viewModel.currentScreen.value)
+    }
+
     // ========== HELPER ==========
 
     private fun createViewModelWithMockStomp(mockStomp: MyStomp): AppViewModel {
