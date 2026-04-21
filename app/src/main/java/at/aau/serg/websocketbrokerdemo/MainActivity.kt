@@ -18,6 +18,16 @@ class MainActivity : ComponentActivity() {
     
     private val viewModel: AppViewModel by viewModels()
 
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) {
+            val screen = viewModel.currentScreen.value
+            if (screen == "host" || screen == "waiting") {
+                viewModel.leaveLobby()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

@@ -324,6 +324,142 @@ class AppViewModelTest {
         verify { mockStomp.startGameCmd(lobbyId, any()) }
     }
 
+    // ========== PLAYER LIST TESTS ==========
+
+    @Test
+    fun `playersList is empty initially`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        assertTrue(viewModel.playersList.value.isEmpty())
+    }
+
+    @Test
+    fun `onResponse with LOBBY_FULL error sets errorMessage`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onResponse("""{"success":false,"message":"Lobby is full"}""")
+
+        assertEquals("Lobby is full", viewModel.errorMessage.value)
+    }
+
+    @Test
+    fun `onResponse with LOBBY_FULL error does not navigate`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onResponse("""{"success":false,"message":"Lobby is full"}""")
+
+        assertEquals("login", viewModel.currentScreen.value)
+    }
+
+    // ========== LEAVE LOBBY TESTS ==========
+
+    @Test
+    fun `leaveLobby navigates to login`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Host")
+        viewModel.navigateTo("host")
+
+        viewModel.leaveLobby()
+
+        assertEquals("login", viewModel.currentScreen.value)
+    }
+
+    @Test
+    fun `leaveLobby clears lobbyId`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Host")
+
+        viewModel.leaveLobby()
+
+        assertEquals("", viewModel.lobbyId.value)
+    }
+
+    @Test
+    fun `leaveLobby clears playersList`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"JOIN_LOBBY","state":{"lobbyId":"1234","players":[{"playerId":"Host"},{"playerId":"Player2"}],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        viewModel.leaveLobby()
+
+        assertTrue(viewModel.playersList.value.isEmpty())
+    }
+
+    @Test
+    fun `leaveLobby sets isHost to false`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Host")
+
+        viewModel.leaveLobby()
+
+        assertFalse(viewModel.isHost.value)
+    }
+
+    @Test
+    fun `leaveLobby calls stomp leaveLobby when lobbyId and playerName are set`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Host")
+        val lobbyId = viewModel.lobbyId.value
+
+        viewModel.leaveLobby()
+
+        verify { mockStomp.leaveLobby(lobbyId, "Host") }
+    }
+
+    @Test
+    fun `leaveLobby does not call stomp when lobbyId is blank`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.leaveLobby()
+
+        verify(exactly = 0) { mockStomp.leaveLobby(any(), any()) }
+    }
+
+    @Test
+    fun `onResponse with LEAVE_LOBBY updates playersList`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.navigateTo("host")
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"LEAVE_LOBBY","state":{"lobbyId":"1234","players":[{"playerId":"Host"}],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals(listOf("Host"), viewModel.playersList.value)
+    }
+
+    @Test
+    fun `onResponse with LEAVE_LOBBY does not navigate away from host screen`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.navigateTo("host")
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"LEAVE_LOBBY","state":{"lobbyId":"1234","players":[{"playerId":"Host"}],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("host", viewModel.currentScreen.value)
+    }
+
+    @Test
+    fun `onResponse with LEAVE_LOBBY does not navigate away from waiting screen`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.navigateTo("waiting")
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"LEAVE_LOBBY","state":{"lobbyId":"1234","players":[{"playerId":"Player1"}],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("waiting", viewModel.currentScreen.value)
+    }
+
     // ========== HELPER ==========
 
     private fun createViewModelWithMockStomp(mockStomp: MyStomp): AppViewModel {

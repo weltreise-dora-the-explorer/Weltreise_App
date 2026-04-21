@@ -47,6 +47,18 @@ fun WaitingScreen(viewModel: AppViewModel) {
                 )
             )
     ) {
+        Button(
+            onClick = { viewModel.leaveLobby() },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+                .height(40.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C))
+        ) {
+            Text("Leave Lobby", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -109,7 +121,7 @@ fun WaitingScreen(viewModel: AppViewModel) {
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f)) // Schiebt den Button nach unten
+            Spacer(modifier = Modifier.weight(1f))
 
             //Warten - Anzeige
             Box(

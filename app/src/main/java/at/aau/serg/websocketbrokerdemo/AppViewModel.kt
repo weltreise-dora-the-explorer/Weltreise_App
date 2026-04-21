@@ -87,6 +87,18 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         stomp.startGameCmd(_lobbyId.value, stops)
     }
 
+    fun leaveLobby() {
+        val currentLobbyId = _lobbyId.value
+        val currentPlayerName = _playerName.value
+        if (currentLobbyId.isNotBlank() && currentPlayerName.isNotBlank()) {
+            stomp.leaveLobby(currentLobbyId, currentPlayerName)
+        }
+        _lobbyId.value = ""
+        _playersList.value = emptyList()
+        _isHost.value = false
+        navigateTo("login")
+    }
+
     override fun onResponse(res: String) {
         Log.i("AppViewModel", "Received from server: $res")
         _isLoading.value = false
