@@ -35,6 +35,11 @@ fun GameScreen(viewModel: AppViewModel) {
     val playersList by viewModel.playersList.collectAsState()
     val currentPlayerName by viewModel.playerName.collectAsState()
     val gameMode by viewModel.gameMode.collectAsState()
+    val diceValue by viewModel.diceValue.collectAsState()
+    val currentTurnPlayerId by viewModel.currentTurnPlayerId.collectAsState()
+    val isMyTurn = currentTurnPlayerId == currentPlayerName
+    val canRoll = isMyTurn && diceValue == null
+    val canEndTurn = isMyTurn && diceValue != null
 
     //Bilder
     val mapBitmap = loadAssetBitmap(context, "world_map_klein.png")
@@ -97,9 +102,48 @@ fun GameScreen(viewModel: AppViewModel) {
                     name = displayName,
                     bucketListCount = 8, // TODO: Später vom Server holen
                     avatar = avatar,
-                    isActive = playerName == currentPlayerName
+                    isActive = playerName == currentTurnPlayerId
                 )
             }
+        }
+
+        // Würfelergebnis – für alle sichtbar in der Mitte
+        if (diceValue != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .background(Color(0xCC000000), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 32.dp, vertical = 20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "$diceValue",
+                        fontSize = 72.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = if (isMyTurn) "Dein Wurf!" else "$currentTurnPlayerId würfelt",
+                        fontSize = 14.sp,
+                        color = Color(0xFFD4AF37)
+                    )
+                }
+            }
+        }
+
+        // Warte-Hinweis wenn nicht dein Zug
+        if (!isMyTurn && currentTurnPlayerId != null) {
+            Text(
+                text = "Warte auf $currentTurnPlayerId ...",
+                color = Color.White,
+                fontSize = 13.sp,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp)
+                    .background(Color(0x88000000), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+            )
         }
 
         //Actionbuttons
@@ -112,12 +156,22 @@ fun GameScreen(viewModel: AppViewModel) {
             GameButton(
                 text = "ROLL DICE",
                 imageBitmap = diceBitmap,
-                onClick = {
-                    println("WÜRFEL WURDE GEKLICKT!")
-                }
+                enabled = canRoll,
+                onClick = { viewModel.onRollDice() }
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(1.dp))
+
+            // Zug beenden – nur sichtbar wenn gewürfelt und dran
+            if (canEndTurn) {
+                GameButton(
+                    text = "ZUG ENDE",
+                    imageBitmap = null,
+                    enabled = true,
+                    onClick = { viewModel.onEndTurn() }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             //Bucket List
             GameButton(
@@ -212,12 +266,13 @@ fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActiv
 }
 
 @Composable
-fun GameButton(text: String, imageBitmap: ImageBitmap?, onClick: () -> Unit) {
+fun GameButton(text: String, imageBitmap: ImageBitmap?, onClick: () -> Unit, enabled: Boolean = true) {
+    val bgColor = if (enabled) Color.White.copy(alpha = 0.8f) else Color.Gray.copy(alpha = 0.4f)
     Box(
         modifier = Modifier
             .size(120.dp)
-            .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(16.dp))
-            .clickable { onClick() }
+            .background(bgColor, RoundedCornerShape(16.dp))
+            .then(if (enabled) Modifier.clickable { onClick() } else Modifier)
             .padding(12.dp),
         contentAlignment = Alignment.Center
     ) {

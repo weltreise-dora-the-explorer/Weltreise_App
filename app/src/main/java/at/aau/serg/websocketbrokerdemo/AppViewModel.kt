@@ -35,6 +35,12 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
     private val _gameMode = MutableStateFlow("Grand Tour")
     val gameMode: StateFlow<String> = _gameMode.asStateFlow()
 
+    private val _diceValue = MutableStateFlow<Int?>(null)
+    val diceValue: StateFlow<Int?> = _diceValue.asStateFlow()
+
+    private val _currentTurnPlayerId = MutableStateFlow<String?>(null)
+    val currentTurnPlayerId: StateFlow<String?> = _currentTurnPlayerId.asStateFlow()
+
     fun setGameMode(mode: String) {
         _gameMode.value = mode
     }
@@ -87,6 +93,15 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         stomp.startGameCmd(_lobbyId.value, stops)
     }
 
+    fun onRollDice() {
+        stomp.rollDice(_lobbyId.value, _playerName.value)
+    }
+
+    fun onEndTurn() {
+        val dice = _diceValue.value ?: return
+        stomp.endTurn(_lobbyId.value, _playerName.value, dice)
+    }
+
     fun leaveLobby() {
         val currentLobbyId = _lobbyId.value
         val currentPlayerName = _playerName.value
@@ -129,6 +144,10 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                         }
                         _playersList.value = newList
                     }
+
+                    // Würfelergebnis und aktueller Spieler aktualisieren
+                    _diceValue.value = if (stateJson.isNull("lastDiceValue")) null else stateJson.optInt("lastDiceValue")
+                    _currentTurnPlayerId.value = stateJson.optString("currentPlayerId").ifEmpty { null }
 
                     // Navigation basierend auf Phase und Command-Type
                     val commandType = rootJson.optString("commandType", "")
