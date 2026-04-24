@@ -28,6 +28,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import at.aau.serg.websocketbrokerdemo.AppViewModel
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 
 @Composable
 fun GameScreen(viewModel: AppViewModel) {
@@ -61,12 +65,7 @@ fun GameScreen(viewModel: AppViewModel) {
 
         // Weltkarte
         if (mapBitmap != null) {
-            Image(
-                bitmap = mapBitmap,
-                contentDescription = "Weltkarte",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
+            ZoomableMap(mapBitmap = mapBitmap)
         }
 
         // Game Mode Badge oben rechts
@@ -171,8 +170,39 @@ fun GameScreen(viewModel: AppViewModel) {
 }
 
 
-//Hilfe damit App nicht abstürzt (bsp. derzeit noch fehlende Bilder)
+//Weltkarte mit Zoom und Verschiebe Funktion
+@Composable
+fun ZoomableMap(mapBitmap: ImageBitmap) {
+    var scale by remember {mutableStateOf(1f)}
+    var offset by remember {mutableStateOf(Offset.Zero)}
 
+    Image(
+        bitmap = mapBitmap,
+        contentDescription = "Weltkarte",
+        contentScale = ContentScale.Crop,
+        modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer(
+                scaleX = scale,
+                scaleY = scale,
+                translationX = offset.x,
+                translationY = offset.y
+            )
+            .pointerInput(Unit) {
+                detectTransformGestures { _, pan, zoom, _ ->
+                    scale = (scale * zoom).coerceIn(1f, 4f)
+
+                    if(scale > 1f) {
+                        offset += pan
+                    }else {
+                        offset = Offset.Zero
+                    }
+                }
+            }
+    )
+}
+
+//Hilfe damit App nicht abstürzt (bsp. derzeit noch fehlende Bilder)
 @Composable
 fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActive: Boolean) {
     Row(
