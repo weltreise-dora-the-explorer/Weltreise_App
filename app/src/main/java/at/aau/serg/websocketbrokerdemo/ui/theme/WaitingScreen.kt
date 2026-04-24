@@ -59,6 +59,10 @@ fun WaitingScreen(viewModel: AppViewModel) {
             Text("Leave Lobby", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
         }
 
+        GameRulesButton(
+            modifier = Modifier.align(Alignment.TopEnd)
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()

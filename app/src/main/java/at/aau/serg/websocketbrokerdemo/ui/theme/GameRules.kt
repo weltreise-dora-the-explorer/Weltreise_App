@@ -21,14 +21,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+//Button oben rechts in der Lobby, der das Regel Popup öffnet
 @Composable
-fun GameRulesButton() {
+fun GameRulesButton(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val rulesIcon = loadAssetBitmap(context, "rules.png")
+    val rulesIcon = loadAssetBitmap(context, "rules_icon.png")
     var showRules by remember {mutableStateOf(false)}
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .padding(top = 24.dp, end = 32.dp)
             .size(64.dp)
             .background(Color.White.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
@@ -47,9 +48,10 @@ fun GameRulesButton() {
         }
     }
 
+    //Dialog mit den Spielregeln
     if(showRules) {
         AlertDialog(
-            onDismissRequest = {showRules = false},
+            onDismissRequest = { showRules = false},
             title = {
                 Text(
                     text = "Spielregeln",
@@ -63,6 +65,7 @@ fun GameRulesButton() {
                         .heightIn(max = 420.dp)
                         .verticalScroll(rememberScrollState())
                 ){
+                    //Aufklappbare Regeln
                     ExpandableRule(
                         title = "Spielziel",
                         content = "Ziel des Spiels ist es, alle eigenen Zielstädte zu erreichen und anschließend wieder zur eigenen Startstadt zurückzukehren."
@@ -103,6 +106,7 @@ fun GameRulesButton() {
     }
 }
 
+//Einzelner aufklappbarer Regelpunkt
 @Composable
 fun ExpandableRule(title: String, content: String) {
     var expanded by remember {mutableStateOf(false)}
