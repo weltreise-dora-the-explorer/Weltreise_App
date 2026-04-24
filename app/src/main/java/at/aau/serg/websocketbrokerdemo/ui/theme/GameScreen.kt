@@ -68,7 +68,7 @@ fun GameScreen(viewModel: AppViewModel) {
         if (diceValue != null) {
             showDiceOverlay = true
             diceAlpha.snapTo(1f)
-            delay(4000)
+            delay(2000)
             diceAlpha.animateTo(0f, animationSpec = tween(1000))
             showDiceOverlay = false
         } else {
@@ -122,7 +122,8 @@ fun GameScreen(viewModel: AppViewModel) {
                     name = displayName,
                     bucketListCount = 8, // TODO: Später vom Server holen
                     avatar = avatar,
-                    isActive = playerName == currentTurnPlayerId
+                    isActive = playerName == currentTurnPlayerId,
+                    diceValue = if (playerName == currentTurnPlayerId) diceValue else null
                 )
             }
         }
@@ -249,7 +250,7 @@ fun GameScreen(viewModel: AppViewModel) {
 //Hilfe damit App nicht abstürzt (bsp. derzeit noch fehlende Bilder)
 
 @Composable
-fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActive: Boolean) {
+fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActive: Boolean, diceValue: Int? = null) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.height(50.dp)
@@ -280,7 +281,13 @@ fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActiv
                 )
                 .padding(start = 24.dp, end = 16.dp, top = 4.dp, bottom = 4.dp)
         ) {
-            Text(text = name, fontSize = 12.sp, color = Color(0xFF1E56A0), fontWeight = FontWeight.Bold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = name, fontSize = 12.sp, color = Color(0xFF1E56A0), fontWeight = FontWeight.Bold)
+                if (diceValue != null) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(text = "🎲 $diceValue", fontSize = 11.sp, color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold)
+                }
+            }
             Text(text = "Bucket List: $bucketListCount", fontSize = 10.sp, color = Color.Gray)
         }
     }
