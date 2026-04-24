@@ -153,10 +153,10 @@ fun GameScreen(viewModel: AppViewModel) {
             }
         }
 
-        // Warte-Hinweis wenn nicht dein Zug
-        if (!isMyTurn && currentTurnPlayerId != null) {
+        // Hinweis wessen Zug es ist
+        if (currentTurnPlayerId != null) {
             Text(
-                text = "Warte auf $currentTurnPlayerId ...",
+                text = if (isMyTurn) "Du bist dran!" else "Warte auf $currentTurnPlayerId ...",
                 color = Color.White,
                 fontSize = 13.sp,
                 modifier = Modifier
