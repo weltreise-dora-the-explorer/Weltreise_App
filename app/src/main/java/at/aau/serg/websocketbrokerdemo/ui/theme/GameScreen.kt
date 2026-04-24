@@ -14,7 +14,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
+import androidx.compose.ui.draw.alpha
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +60,22 @@ fun GameScreen(viewModel: AppViewModel) {
 
     //Bucketlist offen? Default false
     var showBucketListDialog by remember { mutableStateOf(false) }
+
+    // Würfelergebnis fade-out nach 5 Sekunden
+    var showDiceOverlay by remember { mutableStateOf(false) }
+    val diceAlpha = remember { Animatable(0f) }
+    LaunchedEffect(diceValue) {
+        if (diceValue != null) {
+            showDiceOverlay = true
+            diceAlpha.snapTo(1f)
+            delay(4000)
+            diceAlpha.animateTo(0f, animationSpec = tween(1000))
+            showDiceOverlay = false
+        } else {
+            showDiceOverlay = false
+            diceAlpha.snapTo(0f)
+        }
+    }
 
     // Box (Schichten-Design)
     Box(
@@ -107,11 +127,12 @@ fun GameScreen(viewModel: AppViewModel) {
             }
         }
 
-        // Würfelergebnis – für alle sichtbar in der Mitte
-        if (diceValue != null) {
+        // Würfelergebnis – für alle sichtbar in der Mitte, verschwindet nach 5s
+        if (showDiceOverlay && diceValue != null) {
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
+                    .alpha(diceAlpha.value)
                     .background(Color(0xCC000000), RoundedCornerShape(20.dp))
                     .padding(horizontal = 32.dp, vertical = 20.dp),
                 contentAlignment = Alignment.Center
