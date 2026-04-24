@@ -179,7 +179,7 @@ fun ZoomableMap(mapBitmap: ImageBitmap) {
     Image(
         bitmap = mapBitmap,
         contentDescription = "Weltkarte",
-        contentScale = ContentScale.Crop,
+        contentScale = ContentScale.Fit,
         modifier = Modifier
             .fillMaxSize()
             .graphicsLayer(
