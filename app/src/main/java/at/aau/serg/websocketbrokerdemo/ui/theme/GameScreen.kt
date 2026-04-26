@@ -32,7 +32,7 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-
+import kotlin.math.pow
 @Composable
 fun GameScreen(viewModel: AppViewModel) {
     val context = LocalContext.current
@@ -176,30 +176,57 @@ fun ZoomableMap(mapBitmap: ImageBitmap) {
     var scale by remember {mutableStateOf(1f)}
     var offset by remember {mutableStateOf(Offset.Zero)}
 
-    Image(
-        bitmap = mapBitmap,
-        contentDescription = "Weltkarte",
-        contentScale = ContentScale.Fit,
-        modifier = Modifier
-            .fillMaxSize()
-            .graphicsLayer(
-                scaleX = scale,
-                scaleY = scale,
-                translationX = offset.x,
-                translationY = offset.y
-            )
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(1f, 4f)
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        val screenWidth = constraints.maxWidth.toFloat()
+        val screenHeight = constraints.maxHeight.toFloat()
 
-                    if(scale > 1f) {
-                        offset += pan
-                    }else {
-                        offset = Offset.Zero
+
+        Image(
+            bitmap = mapBitmap,
+            contentDescription = "Weltkarte",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    translationX = offset.x,
+                    translationY = offset.y,
+                )
+                .pointerInput(screenWidth, screenHeight) {
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        val adjustedZoom = if (zoom < 1f) {
+                            zoom.toDouble().pow(2.2).toFloat()
+                        } else {
+                            zoom.toDouble().pow(1.1).toFloat()
+                        }
+
+                        val newScale = (scale * adjustedZoom).coerceIn(1f, 8f)
+
+                        val maxOffsetX = ((screenWidth * newScale) - screenWidth) / 2f
+                        val maxOffsetY = ((screenHeight * newScale) - screenHeight) / 2f
+
+                        // Je stärker hineingezoomt ist, desto schneller soll die Karte verschiebbar sein.
+                        val panSpeed = (newScale * 1.4f).coerceIn(2.5f, 10f)
+
+                        scale = newScale
+
+                        offset = if (newScale > 1f) {
+                            Offset(
+                                x = (offset.x + pan.x * panSpeed)
+                                    .coerceIn(-maxOffsetX, maxOffsetX),
+                                y = (offset.y + pan.y * panSpeed)
+                                    .coerceIn(-maxOffsetY, maxOffsetY)
+                            )
+                        } else {
+                            Offset.Zero
+                        }
                     }
                 }
-            }
-    )
+        )
+    }
 }
 
 //Hilfe damit App nicht abstürzt (bsp. derzeit noch fehlende Bilder)
