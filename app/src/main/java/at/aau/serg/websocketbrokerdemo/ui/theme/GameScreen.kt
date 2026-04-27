@@ -41,9 +41,14 @@ fun GameScreen(viewModel: AppViewModel) {
     val gameMode by viewModel.gameMode.collectAsState()
     val diceValue by viewModel.diceValue.collectAsState()
     val currentTurnPlayerId by viewModel.currentTurnPlayerId.collectAsState()
+    val ownedCities by viewModel.ownedCities.collectAsState()
+    val startCity by viewModel.startCity.collectAsState()
+    val playerCityCounts by viewModel.playerCityCounts.collectAsState()
     val isMyTurn = currentTurnPlayerId == currentPlayerName
     val canRoll = isMyTurn && diceValue == null
     val canEndTurn = isMyTurn && diceValue != null
+
+
 
     //Bilder
     val mapBitmap = loadAssetBitmap(context, "world_map_klein.png")
@@ -100,7 +105,7 @@ fun GameScreen(viewModel: AppViewModel) {
             color = Color.White,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            modifier = androidx.compose.ui.Modifier
+            modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(top = 12.dp, end = 16.dp)
                 .background(Color(0x88000000), RoundedCornerShape(8.dp))
@@ -120,7 +125,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 val displayName = if (isFirstPlayer) "$playerName (Host)" else playerName
                 PlayerCard(
                     name = displayName,
-                    bucketListCount = 8, // TODO: Später vom Server holen
+                    bucketListCount = playerCityCounts[playerName] ?: 0,
                     avatar = avatar,
                     isActive = playerName == currentTurnPlayerId,
                     diceValue = if (playerName == currentTurnPlayerId) diceValue else null
@@ -214,27 +219,43 @@ fun GameScreen(viewModel: AppViewModel) {
                 Text(text = "Bucket List", fontWeight = FontWeight.Bold)
             },
             text = {
-                //vertikales Scrollen
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
-                    Text("Your Destinations:") //Beispiel STädte die für Sprint 1 nicht existieren!
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("📍 Hometown: Berlin", fontWeight = FontWeight.Bold)
-                    Text("Paris")
-                    Text("Tokyo")
-                    Text("New York")
-                    Text("Sydney")
-                    Text("Kapstadt")
-                    Text("Rio de Janeiro")
-                    Text("Moskau")
-                    Text("Peking")
-                    Text("Kairo")
-                    Text("Rom")
-                    Text("London")
-                    Text("Los Angeles")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "wird später automatisch befüllt", fontSize = 12.sp, color = Color.Gray)
+                    if (startCity != null) {
+                        Text(
+                            text = "🏠 Startstadt",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFF1E56A0)
+                        )
+                        Text(
+                            text = "${startCity!!.name}  •  ${startCity!!.continent.name.replace("_", " ")}",
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                    if (ownedCities.isEmpty()) {
+                        Text(
+                            text = "Noch keine Zielstädte zugewiesen.",
+                            fontSize = 13.sp,
+                            color = Color.Gray
+                        )
+                    } else {
+                        Text(
+                            text = "📍 Zielstädte (${ownedCities.size})",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFF1E56A0)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        ownedCities.forEach { city ->
+                            Text(
+                                text = "${city.name}  •  ${city.continent.name.replace("_", " ")}",
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
                 }
             },
             confirmButton = {
@@ -331,7 +352,7 @@ fun loadAssetBitmap(context: Context, fileName: String): ImageBitmap? {
         context.assets.open(fileName).use { inputStream ->
             BitmapFactory.decodeStream(inputStream).asImageBitmap()
         }
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         null
     }
 }
