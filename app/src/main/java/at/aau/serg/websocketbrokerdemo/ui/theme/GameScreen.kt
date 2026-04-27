@@ -215,7 +215,7 @@ fun GameScreen(viewModel: AppViewModel) {
                     )
                 ) {
                     Text(
-                        text = "ZUG\nBEENDEN",
+                        text = "End Turn",
                         color = Color.White,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
