@@ -12,6 +12,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.animation.core.Animatable
@@ -177,7 +179,8 @@ fun GameScreen(viewModel: AppViewModel) {
         Column(
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(start = 24.dp)
+                .padding(start = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             //Roll Dice
             GameButton(
@@ -189,17 +192,6 @@ fun GameScreen(viewModel: AppViewModel) {
 
             Spacer(modifier = Modifier.height(1.dp))
 
-            // Zug beenden – nur sichtbar wenn gewürfelt und dran
-            if (canEndTurn) {
-                GameButton(
-                    text = "ZUG ENDE",
-                    imageBitmap = null,
-                    enabled = true,
-                    onClick = { viewModel.onEndTurn() }
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
             //Bucket List
             GameButton(
                 text = "BUCKET LIST",
@@ -208,6 +200,29 @@ fun GameScreen(viewModel: AppViewModel) {
                     showBucketListDialog = true
                 }
             )
+
+            // Zug beenden – nur sichtbar wenn gewürfelt und dran, unter Bucket List
+            if (canEndTurn) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = { viewModel.onEndTurn() },
+                    modifier = Modifier
+                        .width(120.dp)
+                        .height(60.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF8DB6CD)
+                    )
+                ) {
+                    Text(
+                        text = "ZUG\nBEENDEN",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            }
         }
     }
 
