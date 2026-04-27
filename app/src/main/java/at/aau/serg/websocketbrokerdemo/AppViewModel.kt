@@ -98,8 +98,8 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
     fun startGame() {
         val stops = when (_gameMode.value) {
             "City Hopper" -> 6
-            "Epic Voyage" -> 18
-            else -> 12
+            "Epic Voyage" -> 12
+            else -> 9
         }
         stomp.startGameCmd(_lobbyId.value, stops)
     }
@@ -178,21 +178,21 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                                     }
                                     _ownedCities.value = cities
                                     Log.d("AppViewModel", "Eigene Städte empfangen: ${cities.map { it.name }}")
-                                }
 
-                                if (playerObj.has("startCity") && !playerObj.isNull("startCity")) {
-                                    val sc = playerObj.getJSONObject("startCity")
-                                    val continent = try {
-                                        Continent.valueOf(sc.optString("continent", "EUROPE"))
-                                    } catch (_: IllegalArgumentException) {
-                                        Continent.EUROPE
+                                    if (playerObj.has("startCity") && !playerObj.isNull("startCity")) {
+                                        val sc = playerObj.getJSONObject("startCity")
+                                        val continent = try {
+                                            Continent.valueOf(sc.optString("continent", "EUROPE"))
+                                        } catch (_: IllegalArgumentException) {
+                                            Continent.EUROPE
+                                        }
+                                        _startCity.value = City(
+                                            id = sc.optString("id", ""),
+                                            name = sc.optString("name", ""),
+                                            continent = continent,
+                                            color = sc.optString("color", "")
+                                        )
                                     }
-                                    _startCity.value = City(
-                                        id = sc.optString("id", ""),
-                                        name = sc.optString("name", ""),
-                                        continent = continent,
-                                        color = sc.optString("color", "")
-                                    )
                                 }
                             }
                         }
