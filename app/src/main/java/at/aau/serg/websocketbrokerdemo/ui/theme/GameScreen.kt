@@ -153,7 +153,7 @@ fun GameScreen(viewModel: AppViewModel) {
                         color = Color.White
                     )
                     Text(
-                        text = if (isMyTurn) "Dein Wurf!" else "$currentTurnPlayerId würfelt",
+                        text = if (isMyTurn) "Your roll!" else "$currentTurnPlayerId is rolling",
                         fontSize = 14.sp,
                         color = Color(0xFFD4AF37)
                     )
@@ -164,7 +164,7 @@ fun GameScreen(viewModel: AppViewModel) {
         // Hinweis wessen Zug es ist
         if (currentTurnPlayerId != null) {
             Text(
-                text = if (isMyTurn) "Du bist dran!" else "Warte auf $currentTurnPlayerId ...",
+                text = if (isMyTurn) "It is your turn!" else "Waiting for $currentTurnPlayerId ...",
                 color = Color.White,
                 fontSize = 13.sp,
                 modifier = Modifier
@@ -252,13 +252,13 @@ fun GameScreen(viewModel: AppViewModel) {
                     }
                     if (ownedCities.isEmpty()) {
                         Text(
-                            text = "Noch keine Zielstädte zugewiesen.",
+                            text = "No target cities assigned yet.",
                             fontSize = 13.sp,
                             color = Color.Gray
                         )
                     } else {
                         Text(
-                            text = "📍 Zielstädte (${ownedCities.size})",
+                            text = "📍 Target Cities (${ownedCities.size})",
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = Color(0xFF1E56A0)
