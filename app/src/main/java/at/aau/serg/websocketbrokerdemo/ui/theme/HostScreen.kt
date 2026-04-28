@@ -16,7 +16,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -25,6 +24,7 @@ import at.aau.serg.websocketbrokerdemo.AppViewModel
 @Composable
 fun HostScreen(viewModel: AppViewModel) {
     val selectedTour by viewModel.gameMode.collectAsState()
+    val playersList by viewModel.playersList.collectAsState()
     val context = LocalContext.current
     val avatars = listOf(
         loadAssetBitmap(context, "turtle_with_luggage_loginscreen.png"),
@@ -46,6 +46,18 @@ fun HostScreen(viewModel: AppViewModel) {
                 )
             )
     ) {
+        Button(
+            onClick = { viewModel.leaveLobby() },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+                .height(40.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C))
+        ) {
+            Text("Leave Lobby", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -101,12 +113,12 @@ fun HostScreen(viewModel: AppViewModel) {
                             onClick = { viewModel.setGameMode("City Hopper") }
                         )
                         TourButton(
-                            text = "Grand Tour\n(12)",
+                            text = "Grand Tour\n(9)",
                             isSelected = selectedTour == "Grand Tour",
                             onClick = { viewModel.setGameMode("Grand Tour") }
                         )
                         TourButton(
-                            text = "Epic Voyage\n(18)",
+                            text = "Epic Voyage\n(12)",
                             isSelected = selectedTour == "Epic Voyage",
                             onClick = { viewModel.setGameMode("Epic Voyage") }
                         )
@@ -117,19 +129,25 @@ fun HostScreen(viewModel: AppViewModel) {
                     // Start Button
                     Button(
                         onClick = { viewModel.startGame() },
+                        enabled = playersList.size >= 2,
                         modifier = Modifier
                             .fillMaxWidth(0.8f)
                             .height(60.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8DB6CD))
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF8DB6CD),
+                            disabledContainerColor = Color(0x1F000000),
+                            disabledContentColor = Color(0x1F000000)
+                        )
                     ) {
                         Text(
-                            text = "Start The Journey",
+                            text = if (playersList.size >= 2) "Start The Journey" else "Not Enough Players",
                             color = Color.White,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
+
                 }
 
                 //rechte Spalte -> Mitspieler
@@ -148,7 +166,6 @@ fun HostScreen(viewModel: AppViewModel) {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Dynamically render players
-                    val playersList by viewModel.playersList.collectAsState()
                     playersList.forEachIndexed { index, playerName ->
                         TravellerCard(playerName, avatars.getOrNull(index % avatars.size))
                         Spacer(modifier = Modifier.height(12.dp))

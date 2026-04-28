@@ -195,4 +195,54 @@ class MyStomp(val callbacks: Callbacks) {
             }
         }
     }
+
+    fun leaveLobby(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val command = JSONObject()
+                command.put("type", "LEAVE_LOBBY")
+                command.put("playerId", playerId)
+                session?.sendText("/app/lobby/$lobbyId/command", command.toString())
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Lobby verlassen", e)
+            }
+        }
+    }
+
+    fun rollDice(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val command = JSONObject()
+                command.put("type", "ROLL_DICE")
+                command.put("playerId", playerId)
+                session?.sendText("/app/lobby/$lobbyId/command", command.toString())
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Würfeln", e)
+            }
+        }
+    }
+
+    fun endTurn(lobbyId: String, playerId: String, diceValue: Int) {
+        scope.launch {
+            try {
+                val command = JSONObject()
+                command.put("type", "MOVE_TOKEN")
+                command.put("playerId", playerId)
+                command.put("moveSteps", diceValue)
+                session?.sendText("/app/lobby/$lobbyId/command", command.toString())
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Zug beenden", e)
+            }
+        }
+    }
+
+    fun disconnect() {
+        scope.launch {
+            try {
+                session?.disconnect()
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Disconnect", e)
+            }
+        }
+    }
 }
