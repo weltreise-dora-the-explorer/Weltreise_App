@@ -28,24 +28,24 @@ class CityDistributorTest {
         //  Liste: 4 Kontinente mit je 6 Städten
         testCities = listOf<City>(
             // Europa (6)
-            City("Wien", Continent.EUROPE), City("Berlin", Continent.EUROPE),
-            City("Paris", Continent.EUROPE), City("Rom", Continent.EUROPE),
-            City("Madrid", Continent.EUROPE), City("London", Continent.EUROPE),
+            City(name = "Wien", continent = Continent.EUROPE), City(name = "Berlin", continent = Continent.EUROPE),
+            City(name = "Paris", continent = Continent.EUROPE), City(name = "Rom", continent = Continent.EUROPE),
+            City(name = "Madrid", continent = Continent.EUROPE), City(name = "London", continent = Continent.EUROPE),
 
             // Asien (6)
-            City("Tokio", Continent.ASIA), City("Peking", Continent.ASIA),
-            City("Bangkok", Continent.ASIA), City("Seoul", Continent.ASIA),
-            City("Neu-Delhi", Continent.ASIA), City("Singapur", Continent.ASIA),
+            City(name = "Tokio", continent = Continent.ASIA), City(name = "Peking", continent = Continent.ASIA),
+            City(name = "Bangkok", continent = Continent.ASIA), City(name = "Seoul", continent = Continent.ASIA),
+            City(name = "Neu-Delhi", continent = Continent.ASIA), City(name = "Singapur", continent = Continent.ASIA),
 
             // Nordamerika (6)
-            City("New York", Continent.NORTH_AMERICA), City("Los Angeles", Continent.NORTH_AMERICA),
-            City("Toronto", Continent.NORTH_AMERICA), City("Chicago", Continent.NORTH_AMERICA),
-            City("Mexiko-Stadt", Continent.NORTH_AMERICA), City("Miami", Continent.NORTH_AMERICA),
+            City(name = "New York", continent = Continent.NORTH_AMERICA), City(name = "Los Angeles", continent = Continent.NORTH_AMERICA),
+            City(name = "Toronto", continent = Continent.NORTH_AMERICA), City(name = "Chicago", continent = Continent.NORTH_AMERICA),
+            City(name = "Mexiko-Stadt", continent = Continent.NORTH_AMERICA), City(name = "Miami", continent = Continent.NORTH_AMERICA),
 
             // Südamerika (6)
-            City("Rio de Janeiro", Continent.SOUTH_AMERICA), City("Buenos Aires", Continent.SOUTH_AMERICA),
-            City("Lima", Continent.SOUTH_AMERICA), City("Bogota", Continent.SOUTH_AMERICA),
-            City("Santiago", Continent.SOUTH_AMERICA), City("Quito", Continent.SOUTH_AMERICA)
+            City(name = "Rio de Janeiro", continent = Continent.SOUTH_AMERICA), City(name = "Buenos Aires", continent = Continent.SOUTH_AMERICA),
+            City(name = "Lima", continent = Continent.SOUTH_AMERICA), City(name = "Bogota", continent = Continent.SOUTH_AMERICA),
+            City(name = "Santiago", continent = Continent.SOUTH_AMERICA), City(name = "Quito", continent = Continent.SOUTH_AMERICA)
         )
     }
 
@@ -72,7 +72,7 @@ class CityDistributorTest {
     @Test
     fun `test gracefully handles not enough cities in a pool`() {
         // Randfall 1: Zu wenige Städte
-        val fewCities = listOf(City("Wien", Continent.EUROPE))
+        val fewCities = listOf(City(name = "Wien", continent = Continent.EUROPE))
 
         distributor.distributeByContinent(fewCities, players, 2)
 

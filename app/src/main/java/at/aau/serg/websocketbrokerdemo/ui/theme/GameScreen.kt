@@ -12,9 +12,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
+import androidx.compose.ui.draw.alpha
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +41,16 @@ fun GameScreen(viewModel: AppViewModel) {
     val playersList by viewModel.playersList.collectAsState()
     val currentPlayerName by viewModel.playerName.collectAsState()
     val gameMode by viewModel.gameMode.collectAsState()
+    val diceValue by viewModel.diceValue.collectAsState()
+    val currentTurnPlayerId by viewModel.currentTurnPlayerId.collectAsState()
+    val ownedCities by viewModel.ownedCities.collectAsState()
+    val startCity by viewModel.startCity.collectAsState()
+    val playerCityCounts by viewModel.playerCityCounts.collectAsState()
+    val isMyTurn = currentTurnPlayerId == currentPlayerName
+    val canRoll = isMyTurn && diceValue == null
+    val canEndTurn = isMyTurn && diceValue != null
+
+
 
     //Bilder
     val mapBitmap = loadAssetBitmap(context, "world_map_klein.png")
@@ -51,6 +67,22 @@ fun GameScreen(viewModel: AppViewModel) {
 
     //Bucketlist offen? Default false
     var showBucketListDialog by remember { mutableStateOf(false) }
+
+    // Würfelergebnis fade-out nach 5 Sekunden
+    var showDiceOverlay by remember { mutableStateOf(false) }
+    val diceAlpha = remember { Animatable(0f) }
+    LaunchedEffect(diceValue) {
+        if (diceValue != null) {
+            showDiceOverlay = true
+            diceAlpha.snapTo(1f)
+            delay(2000)
+            diceAlpha.animateTo(0f, animationSpec = tween(1000))
+            showDiceOverlay = false
+        } else {
+            showDiceOverlay = false
+            diceAlpha.snapTo(0f)
+        }
+    }
 
     // Box (Schichten-Design)
     Box(
@@ -75,7 +107,7 @@ fun GameScreen(viewModel: AppViewModel) {
             color = Color.White,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            modifier = androidx.compose.ui.Modifier
+            modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(top = 12.dp, end = 16.dp)
                 .background(Color(0x88000000), RoundedCornerShape(8.dp))
@@ -95,29 +127,70 @@ fun GameScreen(viewModel: AppViewModel) {
                 val displayName = if (isFirstPlayer) "$playerName (Host)" else playerName
                 PlayerCard(
                     name = displayName,
-                    bucketListCount = 8, // TODO: Später vom Server holen
+                    bucketListCount = playerCityCounts[playerName] ?: 0,
                     avatar = avatar,
-                    isActive = playerName == currentPlayerName
+                    isActive = playerName == currentTurnPlayerId,
+                    diceValue = if (playerName == currentTurnPlayerId) diceValue else null
                 )
             }
+        }
+
+        // Würfelergebnis – für alle sichtbar in der Mitte, verschwindet nach 5s
+        if (showDiceOverlay && diceValue != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .alpha(diceAlpha.value)
+                    .background(Color(0xCC000000), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 32.dp, vertical = 20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "$diceValue",
+                        fontSize = 72.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = if (isMyTurn) "Your roll!" else "$currentTurnPlayerId is rolling",
+                        fontSize = 14.sp,
+                        color = Color(0xFFD4AF37)
+                    )
+                }
+            }
+        }
+
+        // Hinweis wessen Zug es ist
+        if (currentTurnPlayerId != null) {
+            Text(
+                text = if (isMyTurn) "It is your turn!" else "Waiting for $currentTurnPlayerId ...",
+                color = Color.White,
+                fontSize = 13.sp,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp)
+                    .background(Color(0x88000000), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+            )
         }
 
         //Actionbuttons
         Column(
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(start = 24.dp)
+                .padding(start = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             //Roll Dice
             GameButton(
                 text = "ROLL DICE",
                 imageBitmap = diceBitmap,
-                onClick = {
-                    println("WÜRFEL WURDE GEKLICKT!")
-                }
+                enabled = canRoll,
+                onClick = { viewModel.onRollDice() }
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(1.dp))
 
             //Bucket List
             GameButton(
@@ -127,6 +200,29 @@ fun GameScreen(viewModel: AppViewModel) {
                     showBucketListDialog = true
                 }
             )
+
+            // Zug beenden – nur sichtbar wenn gewürfelt und dran, unter Bucket List
+            if (canEndTurn) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = { viewModel.onEndTurn() },
+                    modifier = Modifier
+                        .width(120.dp)
+                        .height(60.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF8DB6CD)
+                    )
+                ) {
+                    Text(
+                        text = "End Turn",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            }
         }
     }
 
@@ -138,27 +234,43 @@ fun GameScreen(viewModel: AppViewModel) {
                 Text(text = "Bucket List", fontWeight = FontWeight.Bold)
             },
             text = {
-                //vertikales Scrollen
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
-                    Text("Your Destinations:") //Beispiel STädte die für Sprint 1 nicht existieren!
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("📍 Hometown: Berlin", fontWeight = FontWeight.Bold)
-                    Text("Paris")
-                    Text("Tokyo")
-                    Text("New York")
-                    Text("Sydney")
-                    Text("Kapstadt")
-                    Text("Rio de Janeiro")
-                    Text("Moskau")
-                    Text("Peking")
-                    Text("Kairo")
-                    Text("Rom")
-                    Text("London")
-                    Text("Los Angeles")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "wird später automatisch befüllt", fontSize = 12.sp, color = Color.Gray)
+                    if (startCity != null) {
+                        Text(
+                            text = "🏠 Startstadt",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFF1E56A0)
+                        )
+                        Text(
+                            text = "${startCity!!.name}  •  ${startCity!!.continent.name.replace("_", " ")}",
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                    if (ownedCities.isEmpty()) {
+                        Text(
+                            text = "No target cities assigned yet.",
+                            fontSize = 13.sp,
+                            color = Color.Gray
+                        )
+                    } else {
+                        Text(
+                            text = "📍 Target Cities (${ownedCities.size})",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFF1E56A0)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        ownedCities.forEach { city ->
+                            Text(
+                                text = "${city.name}  •  ${city.continent.name.replace("_", " ")}",
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
                 }
             },
             confirmButton = {
@@ -174,7 +286,7 @@ fun GameScreen(viewModel: AppViewModel) {
 //Hilfe damit App nicht abstürzt (bsp. derzeit noch fehlende Bilder)
 
 @Composable
-fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActive: Boolean) {
+fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActive: Boolean, diceValue: Int? = null) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.height(50.dp)
@@ -205,19 +317,26 @@ fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActiv
                 )
                 .padding(start = 24.dp, end = 16.dp, top = 4.dp, bottom = 4.dp)
         ) {
-            Text(text = name, fontSize = 12.sp, color = Color(0xFF1E56A0), fontWeight = FontWeight.Bold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = name, fontSize = 12.sp, color = Color(0xFF1E56A0), fontWeight = FontWeight.Bold)
+                if (diceValue != null) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(text = "🎲 $diceValue", fontSize = 11.sp, color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold)
+                }
+            }
             Text(text = "Bucket List: $bucketListCount", fontSize = 10.sp, color = Color.Gray)
         }
     }
 }
 
 @Composable
-fun GameButton(text: String, imageBitmap: ImageBitmap?, onClick: () -> Unit) {
+fun GameButton(text: String, imageBitmap: ImageBitmap?, onClick: () -> Unit, enabled: Boolean = true) {
+    val bgColor = if (enabled) Color.White.copy(alpha = 0.8f) else Color.Gray.copy(alpha = 0.4f)
     Box(
         modifier = Modifier
             .size(120.dp)
-            .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(16.dp))
-            .clickable { onClick() }
+            .background(bgColor, RoundedCornerShape(16.dp))
+            .then(if (enabled) Modifier.clickable { onClick() } else Modifier)
             .padding(12.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -248,7 +367,7 @@ fun loadAssetBitmap(context: Context, fileName: String): ImageBitmap? {
         context.assets.open(fileName).use { inputStream ->
             BitmapFactory.decodeStream(inputStream).asImageBitmap()
         }
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         null
     }
 }

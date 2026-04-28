@@ -3,6 +3,8 @@ package at.aau.serg.websocketbrokerdemo
 import MyStomp
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import at.aau.serg.websocketbrokerdemo.models.City
+import at.aau.serg.websocketbrokerdemo.models.Continent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,6 +36,21 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
 
     private val _gameMode = MutableStateFlow("Grand Tour")
     val gameMode: StateFlow<String> = _gameMode.asStateFlow()
+
+    private val _diceValue = MutableStateFlow<Int?>(null)
+    val diceValue: StateFlow<Int?> = _diceValue.asStateFlow()
+
+    private val _currentTurnPlayerId = MutableStateFlow<String?>(null)
+    val currentTurnPlayerId: StateFlow<String?> = _currentTurnPlayerId.asStateFlow()
+
+    private val _ownedCities = MutableStateFlow<List<City>>(emptyList())
+    val ownedCities: StateFlow<List<City>> = _ownedCities.asStateFlow()
+
+    private val _startCity = MutableStateFlow<City?>(null)
+    val startCity: StateFlow<City?> = _startCity.asStateFlow()
+
+    private val _playerCityCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val playerCityCounts: StateFlow<Map<String, Int>> = _playerCityCounts.asStateFlow()
 
     fun setGameMode(mode: String) {
         _gameMode.value = mode
@@ -81,10 +98,19 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
     fun startGame() {
         val stops = when (_gameMode.value) {
             "City Hopper" -> 6
-            "Epic Voyage" -> 18
-            else -> 12
+            "Epic Voyage" -> 12
+            else -> 9
         }
         stomp.startGameCmd(_lobbyId.value, stops)
+    }
+
+    fun onRollDice() {
+        stomp.rollDice(_lobbyId.value, _playerName.value)
+    }
+
+    fun onEndTurn() {
+        val dice = _diceValue.value ?: return
+        stomp.endTurn(_lobbyId.value, _playerName.value, dice)
     }
 
     fun leaveLobby() {
@@ -115,22 +141,70 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                     return
                 }
 
-                // Erfolgreiche Response - navigiere je nach Kontext
+                // Erfolgreiche Response
                 if (rootJson.has("state") && !rootJson.isNull("state")) {
                     val stateJson = rootJson.getJSONObject("state")
 
-                    // Spielerliste aktualisieren
+                    // Spielerliste und Städte aktualisieren
                     if (stateJson.has("players")) {
                         val playersArray = stateJson.getJSONArray("players")
                         val newList = mutableListOf<String>()
+                        val cityCountsMap = mutableMapOf<String, Int>()
+
                         for (i in 0 until playersArray.length()) {
                             val playerObj = playersArray.getJSONObject(i)
-                            newList.add(playerObj.getString("playerId"))
+                            val pId = playerObj.getString("playerId")
+                            newList.add(pId)
+
+                            if (playerObj.has("ownedCities")) {
+                                val citiesArray = playerObj.getJSONArray("ownedCities")
+                                cityCountsMap[pId] = citiesArray.length()
+
+                                if (pId == _playerName.value) {
+                                    val cities = mutableListOf<City>()
+                                    for (j in 0 until citiesArray.length()) {
+                                        val cityObj = citiesArray.getJSONObject(j)
+                                        val continent = try {
+                                            Continent.valueOf(cityObj.optString("continent", "EUROPE"))
+                                        } catch (_: IllegalArgumentException) {
+                                            Continent.EUROPE
+                                        }
+                                        cities.add(City(
+                                            id = cityObj.optString("id", ""),
+                                            name = cityObj.optString("name", ""),
+                                            continent = continent,
+                                            color = cityObj.optString("color", "")
+                                        ))
+                                    }
+                                    _ownedCities.value = cities
+                                    Log.d("AppViewModel", "Eigene Städte empfangen: ${cities.map { it.name }}")
+
+                                    if (playerObj.has("startCity") && !playerObj.isNull("startCity")) {
+                                        val sc = playerObj.getJSONObject("startCity")
+                                        val continent = try {
+                                            Continent.valueOf(sc.optString("continent", "EUROPE"))
+                                        } catch (_: IllegalArgumentException) {
+                                            Continent.EUROPE
+                                        }
+                                        _startCity.value = City(
+                                            id = sc.optString("id", ""),
+                                            name = sc.optString("name", ""),
+                                            continent = continent,
+                                            color = sc.optString("color", "")
+                                        )
+                                    }
+                                }
+                            }
                         }
                         _playersList.value = newList
+                        _playerCityCounts.value = cityCountsMap
                     }
 
-                    // Navigation basierend auf Phase und Command-Type
+                    // Würfelergebnis und aktueller Spieler (dein bestehender Code)
+                    _diceValue.value = if (stateJson.isNull("lastDiceValue")) null else stateJson.optInt("lastDiceValue")
+                    _currentTurnPlayerId.value = stateJson.optString("currentPlayerId").ifEmpty { null }
+
+                    // Navigation (dein bestehender Code)
                     val commandType = rootJson.optString("commandType", "")
                     val phase = stateJson.optString("phase", "LOBBY")
 
