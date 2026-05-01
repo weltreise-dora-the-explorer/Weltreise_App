@@ -5,4 +5,25 @@
     <string name="title_activity_connection_view">ConnectionView</string>
     <string name="title_activity_view">view</string>
     <string name="title_activity_main2">MainActivity2</string>
+
+    <string name="game_rules_title">Game Rules</string>
+    <string name="game_rules_close">Close</string>
+
+    <string name="rule_goal_title">🎯 Goal of the Game</string>
+    <string name="rule_goal_content">The goal of the game is to reach all of your destination cities and then return to your starting city.</string>
+
+    <string name="rule_start_title">🚀 Start of the Game</string>
+    <string name="rule_start_content">At the beginning, each player receives a starting city and depending on the game mode 6, 12 or 18 destination cities.</string>
+
+    <string name="rule_movement_title">🎲 Movement</string>
+    <string name="rule_movement_content">Each round the player rolls the dice. The number determines the movement points. Train routes cost 1 point, flights cost 2 points.</string>
+
+    <string name="rule_movement_rules_title">⚠️ Movement Rules</string>
+    <string name="rule_movement_rules_content">You cannot enter a city where another player is located. You also cannot directly go back on the same route within one turn.</string>
+
+    <string name="rule_minigame_title">🧩 Minigames</string>
+    <string name="rule_minigame_content">Each destination city has a minigame. Winning completes it, losing replaces it with a new one.</string>
+
+    <string name="rule_end_title">🏁 End of the Game</string>
+    <string name="rule_end_content">After completing all destinations, return to your starting city. The first player to do so wins.</string>
 </resources>
