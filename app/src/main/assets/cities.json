@@ -1,0 +1,2977 @@
+[
+  {
+    "id": "novosibirsk",
+    "name": "Novosibirsk",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "omsk",
+      "krasnoyarsk"
+    ],
+    "flightConnections": [],
+    "x": 1336.1,
+    "y": 336.6,
+    "x_relativ": 0.695885,
+    "y_relativ": 0.311667
+  },
+  {
+    "id": "yakutsk",
+    "name": "Yakutsk",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "irkutsk",
+      "oymyakon"
+    ],
+    "flightConnections": [],
+    "x": 1504.3,
+    "y": 297.6,
+    "x_relativ": 0.78349,
+    "y_relativ": 0.275556
+  },
+  {
+    "id": "omsk",
+    "name": "Omsk",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "novosibirsk",
+      "sverdlovsk"
+    ],
+    "flightConnections": [],
+    "x": 1267.7,
+    "y": 351.9,
+    "x_relativ": 0.66026,
+    "y_relativ": 0.325833
+  },
+  {
+    "id": "beirut",
+    "name": "Beirut",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "jerusalem",
+      "ankara",
+      "baghdad"
+    ],
+    "flightConnections": [],
+    "x": 1217.9,
+    "y": 466.8,
+    "x_relativ": 0.634323,
+    "y_relativ": 0.432222
+  },
+  {
+    "id": "djakarta",
+    "name": "Djakarta",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [],
+    "flightConnections": [
+      "surabaja",
+      "singapore"
+    ],
+    "x": 1597.3,
+    "y": 706.3,
+    "x_relativ": 0.831927,
+    "y_relativ": 0.653981
+  },
+  {
+    "id": "ankara",
+    "name": "Ankara",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "istanbul",
+      "beirut"
+    ],
+    "flightConnections": [
+      "baghdad"
+    ],
+    "x": 1193.7,
+    "y": 433.8,
+    "x_relativ": 0.621719,
+    "y_relativ": 0.401667
+  },
+  {
+    "id": "sverdlovsk",
+    "name": "Sverdlovsk",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "perm",
+      "omsk"
+    ],
+    "flightConnections": [],
+    "x": 1281.1,
+    "y": 340.4,
+    "x_relativ": 0.66724,
+    "y_relativ": 0.315185
+  },
+  {
+    "id": "singapore",
+    "name": "Singapore",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "bangkok"
+    ],
+    "flightConnections": [
+      "djakarta",
+      "bombay",
+      "hongkong",
+      "rangoon",
+      "melbourne"
+    ],
+    "x": 1578.6,
+    "y": 655.5,
+    "x_relativ": 0.822187,
+    "y_relativ": 0.606944
+  },
+  {
+    "id": "hanoi",
+    "name": "Hanoi",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "hochiminhcity",
+      "hongkong"
+    ],
+    "flightConnections": [],
+    "x": 1577.7,
+    "y": 545.8,
+    "x_relativ": 0.821719,
+    "y_relativ": 0.50537
+  },
+  {
+    "id": "dubayy",
+    "name": "Dubayy",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [],
+    "flightConnections": [
+      "kuwait",
+      "bombay"
+    ],
+    "x": 1319.1,
+    "y": 520.1,
+    "x_relativ": 0.687031,
+    "y_relativ": 0.481574
+  },
+  {
+    "id": "kabul",
+    "name": "Kabul",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "samarkand",
+      "tehran",
+      "karachi"
+    ],
+    "flightConnections": [],
+    "x": 1384.1,
+    "y": 488.9,
+    "x_relativ": 0.720885,
+    "y_relativ": 0.452685
+  },
+  {
+    "id": "samarkand",
+    "name": "Samarkand",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "volgograd",
+      "almaata",
+      "kabul"
+    ],
+    "flightConnections": [],
+    "x": 1347.9,
+    "y": 437.5,
+    "x_relativ": 0.702031,
+    "y_relativ": 0.405093
+  },
+  {
+    "id": "addisabeba",
+    "name": "Addis Abeba",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "khartoum",
+      "mogadishu"
+    ],
+    "flightConnections": [
+      "adea",
+      "aden"
+    ],
+    "x": 1239.1,
+    "y": 607.2,
+    "x_relativ": 0.645365,
+    "y_relativ": 0.562222
+  },
+  {
+    "id": "hongkong",
+    "name": "Hong Kong",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "hanoi",
+      "chungking",
+      "shanghai"
+    ],
+    "flightConnections": [
+      "singapore",
+      "manila",
+      "taipei",
+      "peking",
+      "moskava"
+    ],
+    "x": 1621.6,
+    "y": 534.0,
+    "x_relativ": 0.844583,
+    "y_relativ": 0.494444
+  },
+  {
+    "id": "oymyakon",
+    "name": "Oymyakon",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "yakutsk",
+      "magadan"
+    ],
+    "flightConnections": [],
+    "x": 1597.3,
+    "y": 307.6,
+    "x_relativ": 0.831927,
+    "y_relativ": 0.284815
+  },
+  {
+    "id": "nairobi",
+    "name": "Nairobi",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "daressalaam"
+    ],
+    "flightConnections": [
+      "mogadishu",
+      "capetown",
+      "bangkok",
+      "lusaka",
+      "kinshasa",
+      "paris",
+      "cairo"
+    ],
+    "x": 1229.3,
+    "y": 665.1,
+    "x_relativ": 0.64026,
+    "y_relativ": 0.615833
+  },
+  {
+    "id": "shanghai",
+    "name": "Shanghai",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "hongkong",
+      "peking"
+    ],
+    "flightConnections": [],
+    "x": 1648.5,
+    "y": 493.9,
+    "x_relativ": 0.858594,
+    "y_relativ": 0.457315
+  },
+  {
+    "id": "karachi",
+    "name": "Karachi",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "kabul",
+      "delhi"
+    ],
+    "flightConnections": [],
+    "x": 1384.1,
+    "y": 527.1,
+    "x_relativ": 0.720885,
+    "y_relativ": 0.488056
+  },
+  {
+    "id": "calcutta",
+    "name": "Calcutta",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "madras",
+      "delhi",
+      "lhasa"
+    ],
+    "flightConnections": [
+      "rangoon"
+    ],
+    "x": 1486.4,
+    "y": 535.0,
+    "x_relativ": 0.774167,
+    "y_relativ": 0.49537
+  },
+  {
+    "id": "bombay",
+    "name": "Bombay",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "delhi",
+      "madras"
+    ],
+    "flightConnections": [
+      "colombo",
+      "singapore",
+      "dubayy"
+    ],
+    "x": 1414.4,
+    "y": 553.8,
+    "x_relativ": 0.736667,
+    "y_relativ": 0.512778
+  },
+  {
+    "id": "khartoum",
+    "name": "Khartoum",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "ndjamena",
+      "aswan",
+      "addisabeba"
+    ],
+    "flightConnections": [],
+    "x": 1196.7,
+    "y": 579.2,
+    "x_relativ": 0.623281,
+    "y_relativ": 0.536296
+  },
+  {
+    "id": "taipei",
+    "name": "Taipei",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [],
+    "flightConnections": [
+      "hongkong",
+      "seoul"
+    ],
+    "x": 1658.5,
+    "y": 526.1,
+    "x_relativ": 0.863802,
+    "y_relativ": 0.48713
+  },
+  {
+    "id": "daressalaam",
+    "name": "Dar-es Salaam",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "salisbury",
+      "nairobi"
+    ],
+    "flightConnections": [
+      "tananarive"
+    ],
+    "x": 1232.9,
+    "y": 704.1,
+    "x_relativ": 0.642135,
+    "y_relativ": 0.651944
+  },
+  {
+    "id": "mecca",
+    "name": "Mecca",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "jerusalem",
+      "riyadh"
+    ],
+    "flightConnections": [
+      "aden",
+      "cairo"
+    ],
+    "x": 1241.7,
+    "y": 545.0,
+    "x_relativ": 0.646719,
+    "y_relativ": 0.50463
+  },
+  {
+    "id": "perm",
+    "name": "Perm",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "sverdlovsk",
+      "moskva"
+    ],
+    "flightConnections": [],
+    "x": 1236.6,
+    "y": 336.8,
+    "x_relativ": 0.644062,
+    "y_relativ": 0.311852
+  },
+  {
+    "id": "moskava",
+    "name": "Moskava",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "vladivostok",
+      "peking",
+      "leningrad",
+      "volgograd"
+    ],
+    "flightConnections": [
+      "sanfrancisco",
+      "hongkong",
+      "bangkok",
+      "murmansk"
+    ],
+    "x": 1653.5,
+    "y": 440.0,
+    "x_relativ": 0.861198,
+    "y_relativ": 0.407407
+  },
+  {
+    "id": "hochiminhcity",
+    "name": "Ho Chi Minh City",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "bangkok",
+      "hanoi"
+    ],
+    "flightConnections": [],
+    "x": 1592.4,
+    "y": 604.5,
+    "x_relativ": 0.829375,
+    "y_relativ": 0.559722
+  },
+  {
+    "id": "rangoon",
+    "name": "Rangoon",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [],
+    "flightConnections": [
+      "calcutta",
+      "singapore"
+    ],
+    "x": 1529.7,
+    "y": 565.3,
+    "x_relativ": 0.796719,
+    "y_relativ": 0.523426
+  },
+  {
+    "id": "manila",
+    "name": "Manila",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [],
+    "flightConnections": [
+      "hongkong",
+      "bangkok"
+    ],
+    "x": 1662.3,
+    "y": 581.1,
+    "x_relativ": 0.865781,
+    "y_relativ": 0.538056
+  },
+  {
+    "id": "bangkok",
+    "name": "Bangkok",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "volgograd"
+    ],
+    "flightConnections": [
+      "moskava"
+    ],
+    "x": 1250.5,
+    "y": 417.2,
+    "x_relativ": 0.651302,
+    "y_relativ": 0.386296
+  },
+  {
+    "id": "murmansk",
+    "name": "Murmansk",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "leningrad"
+    ],
+    "flightConnections": [
+      "moskava",
+      "moskva"
+    ],
+    "x": 1170.9,
+    "y": 266.7,
+    "x_relativ": 0.609844,
+    "y_relativ": 0.246944
+  },
+  {
+    "id": "salisbury",
+    "name": "Salisbury",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "johannesburg",
+      "windhoek",
+      "daressalaam",
+      "lusaka"
+    ],
+    "flightConnections": [],
+    "x": 1201.4,
+    "y": 757.7,
+    "x_relativ": 0.625729,
+    "y_relativ": 0.701574
+  },
+  {
+    "id": "aden",
+    "name": "Aden",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [],
+    "flightConnections": [
+      "addisabeba",
+      "mecca"
+    ],
+    "x": 1274.7,
+    "y": 583.8,
+    "x_relativ": 0.663906,
+    "y_relativ": 0.540556
+  },
+  {
+    "id": "kuwait",
+    "name": "Kuwait",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "baghdad"
+    ],
+    "flightConnections": [
+      "riyadh",
+      "dubayy",
+      "jerusalem"
+    ],
+    "x": 1279.5,
+    "y": 502.7,
+    "x_relativ": 0.666406,
+    "y_relativ": 0.465463
+  },
+  {
+    "id": "almaata",
+    "name": "Alma Ata",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "samarkand",
+      "urumchi"
+    ],
+    "flightConnections": [],
+    "x": 1409.2,
+    "y": 407.9,
+    "x_relativ": 0.733958,
+    "y_relativ": 0.377685
+  },
+  {
+    "id": "chungking",
+    "name": "Chungking",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "hongkong",
+      "lhasa",
+      "urumchi"
+    ],
+    "flightConnections": [],
+    "x": 1583.2,
+    "y": 501.7,
+    "x_relativ": 0.824583,
+    "y_relativ": 0.464537
+  },
+  {
+    "id": "leningrad",
+    "name": "Leningrad",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "riga",
+      "helsinki",
+      "murmansk",
+      "moskava",
+      "moskva"
+    ],
+    "flightConnections": [],
+    "x": 1162.5,
+    "y": 320.8,
+    "x_relativ": 0.605469,
+    "y_relativ": 0.297037
+  },
+  {
+    "id": "urumchi",
+    "name": "Urumchi",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "almaata",
+      "chungking"
+    ],
+    "flightConnections": [],
+    "x": 1467.3,
+    "y": 432.0,
+    "x_relativ": 0.764219,
+    "y_relativ": 0.4
+  },
+  {
+    "id": "volgograd",
+    "name": "Volgograd",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "moskava",
+      "tiffis",
+      "samarkand",
+      "bangkok",
+      "moskva"
+    ],
+    "flightConnections": [],
+    "x": 1256.7,
+    "y": 382.0,
+    "x_relativ": 0.654531,
+    "y_relativ": 0.353704
+  },
+  {
+    "id": "colombo",
+    "name": "Colombo",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [],
+    "flightConnections": [
+      "bombay",
+      "perth"
+    ],
+    "x": 1455.2,
+    "y": 619.0,
+    "x_relativ": 0.757917,
+    "y_relativ": 0.573148
+  },
+  {
+    "id": "tananarive",
+    "name": "Tananarive",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [],
+    "flightConnections": [
+      "daressalaam",
+      "mogadishu"
+    ],
+    "x": 1281.6,
+    "y": 777.8,
+    "x_relativ": 0.6675,
+    "y_relativ": 0.720185
+  },
+  {
+    "id": "tehran",
+    "name": "Tehran",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "kabul"
+    ],
+    "flightConnections": [
+      "baghdad"
+    ],
+    "x": 1303.1,
+    "y": 457.0,
+    "x_relativ": 0.678698,
+    "y_relativ": 0.423148
+  },
+  {
+    "id": "lhasa",
+    "name": "Lhasa",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "calcutta",
+      "chungking"
+    ],
+    "flightConnections": [],
+    "x": 1510.1,
+    "y": 494.4,
+    "x_relativ": 0.78651,
+    "y_relativ": 0.457778
+  },
+  {
+    "id": "jerusalem",
+    "name": "Jerusalem",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "cairo",
+      "mecca",
+      "beirut"
+    ],
+    "flightConnections": [
+      "kuwait",
+      "roma"
+    ],
+    "x": 1215.9,
+    "y": 481.9,
+    "x_relativ": 0.633281,
+    "y_relativ": 0.446204
+  },
+  {
+    "id": "madras",
+    "name": "Madras",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "bombay",
+      "calcutta"
+    ],
+    "flightConnections": [],
+    "x": 1450.2,
+    "y": 591.1,
+    "x_relativ": 0.755313,
+    "y_relativ": 0.547315
+  },
+  {
+    "id": "bangkok",
+    "name": "Bangkok",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "singapore",
+      "hochiminhcity",
+      "volgograd"
+    ],
+    "flightConnections": [
+      "manila",
+      "nairobi"
+    ],
+    "x": 1563.1,
+    "y": 586.5,
+    "x_relativ": 0.814115,
+    "y_relativ": 0.543056
+  },
+  {
+    "id": "krasnoyarsk",
+    "name": "Krasnoyarsk",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "novosibirsk",
+      "irkutsk"
+    ],
+    "flightConnections": [],
+    "x": 1399.2,
+    "y": 338.4,
+    "x_relativ": 0.72875,
+    "y_relativ": 0.313333
+  },
+  {
+    "id": "peking",
+    "name": "Peking",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "shanghai",
+      "ulanbator",
+      "seoul",
+      "moskava"
+    ],
+    "flightConnections": [
+      "hongkong"
+    ],
+    "x": 1603.3,
+    "y": 438.7,
+    "x_relativ": 0.835052,
+    "y_relativ": 0.406204
+  },
+  {
+    "id": "surabaja",
+    "name": "Surabaja",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [],
+    "flightConnections": [
+      "djakarta"
+    ],
+    "x": 1669.4,
+    "y": 719.3,
+    "x_relativ": 0.869479,
+    "y_relativ": 0.666019
+  },
+  {
+    "id": "moskva",
+    "name": "Moskva",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "kiyev",
+      "warszawa",
+      "leningrad",
+      "arkhangelsk",
+      "volgograd",
+      "perm"
+    ],
+    "flightConnections": [
+      "tiffis",
+      "irkutsk",
+      "norilsk",
+      "murmansk",
+      "frankurt",
+      "frankfurt"
+    ],
+    "x": 1209.0,
+    "y": 355.7,
+    "x_relativ": 0.629687,
+    "y_relativ": 0.329352
+  },
+  {
+    "id": "ulanbator",
+    "name": "Ulan Bator",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "irkutsk",
+      "peking"
+    ],
+    "flightConnections": [],
+    "x": 1497.3,
+    "y": 384.0,
+    "x_relativ": 0.779844,
+    "y_relativ": 0.355556
+  },
+  {
+    "id": "perth",
+    "name": "Perth",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "adelaide"
+    ],
+    "flightConnections": [
+      "portdarwin",
+      "colombo"
+    ],
+    "x": 1618.7,
+    "y": 861.6,
+    "x_relativ": 0.843073,
+    "y_relativ": 0.797778
+  },
+  {
+    "id": "riyadh",
+    "name": "Riyadh",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "mecca"
+    ],
+    "flightConnections": [
+      "kuwait"
+    ],
+    "x": 1279.7,
+    "y": 531.2,
+    "x_relativ": 0.66651,
+    "y_relativ": 0.491852
+  },
+  {
+    "id": "irkutsk",
+    "name": "Irkutsk",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "krasnoyarsk",
+      "yakutsk",
+      "khabarovsk",
+      "vladivostok",
+      "ulanbator"
+    ],
+    "flightConnections": [
+      "moskva",
+      "norilsk",
+      "petropavloyskkamchatskiy"
+    ],
+    "x": 1465.8,
+    "y": 354.2,
+    "x_relativ": 0.763437,
+    "y_relativ": 0.327963
+  },
+  {
+    "id": "mogadishu",
+    "name": "Mogadishu",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "addisabeba"
+    ],
+    "flightConnections": [
+      "nairobi",
+      "tananarive"
+    ],
+    "x": 1275.1,
+    "y": 646.4,
+    "x_relativ": 0.664115,
+    "y_relativ": 0.598519
+  },
+  {
+    "id": "odessa",
+    "name": "Odessa",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "bucuresti",
+      "kiyev"
+    ],
+    "flightConnections": [],
+    "x": 1194.3,
+    "y": 385.9,
+    "x_relativ": 0.622031,
+    "y_relativ": 0.357315
+  },
+  {
+    "id": "delhi",
+    "name": "Delhi",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "karachi",
+      "calcutta",
+      "bombay"
+    ],
+    "flightConnections": [],
+    "x": 1428.4,
+    "y": 504.4,
+    "x_relativ": 0.743958,
+    "y_relativ": 0.467037
+  },
+  {
+    "id": "kiyev",
+    "name": "Kiyev",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "odessa",
+      "moskva"
+    ],
+    "flightConnections": [],
+    "x": 1180.0,
+    "y": 369.3,
+    "x_relativ": 0.614583,
+    "y_relativ": 0.341944
+  },
+  {
+    "id": "norilsk",
+    "name": "Norilsk",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [],
+    "flightConnections": [
+      "moskva",
+      "irkutsk"
+    ],
+    "x": 1363.6,
+    "y": 283.8,
+    "x_relativ": 0.710208,
+    "y_relativ": 0.262778
+  },
+  {
+    "id": "baghdad",
+    "name": "Baghdad",
+    "continent": "ASIA",
+    "color": "ORANGE",
+    "trainConnections": [
+      "kuwait",
+      "beirut"
+    ],
+    "flightConnections": [
+      "tehran",
+      "ankara"
+    ],
+    "x": 1271.1,
+    "y": 483.8,
+    "x_relativ": 0.662031,
+    "y_relativ": 0.447963
+  },
+  {
+    "id": "trondheim",
+    "name": "Trondheim",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "bergen",
+      "narvik"
+    ],
+    "flightConnections": [],
+    "x": 1090.6,
+    "y": 294.0,
+    "x_relativ": 0.568021,
+    "y_relativ": 0.272222
+  },
+  {
+    "id": "arkhangelsk",
+    "name": "Arkhangelsk",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "moskva"
+    ],
+    "flightConnections": [],
+    "x": 1208.0,
+    "y": 295.0,
+    "x_relativ": 0.629167,
+    "y_relativ": 0.273148
+  },
+  {
+    "id": "lulea",
+    "name": "Lulea",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "narvik",
+      "helsinki",
+      "stockholm"
+    ],
+    "flightConnections": [],
+    "x": 1132.7,
+    "y": 284.0,
+    "x_relativ": 0.589948,
+    "y_relativ": 0.262963
+  },
+  {
+    "id": "narvik",
+    "name": "Narvik",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "trondheim",
+      "lulea"
+    ],
+    "flightConnections": [],
+    "x": 1108.9,
+    "y": 272.9,
+    "x_relativ": 0.577552,
+    "y_relativ": 0.252685
+  },
+  {
+    "id": "london",
+    "name": "London",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "dublin",
+      "edinburgh",
+      "amsterdam"
+    ],
+    "flightConnections": [
+      "newyork",
+      "caracas",
+      "lisboa"
+    ],
+    "x": 1045.1,
+    "y": 363.6,
+    "x_relativ": 0.544323,
+    "y_relativ": 0.336667
+  },
+  {
+    "id": "bergen",
+    "name": "Bergen",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "oslo",
+      "trondheim"
+    ],
+    "flightConnections": [
+      "frankurt",
+      "frankfurt"
+    ],
+    "x": 1069.1,
+    "y": 315.0,
+    "x_relativ": 0.556823,
+    "y_relativ": 0.291667
+  },
+  {
+    "id": "kobenhaven",
+    "name": "Kobenhaven",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "hamburg",
+      "stockholm"
+    ],
+    "flightConnections": [],
+    "x": 1054.1,
+    "y": 293.8,
+    "x_relativ": 0.54901,
+    "y_relativ": 0.272037
+  },
+  {
+    "id": "hamburg",
+    "name": "Hamburg",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "frankurt",
+      "berlin",
+      "kobenhaven",
+      "amsterdam",
+      "frankfurt"
+    ],
+    "flightConnections": [],
+    "x": 1080.9,
+    "y": 348.2,
+    "x_relativ": 0.562969,
+    "y_relativ": 0.322407
+  },
+  {
+    "id": "dublin",
+    "name": "Dublin",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "london"
+    ],
+    "flightConnections": [
+      "edinburgh"
+    ],
+    "x": 1009.7,
+    "y": 358.6,
+    "x_relativ": 0.525885,
+    "y_relativ": 0.332037
+  },
+  {
+    "id": "amsterdam",
+    "name": "Amsterdam",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "london",
+      "hamburg",
+      "frankurt",
+      "paris",
+      "frankfurt"
+    ],
+    "flightConnections": [],
+    "x": 1060.2,
+    "y": 365.3,
+    "x_relativ": 0.552188,
+    "y_relativ": 0.338241
+  },
+  {
+    "id": "oslo",
+    "name": "Oslo",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "bergen",
+      "stockholm"
+    ],
+    "flightConnections": [],
+    "x": 1092.4,
+    "y": 320.0,
+    "x_relativ": 0.568958,
+    "y_relativ": 0.296296
+  },
+  {
+    "id": "gdansk",
+    "name": "Gdansk",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "berlin",
+      "riga",
+      "warszawa"
+    ],
+    "flightConnections": [],
+    "x": 1121.9,
+    "y": 349.0,
+    "x_relativ": 0.584323,
+    "y_relativ": 0.323148
+  },
+  {
+    "id": "laspalmas",
+    "name": "Las Palmas",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [],
+    "flightConnections": [
+      "lisboa",
+      "madrid"
+    ],
+    "x": 959.0,
+    "y": 481.5,
+    "x_relativ": 0.499479,
+    "y_relativ": 0.445833
+  },
+  {
+    "id": "marseille",
+    "name": "Marseille",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "madrid",
+      "paris",
+      "milano"
+    ],
+    "flightConnections": [
+      "alger"
+    ],
+    "x": 1069.9,
+    "y": 410.6,
+    "x_relativ": 0.55724,
+    "y_relativ": 0.380185
+  },
+  {
+    "id": "lisboa",
+    "name": "Lisboa",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "madrid"
+    ],
+    "flightConnections": [
+      "laspalmas",
+      "london",
+      "dakar"
+    ],
+    "x": 995.3,
+    "y": 436.7,
+    "x_relativ": 0.518385,
+    "y_relativ": 0.404352
+  },
+  {
+    "id": "madrid",
+    "name": "Madrid",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "lisboa",
+      "marseille",
+      "bordeaux"
+    ],
+    "flightConnections": [
+      "frankurt",
+      "laspalmas",
+      "frankfurt"
+    ],
+    "x": 1019.1,
+    "y": 426.1,
+    "x_relativ": 0.530781,
+    "y_relativ": 0.394537
+  },
+  {
+    "id": "tunis",
+    "name": "Tunis",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "alger",
+      "tripoli"
+    ],
+    "flightConnections": [
+      "roma"
+    ],
+    "x": 1085.9,
+    "y": 448.3,
+    "x_relativ": 0.565573,
+    "y_relativ": 0.415093
+  },
+  {
+    "id": "milano",
+    "name": "Milano",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "marseille",
+      "wien",
+      "bern",
+      "frankfurt",
+      "roma"
+    ],
+    "flightConnections": [],
+    "x": 1090.5,
+    "y": 400.9,
+    "x_relativ": 0.567969,
+    "y_relativ": 0.371204
+  },
+  {
+    "id": "bordeaux",
+    "name": "Bordeaux",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "madrid",
+      "brest",
+      "paris"
+    ],
+    "flightConnections": [],
+    "x": 1039.1,
+    "y": 400.6,
+    "x_relativ": 0.541198,
+    "y_relativ": 0.370926
+  },
+  {
+    "id": "alger",
+    "name": "Alger",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "rabat",
+      "tunis",
+      "tamanrasset"
+    ],
+    "flightConnections": [
+      "marseille"
+    ],
+    "x": 1054.1,
+    "y": 452.0,
+    "x_relativ": 0.54901,
+    "y_relativ": 0.418519
+  },
+  {
+    "id": "paris",
+    "name": "Paris",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "marseille",
+      "bordeaux",
+      "brest",
+      "amsterdam",
+      "frankurt",
+      "bern",
+      "frankfurt"
+    ],
+    "flightConnections": [
+      "nairobi",
+      "caracas",
+      "newyork"
+    ],
+    "x": 1043.6,
+    "y": 380.2,
+    "x_relativ": 0.543542,
+    "y_relativ": 0.352037
+  },
+  {
+    "id": "rabat",
+    "name": "Rabat",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "dakar",
+      "alger"
+    ],
+    "flightConnections": [],
+    "x": 1007.2,
+    "y": 465.9,
+    "x_relativ": 0.524583,
+    "y_relativ": 0.431389
+  },
+  {
+    "id": "bern",
+    "name": "Bern",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "paris",
+      "frankfurt",
+      "milano"
+    ],
+    "flightConnections": [
+      "roma",
+      "frankfurt"
+    ],
+    "x": 1063.7,
+    "y": 392.5,
+    "x_relativ": 0.55401,
+    "y_relativ": 0.363426
+  },
+  {
+    "id": "tripoli",
+    "name": "Tripoli",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "tunis",
+      "bengasi"
+    ],
+    "flightConnections": [],
+    "x": 1096.4,
+    "y": 474.6,
+    "x_relativ": 0.571042,
+    "y_relativ": 0.439444
+  },
+  {
+    "id": "cairo",
+    "name": "Cairo",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "bengasi",
+      "aswan",
+      "jerusalem"
+    ],
+    "flightConnections": [
+      "athinai",
+      "mecca",
+      "nairobi"
+    ],
+    "x": 1199.9,
+    "y": 495.3,
+    "x_relativ": 0.624948,
+    "y_relativ": 0.458611
+  },
+  {
+    "id": "budapest",
+    "name": "Budapest",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "wien",
+      "beograd"
+    ],
+    "flightConnections": [],
+    "x": 1131.9,
+    "y": 387.6,
+    "x_relativ": 0.589531,
+    "y_relativ": 0.358889
+  },
+  {
+    "id": "istanbul",
+    "name": "Istanbul",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "sofiya",
+      "ankara"
+    ],
+    "flightConnections": [
+      "frankfurt"
+    ],
+    "x": 1169.9,
+    "y": 416.6,
+    "x_relativ": 0.609323,
+    "y_relativ": 0.385741
+  },
+  {
+    "id": "bucuresti",
+    "name": "Bucuresti",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "beograd",
+      "odessa"
+    ],
+    "flightConnections": [],
+    "x": 1175.9,
+    "y": 397.6,
+    "x_relativ": 0.612448,
+    "y_relativ": 0.368148
+  },
+  {
+    "id": "bengasi",
+    "name": "Bengasi",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "tripoli",
+      "cairo"
+    ],
+    "flightConnections": [],
+    "x": 1137.5,
+    "y": 480.3,
+    "x_relativ": 0.592448,
+    "y_relativ": 0.444722
+  },
+  {
+    "id": "sofiya",
+    "name": "Sofiya",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "beograd",
+      "istanbul"
+    ],
+    "flightConnections": [],
+    "x": 1158.8,
+    "y": 409.0,
+    "x_relativ": 0.603542,
+    "y_relativ": 0.378704
+  },
+  {
+    "id": "beograd",
+    "name": "Beograd",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "budapest",
+      "bucuresti",
+      "sofiya",
+      "athinai"
+    ],
+    "flightConnections": [],
+    "x": 1144.2,
+    "y": 396.8,
+    "x_relativ": 0.595938,
+    "y_relativ": 0.367407
+  },
+  {
+    "id": "wien",
+    "name": "Wien",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "milano",
+      "frankurt",
+      "praha",
+      "budapest",
+      "frankfurt"
+    ],
+    "flightConnections": [],
+    "x": 1108.3,
+    "y": 385.6,
+    "x_relativ": 0.57724,
+    "y_relativ": 0.357037
+  },
+  {
+    "id": "athinai",
+    "name": "Athinai",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "beograd"
+    ],
+    "flightConnections": [
+      "cairo"
+    ],
+    "x": 1150.4,
+    "y": 437.9,
+    "x_relativ": 0.599167,
+    "y_relativ": 0.405463
+  },
+  {
+    "id": "dakar",
+    "name": "Dakar",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "rabat",
+      "bamako"
+    ],
+    "flightConnections": [
+      "riodejaneiro",
+      "lisboa",
+      "abidjan"
+    ],
+    "x": 953.4,
+    "y": 578.4,
+    "x_relativ": 0.496562,
+    "y_relativ": 0.535556
+  },
+  {
+    "id": "bamako",
+    "name": "Bamako",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "dakar",
+      "timbuktu",
+      "niamey"
+    ],
+    "flightConnections": [],
+    "x": 995.3,
+    "y": 584.0,
+    "x_relativ": 0.518385,
+    "y_relativ": 0.540741
+  },
+  {
+    "id": "accra",
+    "name": "Accra",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [],
+    "flightConnections": [
+      "abidjan",
+      "lagos"
+    ],
+    "x": 1029.2,
+    "y": 633.1,
+    "x_relativ": 0.536042,
+    "y_relativ": 0.586204
+  },
+  {
+    "id": "niamey",
+    "name": "Niamey",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "bamako",
+      "tamanrasset",
+      "ndjamena",
+      "lagos"
+    ],
+    "flightConnections": [],
+    "x": 1035.7,
+    "y": 587.2,
+    "x_relativ": 0.539427,
+    "y_relativ": 0.543704
+  },
+  {
+    "id": "abidjan",
+    "name": "Abidjan",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [],
+    "flightConnections": [
+      "dakar",
+      "accra"
+    ],
+    "x": 1007.1,
+    "y": 636.5,
+    "x_relativ": 0.524531,
+    "y_relativ": 0.589352
+  },
+  {
+    "id": "tamanrasset",
+    "name": "Tamanrasset",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "alger",
+      "timbuktu",
+      "niamey"
+    ],
+    "flightConnections": [],
+    "x": 1064.3,
+    "y": 527.8,
+    "x_relativ": 0.554323,
+    "y_relativ": 0.488704
+  },
+  {
+    "id": "yaounde",
+    "name": "Yaounde",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "lagos",
+      "ndjamena"
+    ],
+    "flightConnections": [
+      "kinshasa"
+    ],
+    "x": 1090.9,
+    "y": 646.0,
+    "x_relativ": 0.568177,
+    "y_relativ": 0.598148
+  },
+  {
+    "id": "timbuktu",
+    "name": "Timbuktu",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "bamako",
+      "tamanrasset"
+    ],
+    "flightConnections": [],
+    "x": 1026.9,
+    "y": 555.4,
+    "x_relativ": 0.534844,
+    "y_relativ": 0.514259
+  },
+  {
+    "id": "edinburgh",
+    "name": "Edinburgh",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "london"
+    ],
+    "flightConnections": [
+      "reykjavik",
+      "dublin"
+    ],
+    "x": 1025.6,
+    "y": 338.2,
+    "x_relativ": 0.534167,
+    "y_relativ": 0.313148
+  },
+  {
+    "id": "berlin",
+    "name": "Berlin",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "praha",
+      "hamburg",
+      "gdansk",
+      "warszawa",
+      "frankfurt"
+    ],
+    "flightConnections": [],
+    "x": 1103.9,
+    "y": 356.3,
+    "x_relativ": 0.574948,
+    "y_relativ": 0.329907
+  },
+  {
+    "id": "frankfurt",
+    "name": "Frankfurt",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "hamburg",
+      "amsterdam",
+      "paris",
+      "bern",
+      "milano",
+      "wien",
+      "berlin"
+    ],
+    "flightConnections": [
+      "bergen",
+      "helsinki",
+      "moskva",
+      "istanbul",
+      "bern",
+      "madrid"
+    ],
+    "x": 1070.3,
+    "y": 376.1,
+    "x_relativ": 0.557448,
+    "y_relativ": 0.348241
+  },
+  {
+    "id": "brest",
+    "name": "Brest",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "bordeaux",
+      "paris"
+    ],
+    "flightConnections": [],
+    "x": 1024.1,
+    "y": 382.0,
+    "x_relativ": 0.533385,
+    "y_relativ": 0.353704
+  },
+  {
+    "id": "stockholm",
+    "name": "Stockholm",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "lulea",
+      "helsinki",
+      "kobenhaven",
+      "oslo"
+    ],
+    "flightConnections": [],
+    "x": 1116.9,
+    "y": 320.8,
+    "x_relativ": 0.581719,
+    "y_relativ": 0.297037
+  },
+  {
+    "id": "riga",
+    "name": "Riga",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "gdansk",
+      "leningrad"
+    ],
+    "flightConnections": [],
+    "x": 1150.4,
+    "y": 335.4,
+    "x_relativ": 0.599167,
+    "y_relativ": 0.310556
+  },
+  {
+    "id": "warszawa",
+    "name": "Warszawa",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "praha",
+      "berlin",
+      "gdansk",
+      "moskva"
+    ],
+    "flightConnections": [],
+    "x": 1140.4,
+    "y": 369.3,
+    "x_relativ": 0.593958,
+    "y_relativ": 0.341944
+  },
+  {
+    "id": "praha",
+    "name": "Praha",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "wien",
+      "berlin",
+      "warszawa"
+    ],
+    "flightConnections": [],
+    "x": 1115.1,
+    "y": 376.0,
+    "x_relativ": 0.580781,
+    "y_relativ": 0.348148
+  },
+  {
+    "id": "helsinki",
+    "name": "Helsinki",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "stockholm",
+      "lulea",
+      "leningrad"
+    ],
+    "flightConnections": [
+      "frankurt",
+      "frankfurt"
+    ],
+    "x": 1142.7,
+    "y": 313.8,
+    "x_relativ": 0.595156,
+    "y_relativ": 0.290556
+  },
+  {
+    "id": "windhoek",
+    "name": "Windhoek",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "capetown",
+      "lobito",
+      "salisbury"
+    ],
+    "flightConnections": [],
+    "x": 1130.3,
+    "y": 780.1,
+    "x_relativ": 0.588698,
+    "y_relativ": 0.722315
+  },
+  {
+    "id": "kinshasa",
+    "name": "Kinshasa",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "lobito"
+    ],
+    "flightConnections": [
+      "yaounde",
+      "nairobi"
+    ],
+    "x": 1123.9,
+    "y": 677.7,
+    "x_relativ": 0.585365,
+    "y_relativ": 0.6275
+  },
+  {
+    "id": "capetown",
+    "name": "Cape - Town",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "johannesburg",
+      "windhoek"
+    ],
+    "flightConnections": [
+      "nairobi"
+    ],
+    "x": 1131.9,
+    "y": 864.0,
+    "x_relativ": 0.589531,
+    "y_relativ": 0.8
+  },
+  {
+    "id": "lagos",
+    "name": "Lagos",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "yaounde",
+      "niamey"
+    ],
+    "flightConnections": [
+      "accra"
+    ],
+    "x": 1055.2,
+    "y": 627.6,
+    "x_relativ": 0.549583,
+    "y_relativ": 0.581111
+  },
+  {
+    "id": "palermo",
+    "name": "Palermo",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "roma"
+    ],
+    "flightConnections": [],
+    "x": 1102.3,
+    "y": 443.0,
+    "x_relativ": 0.574115,
+    "y_relativ": 0.410185
+  },
+  {
+    "id": "roma",
+    "name": "Roma",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "palermo",
+      "milano"
+    ],
+    "flightConnections": [
+      "tunis",
+      "jerusalem",
+      "bern"
+    ],
+    "x": 1099.5,
+    "y": 421.3,
+    "x_relativ": 0.572656,
+    "y_relativ": 0.390093
+  },
+  {
+    "id": "aswan",
+    "name": "Aswan",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "cairo",
+      "khartoum"
+    ],
+    "flightConnections": [],
+    "x": 1194.9,
+    "y": 524.9,
+    "x_relativ": 0.622344,
+    "y_relativ": 0.486019
+  },
+  {
+    "id": "ndjamena",
+    "name": "Ndjamena",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "khartoum",
+      "niamey",
+      "yaounde"
+    ],
+    "flightConnections": [],
+    "x": 1110.0,
+    "y": 600.4,
+    "x_relativ": 0.578125,
+    "y_relativ": 0.555926
+  },
+  {
+    "id": "lobito",
+    "name": "Lobito",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "kinshasa",
+      "windhoek",
+      "lusaka"
+    ],
+    "flightConnections": [],
+    "x": 1110.3,
+    "y": 734.3,
+    "x_relativ": 0.578281,
+    "y_relativ": 0.679907
+  },
+  {
+    "id": "johannesburg",
+    "name": "Johannesburg",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "capetown",
+      "salisbury"
+    ],
+    "flightConnections": [],
+    "x": 1175.9,
+    "y": 808.1,
+    "x_relativ": 0.612448,
+    "y_relativ": 0.748241
+  },
+  {
+    "id": "lusaka",
+    "name": "Lusaka",
+    "continent": "EUROPE_AFRICA",
+    "color": "GREEN",
+    "trainConnections": [
+      "lobito",
+      "salisbury"
+    ],
+    "flightConnections": [
+      "nairobi"
+    ],
+    "x": 1174.9,
+    "y": 744.3,
+    "x_relativ": 0.611927,
+    "y_relativ": 0.689167
+  },
+  {
+    "id": "reykjavik",
+    "name": "Reykjavik",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [],
+    "flightConnections": [
+      "edinburgh",
+      "godthaab"
+    ],
+    "x": 965.1,
+    "y": 290.6,
+    "x_relativ": 0.502656,
+    "y_relativ": 0.269074
+  },
+  {
+    "id": "calgary",
+    "name": "Calgary",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "vancouver",
+      "edmonton",
+      "winnipeg",
+      "minneapolis"
+    ],
+    "flightConnections": [],
+    "x": 557.8,
+    "y": 348.4,
+    "x_relativ": 0.290521,
+    "y_relativ": 0.322593
+  },
+  {
+    "id": "edmonton",
+    "name": "Edmonton",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "vancouver",
+      "winnipeg",
+      "calgary"
+    ],
+    "flightConnections": [],
+    "x": 573.4,
+    "y": 323.9,
+    "x_relativ": 0.298646,
+    "y_relativ": 0.299907
+  },
+  {
+    "id": "godthaab",
+    "name": "Godthaab",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [],
+    "flightConnections": [
+      "montreal",
+      "reykjavik"
+    ],
+    "x": 842.8,
+    "y": 290.6,
+    "x_relativ": 0.438958,
+    "y_relativ": 0.269074
+  },
+  {
+    "id": "khabarovsk",
+    "name": "Khabarovsk",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "vladivostok",
+      "irkutsk"
+    ],
+    "flightConnections": [],
+    "x": 1669.4,
+    "y": 384.0,
+    "x_relativ": 0.869479,
+    "y_relativ": 0.355556
+  },
+  {
+    "id": "petropavloyskkamchatskiy",
+    "name": "Petropavloysk Kamchatskiy",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [],
+    "flightConnections": [
+      "magadan",
+      "irkutsk"
+    ],
+    "x": 1743.6,
+    "y": 353.2,
+    "x_relativ": 0.908125,
+    "y_relativ": 0.327037
+  },
+  {
+    "id": "magadan",
+    "name": "Magadan",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "oymyakon"
+    ],
+    "flightConnections": [
+      "petropavloyskkamchatskiy"
+    ],
+    "x": 1683.6,
+    "y": 315.3,
+    "x_relativ": 0.876875,
+    "y_relativ": 0.291944
+  },
+  {
+    "id": "vancouver",
+    "name": "Vancouver",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "calgary",
+      "edmonton",
+      "portland"
+    ],
+    "flightConnections": [],
+    "x": 478.9,
+    "y": 365.3,
+    "x_relativ": 0.249427,
+    "y_relativ": 0.338241
+  },
+  {
+    "id": "winnipeg",
+    "name": "Winnipeg",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "edmonton",
+      "calgary",
+      "minneapolis",
+      "duluth",
+      "montreal"
+    ],
+    "flightConnections": [],
+    "x": 618.8,
+    "y": 350.8,
+    "x_relativ": 0.322292,
+    "y_relativ": 0.324815
+  },
+  {
+    "id": "losangeles",
+    "name": "Los Angeles",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "sanfrancisco",
+      "santafe",
+      "elpasto",
+      "mexicocity"
+    ],
+    "flightConnections": [
+      "lima"
+    ],
+    "x": 453.2,
+    "y": 470.9,
+    "x_relativ": 0.236042,
+    "y_relativ": 0.436019
+  },
+  {
+    "id": "saltlakecity",
+    "name": "Salt Lake City",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "sanfrancisco",
+      "denver"
+    ],
+    "flightConnections": [],
+    "x": 503.9,
+    "y": 398.6,
+    "x_relativ": 0.262448,
+    "y_relativ": 0.369074
+  },
+  {
+    "id": "sanfrancisco",
+    "name": "San Francisco",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "losangeles",
+      "portland",
+      "saltlakecity"
+    ],
+    "flightConnections": [
+      "newyork",
+      "wellington",
+      "seoul",
+      "moskava"
+    ],
+    "x": 443.3,
+    "y": 440.0,
+    "x_relativ": 0.230885,
+    "y_relativ": 0.407407
+  },
+  {
+    "id": "portland",
+    "name": "Portland",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "sanfrancisco",
+      "vancouver"
+    ],
+    "flightConnections": [],
+    "x": 461.0,
+    "y": 395.6,
+    "x_relativ": 0.240104,
+    "y_relativ": 0.366296
+  },
+  {
+    "id": "santafe",
+    "name": "Santa Fe",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "elpasto",
+      "losangeles",
+      "denver"
+    ],
+    "flightConnections": [],
+    "x": 519.7,
+    "y": 462.0,
+    "x_relativ": 0.270677,
+    "y_relativ": 0.427778
+  },
+  {
+    "id": "denver",
+    "name": "Denver",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "saltlakecity",
+      "santafe",
+      "houston",
+      "stlouis",
+      "minneapolis"
+    ],
+    "flightConnections": [],
+    "x": 538.7,
+    "y": 440.0,
+    "x_relativ": 0.280573,
+    "y_relativ": 0.407407
+  },
+  {
+    "id": "jacksonville",
+    "name": "Jacksonville",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "miami",
+      "washington",
+      "neworleans"
+    ],
+    "flightConnections": [],
+    "x": 620.1,
+    "y": 470.9,
+    "x_relativ": 0.322969,
+    "y_relativ": 0.436019
+  },
+  {
+    "id": "stlouis",
+    "name": "St,Louis",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "neworleans",
+      "washington",
+      "chicago",
+      "minneapolis",
+      "denver"
+    ],
+    "flightConnections": [],
+    "x": 598.7,
+    "y": 441.8,
+    "x_relativ": 0.311823,
+    "y_relativ": 0.409074
+  },
+  {
+    "id": "chicago",
+    "name": "Chicago",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "newyork",
+      "duluth",
+      "minneapolis",
+      "stlouis"
+    ],
+    "flightConnections": [],
+    "x": 637.6,
+    "y": 410.2,
+    "x_relativ": 0.332083,
+    "y_relativ": 0.379815
+  },
+  {
+    "id": "neworleans",
+    "name": "New Orleans",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "houston",
+      "stlouis",
+      "jacksonville"
+    ],
+    "flightConnections": [],
+    "x": 583.8,
+    "y": 479.9,
+    "x_relativ": 0.304062,
+    "y_relativ": 0.444352
+  },
+  {
+    "id": "houston",
+    "name": "Houston",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "elpasto",
+      "denver",
+      "neworleans",
+      "mexicocity"
+    ],
+    "flightConnections": [],
+    "x": 552.0,
+    "y": 486.9,
+    "x_relativ": 0.2875,
+    "y_relativ": 0.450833
+  },
+  {
+    "id": "duluth",
+    "name": "Duluth",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "winnipeg",
+      "chicago"
+    ],
+    "flightConnections": [],
+    "x": 654.4,
+    "y": 371.9,
+    "x_relativ": 0.340833,
+    "y_relativ": 0.344352
+  },
+  {
+    "id": "minneapolis",
+    "name": "Minneapolis",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "calgary",
+      "winnipeg",
+      "chicago",
+      "stlouis",
+      "denver"
+    ],
+    "flightConnections": [],
+    "x": 602.3,
+    "y": 380.2,
+    "x_relativ": 0.313698,
+    "y_relativ": 0.352037
+  },
+  {
+    "id": "elpasto",
+    "name": "El Pasto",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "houston",
+      "losangeles",
+      "santafe"
+    ],
+    "flightConnections": [],
+    "x": 506.7,
+    "y": 486.9,
+    "x_relativ": 0.263906,
+    "y_relativ": 0.450833
+  },
+  {
+    "id": "washington",
+    "name": "Washington",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "newyork",
+      "stlouis",
+      "jacksonville"
+    ],
+    "flightConnections": [],
+    "x": 655.0,
+    "y": 441.1,
+    "x_relativ": 0.341146,
+    "y_relativ": 0.408426
+  },
+  {
+    "id": "newyork",
+    "name": "New York",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "washington",
+      "chicago",
+      "halifax",
+      "montreal"
+    ],
+    "flightConnections": [
+      "miami",
+      "sanfrancisco",
+      "paris",
+      "london"
+    ],
+    "x": 680.3,
+    "y": 423.4,
+    "x_relativ": 0.354323,
+    "y_relativ": 0.392037
+  },
+  {
+    "id": "halifax",
+    "name": "Halifax",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "montreal",
+      "newyork"
+    ],
+    "flightConnections": [],
+    "x": 735.9,
+    "y": 399.0,
+    "x_relativ": 0.383281,
+    "y_relativ": 0.369444
+  },
+  {
+    "id": "montreal",
+    "name": "Montreal",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "winnipeg",
+      "halifax",
+      "newyork"
+    ],
+    "flightConnections": [
+      "godthaab"
+    ],
+    "x": 700.1,
+    "y": 379.2,
+    "x_relativ": 0.364635,
+    "y_relativ": 0.351111
+  },
+  {
+    "id": "managua",
+    "name": "Managua",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "guatemale",
+      "panamacity"
+    ],
+    "flightConnections": [],
+    "x": 590.8,
+    "y": 599.4,
+    "x_relativ": 0.307708,
+    "y_relativ": 0.555
+  },
+  {
+    "id": "guatemale",
+    "name": "Guatemale",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "mexicocity",
+      "managua"
+    ],
+    "flightConnections": [],
+    "x": 562.2,
+    "y": 577.5,
+    "x_relativ": 0.292813,
+    "y_relativ": 0.534722
+  },
+  {
+    "id": "mexicocity",
+    "name": "Mexico City",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "guatemale",
+      "houston",
+      "losangeles"
+    ],
+    "flightConnections": [],
+    "x": 527.6,
+    "y": 549.9,
+    "x_relativ": 0.274792,
+    "y_relativ": 0.509167
+  },
+  {
+    "id": "miami",
+    "name": "Miami",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "jacksonville"
+    ],
+    "flightConnections": [
+      "newyork"
+    ],
+    "x": 620.1,
+    "y": 504.4,
+    "x_relativ": 0.322969,
+    "y_relativ": 0.467037
+  },
+  {
+    "id": "havana",
+    "name": "Havana",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [],
+    "flightConnections": [
+      "kingston"
+    ],
+    "x": 610.6,
+    "y": 530.1,
+    "x_relativ": 0.318021,
+    "y_relativ": 0.490833
+  },
+  {
+    "id": "panamacity",
+    "name": "Panama City",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "bogota",
+      "managua"
+    ],
+    "flightConnections": [],
+    "x": 626.0,
+    "y": 618.4,
+    "x_relativ": 0.326042,
+    "y_relativ": 0.572593
+  },
+  {
+    "id": "kingston",
+    "name": "Kingston",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [],
+    "flightConnections": [
+      "caracas",
+      "havana"
+    ],
+    "x": 639.8,
+    "y": 557.1,
+    "x_relativ": 0.333229,
+    "y_relativ": 0.515833
+  },
+  {
+    "id": "bogota",
+    "name": "Bogota",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "panamacity",
+      "quito",
+      "caracas"
+    ],
+    "flightConnections": [],
+    "x": 646.7,
+    "y": 628.7,
+    "x_relativ": 0.336823,
+    "y_relativ": 0.58213
+  },
+  {
+    "id": "caracas",
+    "name": "Caracas",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "bogota"
+    ],
+    "flightConnections": [
+      "kingston",
+      "brasilia",
+      "buenosaires",
+      "paris",
+      "london"
+    ],
+    "x": 691.5,
+    "y": 605.0,
+    "x_relativ": 0.360156,
+    "y_relativ": 0.560185
+  },
+  {
+    "id": "vladivostok",
+    "name": "Vladivostok",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "khabarovsk",
+      "irkutsk",
+      "seoul",
+      "moskava"
+    ],
+    "flightConnections": [],
+    "x": 1671.3,
+    "y": 409.5,
+    "x_relativ": 0.870469,
+    "y_relativ": 0.379167
+  },
+  {
+    "id": "quito",
+    "name": "Quito",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "bogota",
+      "lima"
+    ],
+    "flightConnections": [],
+    "x": 625.0,
+    "y": 662.0,
+    "x_relativ": 0.325521,
+    "y_relativ": 0.612963
+  },
+  {
+    "id": "lima",
+    "name": "Lima",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "quito",
+      "manaus",
+      "cuzco"
+    ],
+    "flightConnections": [
+      "santiago",
+      "losangeles"
+    ],
+    "x": 608.0,
+    "y": 727.8,
+    "x_relativ": 0.316667,
+    "y_relativ": 0.673889
+  },
+  {
+    "id": "lapaz",
+    "name": "La Paz",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "cuzco",
+      "asuncion",
+      "santiago"
+    ],
+    "flightConnections": [],
+    "x": 693.3,
+    "y": 762.7,
+    "x_relativ": 0.361094,
+    "y_relativ": 0.706204
+  },
+  {
+    "id": "manaus",
+    "name": "Manaus",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "belem",
+      "lima"
+    ],
+    "flightConnections": [],
+    "x": 701.4,
+    "y": 687.3,
+    "x_relativ": 0.365312,
+    "y_relativ": 0.636389
+  },
+  {
+    "id": "cuzco",
+    "name": "Cuzco",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "lima",
+      "lapaz"
+    ],
+    "flightConnections": [],
+    "x": 652.1,
+    "y": 734.7,
+    "x_relativ": 0.339635,
+    "y_relativ": 0.680278
+  },
+  {
+    "id": "asuncion",
+    "name": "Asuncion",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "lapaz",
+      "portoalegre",
+      "buenosaires"
+    ],
+    "flightConnections": [],
+    "x": 735.9,
+    "y": 804.2,
+    "x_relativ": 0.383281,
+    "y_relativ": 0.74463
+  },
+  {
+    "id": "recife",
+    "name": "Recife",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "belem",
+      "riodejaneiro"
+    ],
+    "flightConnections": [],
+    "x": 840.4,
+    "y": 714.7,
+    "x_relativ": 0.437708,
+    "y_relativ": 0.661759
+  },
+  {
+    "id": "riodejaneiro",
+    "name": "Rio de Janeiro",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "portoalegre",
+      "brasilia",
+      "recife"
+    ],
+    "flightConnections": [
+      "dakar"
+    ],
+    "x": 807.9,
+    "y": 790.1,
+    "x_relativ": 0.420781,
+    "y_relativ": 0.731574
+  },
+  {
+    "id": "brasilia",
+    "name": "Brasilia",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "riodejaneiro",
+      "portoalegre"
+    ],
+    "flightConnections": [
+      "caracas"
+    ],
+    "x": 765.7,
+    "y": 752.8,
+    "x_relativ": 0.398802,
+    "y_relativ": 0.697037
+  },
+  {
+    "id": "belem",
+    "name": "Belem",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "manaus",
+      "recife"
+    ],
+    "flightConnections": [],
+    "x": 781.1,
+    "y": 680.7,
+    "x_relativ": 0.406823,
+    "y_relativ": 0.630278
+  },
+  {
+    "id": "brisbane",
+    "name": "Brisbane",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "canberra"
+    ],
+    "flightConnections": [
+      "portdarwin"
+    ],
+    "x": 1815.2,
+    "y": 821.7,
+    "x_relativ": 0.945417,
+    "y_relativ": 0.760833
+  },
+  {
+    "id": "portdarwin",
+    "name": "Port Darwin",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [],
+    "flightConnections": [
+      "perth",
+      "brisbane"
+    ],
+    "x": 1722.9,
+    "y": 745.6,
+    "x_relativ": 0.897344,
+    "y_relativ": 0.69037
+  },
+  {
+    "id": "alicesprings",
+    "name": "Alice Springs",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "adelaide"
+    ],
+    "flightConnections": [],
+    "x": 1729.7,
+    "y": 810.8,
+    "x_relativ": 0.900885,
+    "y_relativ": 0.750741
+  },
+  {
+    "id": "buenosaires",
+    "name": "Buenos Aires",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "portoalegre",
+      "santiago",
+      "asuncion"
+    ],
+    "flightConnections": [
+      "caracas"
+    ],
+    "x": 741.9,
+    "y": 867.0,
+    "x_relativ": 0.386406,
+    "y_relativ": 0.802778
+  },
+  {
+    "id": "puntaarenas",
+    "name": "Punta Arenas",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "santiago"
+    ],
+    "flightConnections": [],
+    "x": 716.2,
+    "y": 962.1,
+    "x_relativ": 0.373021,
+    "y_relativ": 0.890833
+  },
+  {
+    "id": "santiago",
+    "name": "Santiago",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "buenosaires",
+      "lapaz",
+      "puntaarenas"
+    ],
+    "flightConnections": [
+      "lima"
+    ],
+    "x": 681.7,
+    "y": 851.3,
+    "x_relativ": 0.355052,
+    "y_relativ": 0.788241
+  },
+  {
+    "id": "portoalegre",
+    "name": "Porto Alegre",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "asuncion",
+      "riodejaneiro",
+      "buenosaires",
+      "brasilia"
+    ],
+    "flightConnections": [],
+    "x": 783.2,
+    "y": 830.7,
+    "x_relativ": 0.407917,
+    "y_relativ": 0.769167
+  },
+  {
+    "id": "melbourne",
+    "name": "Melbourne",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "canberra",
+      "adelaide"
+    ],
+    "flightConnections": [
+      "singapore",
+      "wellington"
+    ],
+    "x": 1752.1,
+    "y": 889.2,
+    "x_relativ": 0.912552,
+    "y_relativ": 0.823333
+  },
+  {
+    "id": "wellington",
+    "name": "Wellington",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [],
+    "flightConnections": [
+      "sanfrancisco",
+      "melbourne"
+    ],
+    "x": 1885.4,
+    "y": 911.4,
+    "x_relativ": 0.981979,
+    "y_relativ": 0.843889
+  },
+  {
+    "id": "adelaide",
+    "name": "Adelaide",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "melbourne",
+      "alicesprings",
+      "perth"
+    ],
+    "flightConnections": [],
+    "x": 1729.7,
+    "y": 874.0,
+    "x_relativ": 0.900885,
+    "y_relativ": 0.809259
+  },
+  {
+    "id": "canberra",
+    "name": "Canberra",
+    "continent": "AMERICAS_OCEANIA",
+    "color": "RED",
+    "trainConnections": [
+      "brisbane",
+      "melbourne"
+    ],
+    "flightConnections": [],
+    "x": 1776.1,
+    "y": 872.3,
+    "x_relativ": 0.925052,
+    "y_relativ": 0.807685
+  }
+]

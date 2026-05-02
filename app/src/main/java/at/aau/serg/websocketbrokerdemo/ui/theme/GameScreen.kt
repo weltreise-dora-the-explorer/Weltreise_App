@@ -57,7 +57,7 @@ fun GameScreen(viewModel: AppViewModel) {
 
 
     //Bilder
-    val mapBitmap = loadAssetBitmap(context, "world_map_klein.png")
+    val mapBitmap = loadAssetBitmap(context, "world_map.png")
     val diceBitmap = loadAssetBitmap(context, "dice_icon.png")
     val bucketBitmap = loadAssetBitmap(context, "bucket_list_icon.png")
 
