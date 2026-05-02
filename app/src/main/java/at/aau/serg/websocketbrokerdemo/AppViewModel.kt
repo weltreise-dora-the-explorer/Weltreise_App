@@ -167,7 +167,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                                         val continent = try {
                                             Continent.valueOf(cityObj.optString("continent", "EUROPE"))
                                         } catch (_: IllegalArgumentException) {
-                                            Continent.EUROPE
+                                            Continent.EUROPE_AFRICA
                                         }
                                         cities.add(City(
                                             id = cityObj.optString("id", ""),
@@ -184,7 +184,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                                         val continent = try {
                                             Continent.valueOf(sc.optString("continent", "EUROPE"))
                                         } catch (_: IllegalArgumentException) {
-                                            Continent.EUROPE
+                                            Continent.EUROPE_AFRICA
                                         }
                                         _startCity.value = City(
                                             id = sc.optString("id", ""),
