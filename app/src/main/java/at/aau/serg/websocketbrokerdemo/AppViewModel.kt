@@ -1,6 +1,7 @@
 package at.aau.serg.websocketbrokerdemo
 
 import MyStomp
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import at.aau.serg.websocketbrokerdemo.models.City
@@ -8,6 +9,7 @@ import at.aau.serg.websocketbrokerdemo.models.Continent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.json.JSONArray
 import org.json.JSONObject
 
 open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks {
@@ -51,6 +53,37 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
 
     private val _playerCityCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val playerCityCounts: StateFlow<Map<String, Int>> = _playerCityCounts.asStateFlow()
+
+    private val _allCities = MutableStateFlow<List<City>>(emptyList())
+    val allCities: StateFlow<List<City>> = _allCities.asStateFlow()
+
+    fun loadAllCities(context: Context) {
+        try {
+            val json = context.assets.open("cities.json").bufferedReader().readText()
+            val array = JSONArray(json)
+            val cities = mutableListOf<City>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val continent = try {
+                    Continent.valueOf(obj.optString("continent", "EUROPE_AFRICA"))
+                } catch (_: IllegalArgumentException) {
+                    Continent.EUROPE_AFRICA
+                }
+                cities.add(City(
+                    id = obj.optString("id", ""),
+                    name = obj.optString("name", ""),
+                    continent = continent,
+                    color = obj.optString("color", ""),
+                    x_relativ = obj.optDouble("x_relativ", 0.0).toFloat(),
+                    y_relativ = obj.optDouble("y_relativ", 0.0).toFloat()
+                ))
+            }
+            _allCities.value = cities
+            Log.d("AppViewModel", "Alle Städte geladen: ${cities.size}")
+        } catch (e: Exception) {
+            Log.e("AppViewModel", "Fehler beim Laden der Städte", e)
+        }
+    }
 
     fun setGameMode(mode: String) {
         _gameMode.value = mode

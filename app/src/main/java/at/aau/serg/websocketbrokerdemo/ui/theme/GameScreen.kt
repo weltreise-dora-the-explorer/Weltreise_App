@@ -56,6 +56,10 @@ fun GameScreen(viewModel: AppViewModel) {
 
 
 
+    LaunchedEffect(Unit) {
+        viewModel.loadAllCities(context)
+    }
+
     //Bilder
     val mapBitmap = loadAssetBitmap(context, "world_map.png")
     val diceBitmap = loadAssetBitmap(context, "dice_icon.png")

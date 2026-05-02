@@ -4,5 +4,7 @@ data class City(
     val id: String = "",
     val name: String,
     val continent: Continent,
-    val color: String = ""
+    val color: String = "",
+    val x_relativ: Float = 0f,
+    val y_relativ: Float = 0f
 )
