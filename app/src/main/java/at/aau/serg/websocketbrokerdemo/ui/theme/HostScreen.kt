@@ -16,7 +16,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -118,12 +117,12 @@ fun HostScreen(viewModel: AppViewModel) {
                             onClick = { viewModel.setGameMode("City Hopper") }
                         )
                         TourButton(
-                            text = "Grand Tour\n(12)",
+                            text = "Grand Tour\n(9)",
                             isSelected = selectedTour == "Grand Tour",
                             onClick = { viewModel.setGameMode("Grand Tour") }
                         )
                         TourButton(
-                            text = "Epic Voyage\n(18)",
+                            text = "Epic Voyage\n(12)",
                             isSelected = selectedTour == "Epic Voyage",
                             onClick = { viewModel.setGameMode("Epic Voyage") }
                         )

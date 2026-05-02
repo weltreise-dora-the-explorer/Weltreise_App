@@ -508,6 +508,115 @@ class AppViewModelTest {
         assertEquals("login", viewModel.currentScreen.value)
     }
 
+    // ========== DICE / TURN TESTS ==========
+
+    @Test
+    fun `diceValue is null initially`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        assertNull(viewModel.diceValue.value)
+    }
+
+    @Test
+    fun `currentTurnPlayerId is null initially`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        assertNull(viewModel.currentTurnPlayerId.value)
+    }
+
+    @Test
+    fun `onRollDice calls stomp rollDice with lobbyId and playerName`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Alice")
+        val lobbyId = viewModel.lobbyId.value
+
+        viewModel.onRollDice()
+
+        verify { mockStomp.rollDice(lobbyId, "Alice") }
+    }
+
+    @Test
+    fun `onEndTurn calls stomp endTurn with correct dice value`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Alice")
+        val lobbyId = viewModel.lobbyId.value
+        val response = """{"success":true,"message":"OK","lobbyId":"$lobbyId","commandType":"ROLL_DICE","state":{"lobbyId":"$lobbyId","players":[{"playerId":"Alice"}],"phase":"IN_TURN","currentPlayerId":"Alice","lastDiceValue":4}}"""
+        viewModel.onResponse(response)
+
+        viewModel.onEndTurn()
+
+        verify { mockStomp.endTurn(lobbyId, "Alice", 4) }
+    }
+
+    @Test
+    fun `onEndTurn does nothing when diceValue is null`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onEndTurn()
+
+        verify(exactly = 0) { mockStomp.endTurn(any(), any(), any()) }
+    }
+
+    @Test
+    fun `onResponse parses lastDiceValue from state`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"ROLL_DICE","state":{"lobbyId":"1234","players":[{"playerId":"Alice"}],"phase":"IN_TURN","currentPlayerId":"Alice","lastDiceValue":5}}"""
+        viewModel.onResponse(response)
+
+        assertEquals(5, viewModel.diceValue.value)
+    }
+
+    @Test
+    fun `onResponse sets diceValue to null when lastDiceValue is null in JSON`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"ROLL_DICE","state":{"lobbyId":"1234","players":[{"playerId":"Alice"}],"phase":"IN_TURN","currentPlayerId":"Alice","lastDiceValue":3}}""")
+
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"MOVE_TOKEN","state":{"lobbyId":"1234","players":[{"playerId":"Alice"}],"phase":"IN_TURN","currentPlayerId":"Bob","lastDiceValue":null}}""")
+
+        assertNull(viewModel.diceValue.value)
+    }
+
+    @Test
+    fun `onResponse parses currentPlayerId from state`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"START_GAME","state":{"lobbyId":"1234","players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN","currentPlayerId":"Alice"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("Alice", viewModel.currentTurnPlayerId.value)
+    }
+
+    @Test
+    fun `onResponse updates currentTurnPlayerId after move token`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"START_GAME","state":{"lobbyId":"1234","players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN","currentPlayerId":"Alice","lastDiceValue":null}}""")
+
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"MOVE_TOKEN","state":{"lobbyId":"1234","players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN","currentPlayerId":"Bob","lastDiceValue":null}}""")
+
+        assertEquals("Bob", viewModel.currentTurnPlayerId.value)
+    }
+
+    @Test
+    fun `onResponse sets currentTurnPlayerId to null when field is empty`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"CREATE_LOBBY","state":{"lobbyId":"1234","players":[{"playerId":"Host"}],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertNull(viewModel.currentTurnPlayerId.value)
+    }
+
     // ========== HELPER ==========
 
     private fun createViewModelWithMockStomp(mockStomp: MyStomp): AppViewModel {
