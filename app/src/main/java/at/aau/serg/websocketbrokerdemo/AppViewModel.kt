@@ -69,13 +69,25 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                 } catch (_: IllegalArgumentException) {
                     Continent.EUROPE_AFRICA
                 }
+                val trainConns = mutableListOf<String>()
+                val trainArray = obj.optJSONArray("trainConnections")
+                if (trainArray != null) {
+                    for (j in 0 until trainArray.length()) trainConns.add(trainArray.getString(j))
+                }
+                val flightConns = mutableListOf<String>()
+                val flightArray = obj.optJSONArray("flightConnections")
+                if (flightArray != null) {
+                    for (j in 0 until flightArray.length()) flightConns.add(flightArray.getString(j))
+                }
                 cities.add(City(
                     id = obj.optString("id", ""),
                     name = obj.optString("name", ""),
                     continent = continent,
                     color = obj.optString("color", ""),
                     x_relativ = obj.optDouble("x_relativ", 0.0).toFloat(),
-                    y_relativ = obj.optDouble("y_relativ", 0.0).toFloat()
+                    y_relativ = obj.optDouble("y_relativ", 0.0).toFloat(),
+                    trainConnections = trainConns,
+                    flightConnections = flightConns
                 ))
             }
             _allCities.value = cities

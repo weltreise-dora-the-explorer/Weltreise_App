@@ -2,10 +2,12 @@ package at.aau.serg.websocketbrokerdemo.ui.theme
 
 import android.content.Context
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -24,9 +26,14 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -34,11 +41,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import at.aau.serg.websocketbrokerdemo.AppViewModel
-import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
+import at.aau.serg.websocketbrokerdemo.models.City
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import kotlin.math.abs
 import kotlin.math.pow
+import kotlin.math.sqrt
 @Composable
 fun GameScreen(viewModel: AppViewModel) {
     val context = LocalContext.current
@@ -48,6 +56,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val diceValue by viewModel.diceValue.collectAsState()
     val currentTurnPlayerId by viewModel.currentTurnPlayerId.collectAsState()
     val ownedCities by viewModel.ownedCities.collectAsState()
+    val allCities by viewModel.allCities.collectAsState()
     val startCity by viewModel.startCity.collectAsState()
     val playerCityCounts by viewModel.playerCityCounts.collectAsState()
     val isMyTurn = currentTurnPlayerId == currentPlayerName
@@ -62,6 +71,7 @@ fun GameScreen(viewModel: AppViewModel) {
 
     //Bilder
     val mapBitmap = loadAssetBitmap(context, "world_map.png")
+    val rawMapBitmap = remember { loadRawBitmap(context, "world_map.png") }
     val diceBitmap = loadAssetBitmap(context, "dice_icon.png")
     val bucketBitmap = loadAssetBitmap(context, "bucket_list_icon.png")
 
@@ -101,7 +111,7 @@ fun GameScreen(viewModel: AppViewModel) {
 
         // Weltkarte
         if (mapBitmap != null) {
-            ZoomableMap(mapBitmap = mapBitmap)
+            ZoomableMap(mapBitmap = mapBitmap, rawBitmap = rawMapBitmap, allCities = allCities, ownedCities = ownedCities)
         }
 
         // Game Mode Badge oben rechts
@@ -288,21 +298,45 @@ fun GameScreen(viewModel: AppViewModel) {
 
 //Weltkarte mit Zoom und Verschiebe Funktion
 @Composable
-fun ZoomableMap(mapBitmap: ImageBitmap) {
-    var scale by remember {mutableStateOf(1f)}
-    var offset by remember {mutableStateOf(Offset.Zero)}
+fun ZoomableMap(
+    mapBitmap: ImageBitmap,
+    rawBitmap: android.graphics.Bitmap? = null,
+    allCities: List<City> = emptyList(),
+    ownedCities: List<City> = emptyList()
+) {
+    var scale by remember { mutableStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
 
-    BoxWithConstraints(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    // Für jede Stadt vorausberechnen ob sie über Meer liegt
+    val cityOverOcean = remember(allCities, rawBitmap) {
+        if (rawBitmap == null) return@remember emptyMap<String, Boolean>()
+        allCities.associate { city ->
+            val px = (city.x_relativ * rawBitmap.width).toInt().coerceIn(0, rawBitmap.width - 1)
+            val py = (city.y_relativ * rawBitmap.height).toInt().coerceIn(0, rawBitmap.height - 1)
+            val pixel = rawBitmap.getPixel(px, py)
+            val r = android.graphics.Color.red(pixel)
+            val g = android.graphics.Color.green(pixel)
+            val b = android.graphics.Color.blue(pixel)
+            city.id to (b > r + 30 && b > g + 20)
+        }
+    }
+
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val screenWidth = constraints.maxWidth.toFloat()
         val screenHeight = constraints.maxHeight.toFloat()
 
+        // Tatsächliche Kartengröße bei ContentScale.Fit berechnen
+        val mapAspect = mapBitmap.width.toFloat() / mapBitmap.height.toFloat()
+        val screenAspect = screenWidth / screenHeight
+        val (renderedWidth, renderedHeight) = if (mapAspect > screenAspect) {
+            screenWidth to screenWidth / mapAspect
+        } else {
+            screenHeight * mapAspect to screenHeight
+        }
+        val xOffset = (screenWidth - renderedWidth) / 2f
+        val yOffset = (screenHeight - renderedHeight) / 2f
 
-        Image(
-            bitmap = mapBitmap,
-            contentDescription = "Weltkarte",
-            contentScale = ContentScale.Fit,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer(
@@ -318,30 +352,150 @@ fun ZoomableMap(mapBitmap: ImageBitmap) {
                         } else {
                             zoom.toDouble().pow(1.1).toFloat()
                         }
-
                         val newScale = (scale * adjustedZoom).coerceIn(1f, 8f)
-
                         val maxOffsetX = ((screenWidth * newScale) - screenWidth) / 2f
                         val maxOffsetY = ((screenHeight * newScale) - screenHeight) / 2f
-
-                        // Je stärker hineingezoomt ist, desto schneller soll die Karte verschiebbar sein.
                         val panSpeed = (newScale * 1.4f).coerceIn(2.5f, 10f)
-
                         scale = newScale
-
                         offset = if (newScale > 1f) {
                             Offset(
-                                x = (offset.x + pan.x * panSpeed)
-                                    .coerceIn(-maxOffsetX, maxOffsetX),
-                                y = (offset.y + pan.y * panSpeed)
-                                    .coerceIn(-maxOffsetY, maxOffsetY)
+                                x = (offset.x + pan.x * panSpeed).coerceIn(-maxOffsetX, maxOffsetX),
+                                y = (offset.y + pan.y * panSpeed).coerceIn(-maxOffsetY, maxOffsetY)
                             )
                         } else {
                             Offset.Zero
                         }
                     }
                 }
-        )
+        ) {
+            Image(
+                bitmap = mapBitmap,
+                contentDescription = "Weltkarte",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val dotRadius = 5f
+                val cityMap = allCities.associateBy { it.id }
+
+                // Deduplizierte Verbindungspaare sammeln
+                val trainPairs = mutableSetOf<Pair<String, String>>()
+                val flightPairs = mutableSetOf<Pair<String, String>>()
+                allCities.forEach { city ->
+                    city.trainConnections.forEach { targetId ->
+                        val key = if (city.id < targetId) city.id to targetId else targetId to city.id
+                        trainPairs.add(key)
+                    }
+                    city.flightConnections.forEach { targetId ->
+                        val key = if (city.id < targetId) city.id to targetId else targetId to city.id
+                        flightPairs.add(key)
+                    }
+                }
+
+                // Zugverbindungen (schwarz, gerade)
+                trainPairs.forEach { (idA, idB) ->
+                    val a = cityMap[idA] ?: return@forEach
+                    val b = cityMap[idB] ?: return@forEach
+                    val ax = xOffset + a.x_relativ * renderedWidth
+                    val ay = yOffset + a.y_relativ * renderedHeight
+                    val bx = xOffset + b.x_relativ * renderedWidth
+                    val by = yOffset + b.y_relativ * renderedHeight
+                    // Leichter Versatz wenn auch Flugverbindung existiert
+                    val sharedFlight = flightPairs.contains(if (idA < idB) idA to idB else idB to idA)
+                    val dx = bx - ax
+                    val dy = by - ay
+                    val len = sqrt(dx * dx + dy * dy).coerceAtLeast(1f)
+                    val perpX = if (sharedFlight) -dy / len * 2f else 0f
+                    val perpY = if (sharedFlight) dx / len * 2f else 0f
+                    drawLine(
+                        color = Color(0xFF222222),
+                        start = Offset(ax + perpX, ay + perpY),
+                        end = Offset(bx + perpX, by + perpY),
+                        strokeWidth = 1.5f
+                    )
+                }
+
+                // Flugverbindungen (rot, gebogener Bogen)
+                flightPairs.forEach { (idA, idB) ->
+                    val a = cityMap[idA] ?: return@forEach
+                    val b = cityMap[idB] ?: return@forEach
+                    val ax = xOffset + a.x_relativ * renderedWidth
+                    val ay = yOffset + a.y_relativ * renderedHeight
+                    val bx = xOffset + b.x_relativ * renderedWidth
+                    val by = yOffset + b.y_relativ * renderedHeight
+
+                    if (abs(a.x_relativ - b.x_relativ) > 0.5f) {
+                        // Trans-Pazifik: Wrap-Around durch Pazifik (links raus, rechts rein)
+                        val (leftCity, rightCity) = if (a.x_relativ < b.x_relativ) a to b else b to a
+                        val lx = xOffset + leftCity.x_relativ * renderedWidth
+                        val ly = yOffset + leftCity.y_relativ * renderedHeight
+                        val rx = xOffset + rightCity.x_relativ * renderedWidth
+                        val ry = yOffset + rightCity.y_relativ * renderedHeight
+                        val virtualRx = rx - renderedWidth
+                        val virtualLx = lx + renderedWidth
+                        val wrapDist = sqrt((virtualRx - lx).pow(2) + (ry - ly).pow(2))
+                        val curvature = (wrapDist * 0.35f).coerceAtMost(renderedHeight * 0.3f)
+                        // Bogen 1: linke Stadt → linke Kartenkante (Richtung Pazifik)
+                        val path1 = Path().apply {
+                            moveTo(lx, ly)
+                            quadraticTo((lx + virtualRx) / 2f, (ly + ry) / 2f - curvature, virtualRx, ry)
+                        }
+                        drawPath(path1, color = Color(0xFFE53935), style = Stroke(width = 1.5f))
+                        // Bogen 2: rechte Kartenkante → rechte Stadt (aus Pazifik kommend)
+                        val path2 = Path().apply {
+                            moveTo(virtualLx, ly)
+                            quadraticTo((virtualLx + rx) / 2f, (ly + ry) / 2f - curvature, rx, ry)
+                        }
+                        drawPath(path2, color = Color(0xFFE53935), style = Stroke(width = 1.5f))
+                    } else {
+                        val midX = (ax + bx) / 2f
+                        val midY = (ay + by) / 2f
+                        val dist = sqrt((bx - ax).pow(2) + (by - ay).pow(2))
+                        val curvature = (dist * 0.25f).coerceAtMost(renderedHeight * 0.35f)
+                        val path = Path().apply {
+                            moveTo(ax, ay)
+                            quadraticTo(midX, midY - curvature, bx, by)
+                        }
+                        drawPath(path, color = Color(0xFFE53935), style = Stroke(width = 1.5f))
+                    }
+                }
+
+                // Stadtpunkte (über den Linien)
+                allCities.forEach { city ->
+                    val cx = xOffset + city.x_relativ * renderedWidth
+                    val cy = yOffset + city.y_relativ * renderedHeight
+                    val isOcean = cityOverOcean[city.id] == true
+
+                    drawCircle(
+                        color = Color(0xFFE53935),
+                        radius = dotRadius,
+                        center = Offset(cx, cy)
+                    )
+
+                    if (scale >= 2.5f) {
+                        val labelLeft = city.x_relativ < 0.28f
+                        val labelX = if (labelLeft) cx - dotRadius - 3f else cx + dotRadius + 3f
+
+                        val paint = android.graphics.Paint().apply {
+                            color = if (isOcean) android.graphics.Color.WHITE
+                                    else android.graphics.Color.rgb(20, 20, 20)
+                            textSize = 9f
+                            isAntiAlias = true
+                            textAlign = if (labelLeft) android.graphics.Paint.Align.RIGHT
+                                        else android.graphics.Paint.Align.LEFT
+                            setShadowLayer(1.5f, 0.5f, 0.5f,
+                                if (isOcean) android.graphics.Color.BLACK
+                                else android.graphics.Color.WHITE)
+                        }
+
+                        drawIntoCanvas { canvas ->
+                            canvas.nativeCanvas.drawText(city.name, labelX, cy + 4f, paint)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -427,6 +581,16 @@ fun loadAssetBitmap(context: Context, fileName: String): ImageBitmap? {
     return try {
         context.assets.open(fileName).use { inputStream ->
             BitmapFactory.decodeStream(inputStream).asImageBitmap()
+        }
+    } catch (_: Exception) {
+        null
+    }
+}
+
+fun loadRawBitmap(context: Context, fileName: String): android.graphics.Bitmap? {
+    return try {
+        context.assets.open(fileName).use { inputStream ->
+            BitmapFactory.decodeStream(inputStream)
         }
     } catch (_: Exception) {
         null
