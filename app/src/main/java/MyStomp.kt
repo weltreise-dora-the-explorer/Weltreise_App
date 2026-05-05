@@ -67,37 +67,6 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
-    fun sendHello() {
-        scope.launch {
-            try {
-                session?.let {
-                    Log.e("tag", "connecting to topic")
-                    it.sendText("/app/hello", "message from client")
-                } ?: run {
-                    Log.e("MyStomp", "Cannot send: Session is null")
-                    callback("Error: Not connected")
-                }
-            } catch (e: Exception) {
-                Log.e("MyStomp", "Send failed", e)
-            }
-        }
-    }
-
-    fun sendJson() {
-        val json = JSONObject()
-        json.put("from", "client")
-        json.put("text", "from client")
-        val o = json.toString()
-
-        scope.launch {
-            try {
-                session?.sendText("/app/object", o) ?: callback("Error: Not connected")
-            } catch (e: Exception) {
-                Log.e("MyStomp", "Send JSON failed", e)
-            }
-        }
-    }
-
     fun joinMultiplayerLobby(lobbyId: String, playerId: String) {
         scope.launch {
             try {
@@ -236,13 +205,25 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
-    fun disconnect() {
+    fun moveToCity(lobbyId: String, playerId: String, targetCityId: String) {
         scope.launch {
             try {
-                session?.disconnect()
+                val dest = "/app/lobby/$lobbyId/command"
+                Log.d("CityTap", "moveToCity: session=${session != null}, dest=$dest")
+                val command = JSONObject()
+                command.put("type", "MOVE_TO_CITY")
+                command.put("playerId", playerId)
+                command.put("targetCityId", targetCityId)
+                if (session == null) {
+                    Log.e("CityTap", "moveToCity ABGEBROCHEN: session ist null!")
+                    return@launch
+                }
+                session!!.sendText(dest, command.toString())
+                Log.d("CityTap", "moveToCity: gesendet → $command")
             } catch (e: Exception) {
-                Log.e("MyStomp", "Fehler beim Disconnect", e)
+                Log.e("CityTap", "moveToCity Exception: ${e.message}", e)
             }
         }
     }
+
 }

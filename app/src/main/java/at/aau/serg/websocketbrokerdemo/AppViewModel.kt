@@ -57,6 +57,15 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
     private val _allCities = MutableStateFlow<List<City>>(emptyList())
     val allCities: StateFlow<List<City>> = _allCities.asStateFlow()
 
+    private val _playerCurrentCities = MutableStateFlow<Map<String, City?>>(emptyMap())
+    val playerCurrentCities: StateFlow<Map<String, City?>> = _playerCurrentCities.asStateFlow()
+
+    private val _validMoveIds = MutableStateFlow<List<String>>(emptyList())
+    val validMoveIds: StateFlow<List<String>> = _validMoveIds.asStateFlow()
+
+    private val _remainingSteps = MutableStateFlow<Int?>(null)
+    val remainingSteps: StateFlow<Int?> = _remainingSteps.asStateFlow()
+
     fun loadAllCities(context: Context) {
         try {
             val json = context.assets.open("cities.json").bufferedReader().readText()
@@ -155,7 +164,14 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
 
     fun onEndTurn() {
         val dice = _diceValue.value ?: return
+        _validMoveIds.value = emptyList()
+        _remainingSteps.value = null
         stomp.endTurn(_lobbyId.value, _playerName.value, dice)
+    }
+
+    fun onMoveToCity(targetCityId: String) {
+        Log.d("CityTap", "onMoveToCity: lobbyId='${_lobbyId.value}' player='${_playerName.value}' target='$targetCityId'")
+        stomp.moveToCity(_lobbyId.value, _playerName.value, targetCityId)
     }
 
     fun leaveLobby() {
@@ -172,6 +188,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
 
     override fun onResponse(res: String) {
         Log.i("AppViewModel", "Received from server: $res")
+        Log.d("CityTap", "onResponse: commandType=${runCatching { JSONObject(res).optString("commandType") }.getOrDefault("?")} validMoveIds=${runCatching { JSONObject(res).optJSONObject("state")?.optJSONArray("validMoveIds") }.getOrDefault("?")}")
         _isLoading.value = false
 
         try {
@@ -182,6 +199,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                 if (rootJson.has("success") && !rootJson.getBoolean("success")) {
                     val errorMsg = rootJson.optString("message", "Unbekannter Fehler")
                     _errorMessage.value = errorMsg
+                    Log.e("CityTap", "Server-Fehler nach MOVE_TO_CITY: $errorMsg")
                     Log.e("AppViewModel", "Server-Fehler: $errorMsg")
                     return
                 }
@@ -195,11 +213,27 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                         val playersArray = stateJson.getJSONArray("players")
                         val newList = mutableListOf<String>()
                         val cityCountsMap = mutableMapOf<String, Int>()
+                        val currentCitiesMap = mutableMapOf<String, City?>()
 
                         for (i in 0 until playersArray.length()) {
                             val playerObj = playersArray.getJSONObject(i)
                             val pId = playerObj.getString("playerId")
                             newList.add(pId)
+
+                            if (playerObj.has("currentCity") && !playerObj.isNull("currentCity")) {
+                                val cc = playerObj.getJSONObject("currentCity")
+                                val ccContinent = try {
+                                    Continent.valueOf(cc.optString("continent", "EUROPE_AFRICA"))
+                                } catch (_: IllegalArgumentException) { Continent.EUROPE_AFRICA }
+                                currentCitiesMap[pId] = City(
+                                    id = cc.optString("id", ""),
+                                    name = cc.optString("name", ""),
+                                    continent = ccContinent,
+                                    color = cc.optString("color", "")
+                                )
+                            } else {
+                                currentCitiesMap[pId] = null
+                            }
 
                             if (playerObj.has("ownedCities")) {
                                 val citiesArray = playerObj.getJSONArray("ownedCities")
@@ -243,11 +277,22 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                         }
                         _playersList.value = newList
                         _playerCityCounts.value = cityCountsMap
+                        _playerCurrentCities.value = currentCitiesMap
                     }
 
                     // Würfelergebnis und aktueller Spieler (dein bestehender Code)
                     _diceValue.value = if (stateJson.isNull("lastDiceValue")) null else stateJson.optInt("lastDiceValue")
                     _currentTurnPlayerId.value = stateJson.optString("currentPlayerId").ifEmpty { null }
+
+                    val validIds = mutableListOf<String>()
+                    val validArray = stateJson.optJSONArray("validMoveIds")
+                    if (validArray != null) {
+                        for (i in 0 until validArray.length()) validIds.add(validArray.getString(i))
+                    }
+                    _validMoveIds.value = validIds
+
+                    val rs = stateJson.optInt("remainingSteps", -1)
+                    _remainingSteps.value = if (rs >= 0) rs else null
 
                     // Navigation (dein bestehender Code)
                     val commandType = rootJson.optString("commandType", "")
