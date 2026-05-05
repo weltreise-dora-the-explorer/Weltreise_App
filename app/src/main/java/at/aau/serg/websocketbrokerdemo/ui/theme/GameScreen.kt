@@ -372,6 +372,8 @@ fun ZoomableMap(
 
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
+    val currentScale by rememberUpdatedState(scale)
+    val currentOffset by rememberUpdatedState(offset)
 
     // Icon-Radius schrumpft mit Zoom, damit das Icon in Screen-Pixeln ~konstant bleibt
     val effectiveIconRadius = (playerIconRadius / scale).coerceIn(4f, playerIconRadius)
@@ -470,21 +472,20 @@ fun ZoomableMap(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y,
-                )
                 .pointerInput(validMoveIdSet, isMyTurn) {
                     if (!isMyTurn) return@pointerInput
                     detectTapGestures { tapOffset ->
                         Log.d("CityTap", "tap received: $tapOffset")
+                        val dbgCityWorld = allCities.firstOrNull()?.let {
+                            Offset(xOffset + it.x_relativ * renderedWidth, yOffset + it.y_relativ * renderedHeight)
+                        }
+                        Log.d("CityTap", "tapOffset=$tapOffset  scale=$currentScale  firstCityWorld=$dbgCityWorld")
+                        Log.d("CityTap", "scale=$currentScale offset=$currentOffset")
                         if (isLocalPlayerAnimating) return@detectTapGestures
                         Log.d("CityTap", "isMyTurn=$isMyTurn, validMoveIds=$validMoveIdSet")
-                        val canvasX = (tapOffset.x - offset.x - screenWidth / 2f) / scale + screenWidth / 2f
-                        val canvasY = (tapOffset.y - offset.y - screenHeight / 2f) / scale + screenHeight / 2f
-                        val hitRadius = 50f / scale
+                        val canvasX = (tapOffset.x - currentOffset.x - screenWidth / 2f) / currentScale + screenWidth / 2f
+                        val canvasY = (tapOffset.y - currentOffset.y - screenHeight / 2f) / currentScale + screenHeight / 2f
+                        val hitRadius = 60f / currentScale
 
                         var closestCity: City? = null
                         var closestDist = Float.MAX_VALUE
@@ -554,14 +555,24 @@ fun ZoomableMap(
                     }
                 }
         ) {
-            Image(
-                bitmap = mapBitmap,
-                contentDescription = "Weltkarte",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize()
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(
+                        scaleX = scale,
+                        scaleY = scale,
+                        translationX = offset.x,
+                        translationY = offset.y,
+                    )
+            ) {
+                Image(
+                    bitmap = mapBitmap,
+                    contentDescription = "Weltkarte",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
 
-            Canvas(modifier = Modifier.fillMaxSize()) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
                 val dotRadius = 5f
                 val cityMap = allCities.associateBy { it.id }
 
@@ -769,6 +780,7 @@ fun ZoomableMap(
                     drawIntoCanvas { canvas -> drawPlayerIcon(canvas.nativeCanvas, animX, animY, playerIndex) }
                 }
             }
+            } // inner graphicsLayer Box
         }
     }
 }
