@@ -1,6 +1,7 @@
 package at.aau.serg.websocketbrokerdemo
 
 import MyStomp
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import at.aau.serg.websocketbrokerdemo.models.City
@@ -8,6 +9,7 @@ import at.aau.serg.websocketbrokerdemo.models.Continent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.json.JSONArray
 import org.json.JSONObject
 
 open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks {
@@ -51,6 +53,58 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
 
     private val _playerCityCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val playerCityCounts: StateFlow<Map<String, Int>> = _playerCityCounts.asStateFlow()
+
+    private val _allCities = MutableStateFlow<List<City>>(emptyList())
+    val allCities: StateFlow<List<City>> = _allCities.asStateFlow()
+
+    private val _playerCurrentCities = MutableStateFlow<Map<String, City?>>(emptyMap())
+    val playerCurrentCities: StateFlow<Map<String, City?>> = _playerCurrentCities.asStateFlow()
+
+    private val _validMoveIds = MutableStateFlow<List<String>>(emptyList())
+    val validMoveIds: StateFlow<List<String>> = _validMoveIds.asStateFlow()
+
+    private val _remainingSteps = MutableStateFlow<Int?>(null)
+    val remainingSteps: StateFlow<Int?> = _remainingSteps.asStateFlow()
+
+    fun loadAllCities(context: Context) {
+        try {
+            val json = context.assets.open("cities.json").bufferedReader().readText()
+            val array = JSONArray(json)
+            val cities = mutableListOf<City>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val continent = try {
+                    Continent.valueOf(obj.optString("continent", "EUROPE_AFRICA"))
+                } catch (_: IllegalArgumentException) {
+                    Continent.EUROPE_AFRICA
+                }
+                val trainConns = mutableListOf<String>()
+                val trainArray = obj.optJSONArray("trainConnections")
+                if (trainArray != null) {
+                    for (j in 0 until trainArray.length()) trainConns.add(trainArray.getString(j))
+                }
+                val flightConns = mutableListOf<String>()
+                val flightArray = obj.optJSONArray("flightConnections")
+                if (flightArray != null) {
+                    for (j in 0 until flightArray.length()) flightConns.add(flightArray.getString(j))
+                }
+                cities.add(City(
+                    id = obj.optString("id", ""),
+                    name = obj.optString("name", ""),
+                    continent = continent,
+                    color = obj.optString("color", ""),
+                    x_relativ = obj.optDouble("x_relativ", 0.0).toFloat(),
+                    y_relativ = obj.optDouble("y_relativ", 0.0).toFloat(),
+                    trainConnections = trainConns,
+                    flightConnections = flightConns
+                ))
+            }
+            _allCities.value = cities
+            Log.d("AppViewModel", "Alle Städte geladen: ${cities.size}")
+        } catch (e: Exception) {
+            Log.e("AppViewModel", "Fehler beim Laden der Städte", e)
+        }
+    }
 
     fun setGameMode(mode: String) {
         _gameMode.value = mode
@@ -110,7 +164,14 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
 
     fun onEndTurn() {
         val dice = _diceValue.value ?: return
+        _validMoveIds.value = emptyList()
+        _remainingSteps.value = null
         stomp.endTurn(_lobbyId.value, _playerName.value, dice)
+    }
+
+    fun onMoveToCity(targetCityId: String) {
+        Log.d("CityTap", "onMoveToCity: lobbyId='${_lobbyId.value}' player='${_playerName.value}' target='$targetCityId'")
+        stomp.moveToCity(_lobbyId.value, _playerName.value, targetCityId)
     }
 
     fun leaveLobby() {
@@ -127,6 +188,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
 
     override fun onResponse(res: String) {
         Log.i("AppViewModel", "Received from server: $res")
+        Log.d("CityTap", "onResponse: commandType=${runCatching { JSONObject(res).optString("commandType") }.getOrDefault("?")} validMoveIds=${runCatching { JSONObject(res).optJSONObject("state")?.optJSONArray("validMoveIds") }.getOrDefault("?")}")
         _isLoading.value = false
 
         try {
@@ -137,6 +199,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                 if (rootJson.has("success") && !rootJson.getBoolean("success")) {
                     val errorMsg = rootJson.optString("message", "Unbekannter Fehler")
                     _errorMessage.value = errorMsg
+                    Log.e("CityTap", "Server-Fehler nach MOVE_TO_CITY: $errorMsg")
                     Log.e("AppViewModel", "Server-Fehler: $errorMsg")
                     return
                 }
@@ -150,11 +213,27 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                         val playersArray = stateJson.getJSONArray("players")
                         val newList = mutableListOf<String>()
                         val cityCountsMap = mutableMapOf<String, Int>()
+                        val currentCitiesMap = mutableMapOf<String, City?>()
 
                         for (i in 0 until playersArray.length()) {
                             val playerObj = playersArray.getJSONObject(i)
                             val pId = playerObj.getString("playerId")
                             newList.add(pId)
+
+                            if (playerObj.has("currentCity") && !playerObj.isNull("currentCity")) {
+                                val cc = playerObj.getJSONObject("currentCity")
+                                val ccContinent = try {
+                                    Continent.valueOf(cc.optString("continent", "EUROPE_AFRICA"))
+                                } catch (_: IllegalArgumentException) { Continent.EUROPE_AFRICA }
+                                currentCitiesMap[pId] = City(
+                                    id = cc.optString("id", ""),
+                                    name = cc.optString("name", ""),
+                                    continent = ccContinent,
+                                    color = cc.optString("color", "")
+                                )
+                            } else {
+                                currentCitiesMap[pId] = null
+                            }
 
                             if (playerObj.has("ownedCities")) {
                                 val citiesArray = playerObj.getJSONArray("ownedCities")
@@ -167,7 +246,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                                         val continent = try {
                                             Continent.valueOf(cityObj.optString("continent", "EUROPE"))
                                         } catch (_: IllegalArgumentException) {
-                                            Continent.EUROPE
+                                            Continent.EUROPE_AFRICA
                                         }
                                         cities.add(City(
                                             id = cityObj.optString("id", ""),
@@ -184,7 +263,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                                         val continent = try {
                                             Continent.valueOf(sc.optString("continent", "EUROPE"))
                                         } catch (_: IllegalArgumentException) {
-                                            Continent.EUROPE
+                                            Continent.EUROPE_AFRICA
                                         }
                                         _startCity.value = City(
                                             id = sc.optString("id", ""),
@@ -198,11 +277,22 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                         }
                         _playersList.value = newList
                         _playerCityCounts.value = cityCountsMap
+                        _playerCurrentCities.value = currentCitiesMap
                     }
 
                     // Würfelergebnis und aktueller Spieler (dein bestehender Code)
                     _diceValue.value = if (stateJson.isNull("lastDiceValue")) null else stateJson.optInt("lastDiceValue")
                     _currentTurnPlayerId.value = stateJson.optString("currentPlayerId").ifEmpty { null }
+
+                    val validIds = mutableListOf<String>()
+                    val validArray = stateJson.optJSONArray("validMoveIds")
+                    if (validArray != null) {
+                        for (i in 0 until validArray.length()) validIds.add(validArray.getString(i))
+                    }
+                    _validMoveIds.value = validIds
+
+                    val rs = stateJson.optInt("remainingSteps", -1)
+                    _remainingSteps.value = if (rs >= 0) rs else null
 
                     // Navigation (dein bestehender Code)
                     val commandType = rootJson.optString("commandType", "")
