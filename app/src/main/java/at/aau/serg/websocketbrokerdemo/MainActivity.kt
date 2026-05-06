@@ -50,7 +50,10 @@ class MainActivity : ComponentActivity() {
                         HostScreen(viewModel)
                     }
                     "lobby" -> {
-                        LobbyScreen(viewModel)
+                        LobbyScreen(
+                            viewModel = viewModel,
+                            onBackClick = { viewModel.navigateTo("login") }
+                        )
                     }
                     "waiting" -> {
                         WaitingScreen(viewModel)
