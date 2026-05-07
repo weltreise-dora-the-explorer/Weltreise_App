@@ -165,15 +165,16 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
-    fun updateGameMode(lobbyId: String, gameMode: String){
+    fun updateGameMode(lobbyId: String, playerId: String, gameMode: String){
         scope.launch {
             try{
                 val command = JSONObject()
                 command.put("type", "UPDATE_GAME_MODE")
+                command.put("playerId", playerId)
                 command.put("gameMode", gameMode)
 
                 session?.sendText("/app/lobby/$lobbyId/command", command.toString())
-                Log.i("Lobby", "Game mode update sent: $gameMode")
+                Log.i("Lobby", "Game mode update sent: $gameMode by player: $playerId")
             } catch (e: Exception){
                 Log.e("MyStomp", "Fehler beim Aktualisieren des Spielmodus", e)
             }

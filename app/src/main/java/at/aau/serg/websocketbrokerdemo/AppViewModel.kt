@@ -110,7 +110,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         _gameMode.value = mode
 
         if(_isHost.value && _lobbyId.value.isNotBlank()){
-            stomp.updateGameMode(_lobbyId.value, mode)
+            stomp.updateGameMode(_lobbyId.value, _playerName.value, mode)
         }
     }
 
