@@ -53,6 +53,8 @@ import androidx.core.graphics.scale
 import androidx.core.graphics.withSave
 import at.aau.serg.websocketbrokerdemo.AppViewModel
 import at.aau.serg.websocketbrokerdemo.models.City
+import at.aau.serg.websocketbrokerdemo.models.GameOverMessage
+import at.aau.serg.websocketbrokerdemo.models.GoalReachedMessage
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import kotlin.math.abs
@@ -80,9 +82,13 @@ fun GameScreen(viewModel: AppViewModel) {
     val playerCurrentCities by viewModel.playerCurrentCities.collectAsState()
     val validMoveIds by viewModel.validMoveIds.collectAsState()
     val remainingSteps by viewModel.remainingSteps.collectAsState()
+    val isGameOver by viewModel.isGameOver.collectAsState()
+    val goalReachedMessage by viewModel.goalReachedMessage.collectAsState()
+    val gameOverMessage by viewModel.gameOverMessage.collectAsState()
     val isMyTurn = currentTurnPlayerId == currentPlayerName
-    val canRoll = isMyTurn && diceValue == null
-    val canEndTurn = isMyTurn && diceValue != null
+    val effectiveIsMyTurn = isMyTurn && !isGameOver
+    val canRoll = effectiveIsMyTurn && diceValue == null
+    val canEndTurn = effectiveIsMyTurn && diceValue != null
 
 
 
@@ -131,6 +137,19 @@ fun GameScreen(viewModel: AppViewModel) {
         }
     }
 
+    // Goal-Reached fade-out nach 4 Sekunden
+    var showGoalReachedOverlay by remember { mutableStateOf(false) }
+    val goalReachedAlpha = remember { Animatable(0f) }
+    LaunchedEffect(goalReachedMessage) {
+        if (goalReachedMessage != null) {
+            showGoalReachedOverlay = true
+            goalReachedAlpha.snapTo(1f)
+            delay(3000)
+            goalReachedAlpha.animateTo(0f, animationSpec = tween(1000))
+            showGoalReachedOverlay = false
+        }
+    }
+
     // Box (Schichten-Design)
     Box(
         modifier = Modifier
@@ -149,7 +168,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 playerCurrentCities = playerCurrentCities,
                 rawAvatars = rawAvatars,
                 validMoveIds = validMoveIds,
-                isMyTurn = isMyTurn,
+                isMyTurn = effectiveIsMyTurn,
                 myPlayerId = currentPlayerName,
                 onCityClick = { cityId -> viewModel.onMoveToCity(cityId) }
             )
@@ -228,6 +247,65 @@ fun GameScreen(viewModel: AppViewModel) {
                     .background(Color(0x88000000), RoundedCornerShape(8.dp))
                     .padding(horizontal = 16.dp, vertical = 6.dp)
             )
+        }
+
+        // Goal-Reached Popup – für alle sichtbar, verschwindet nach 4s
+        if (showGoalReachedOverlay && goalReachedMessage != null) {
+            val msg = goalReachedMessage!!
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .alpha(goalReachedAlpha.value)
+                    .background(Color(0xCC000000), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 32.dp, vertical = 20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "${msg.playerName} hat ${msg.cityName} erreicht!",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFD4AF37)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "(${msg.reached}/${msg.total})",
+                        fontSize = 16.sp,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+
+        // Game-Over Popup – provisorisch, persistent, kein Schließen-Button
+        if (isGameOver) {
+            val winnerName = gameOverMessage?.results?.maxByOrNull { it.score }?.playerName
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .zIndex(10f)
+                    .background(Color(0xCC000000), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 40.dp, vertical = 28.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (winnerName != null) {
+                        Text(
+                            text = "$winnerName hat gewonnen!",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD4AF37)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    Text(
+                        text = "Spiel beendet!",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
         }
 
         //Actionbuttons

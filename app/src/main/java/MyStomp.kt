@@ -52,6 +52,25 @@ class MyStomp(val callbacks: Callbacks) {
                         callback(o.get("text").toString())
                     }
                 }
+
+                val goalReachedFlow = activeSession.subscribeText("/topic/goal-reached")
+                scope.launch {
+                    goalReachedFlow.collect { msg ->
+                        Log.d("MyStomp", "GOAL-REACHED received: $msg")
+                        callbackGoalReached(msg)
+                    }
+                }
+                Log.d("MyStomp", "Subscribed to /topic/goal-reached")
+
+                val gameOverFlow = activeSession.subscribeText("/topic/game-over")
+                scope.launch {
+                    gameOverFlow.collect { msg ->
+                        Log.d("MyStomp", "GAME-OVER received: $msg")
+                        callbackGameOver(msg)
+                    }
+                }
+                Log.d("MyStomp", "Subscribed to /topic/game-over")
+
                 callback("connected")
 
             } catch (e: Exception) {
@@ -64,6 +83,18 @@ class MyStomp(val callbacks: Callbacks) {
     private fun callback(msg: String) {
         Handler(Looper.getMainLooper()).post {
             callbacks.onResponse(msg)
+        }
+    }
+
+    private fun callbackGoalReached(msg: String) {
+        Handler(Looper.getMainLooper()).post {
+            callbacks.onGoalReached(msg)
+        }
+    }
+
+    private fun callbackGameOver(msg: String) {
+        Handler(Looper.getMainLooper()).post {
+            callbacks.onGameOver(msg)
         }
     }
 
