@@ -113,18 +113,18 @@ fun HostScreen(viewModel: AppViewModel) {
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         TourButton(
                             text = "City Hopper\n(6)",
-                            isSelected = selectedTour == "City Hopper",
-                            onClick = { viewModel.setGameMode("City Hopper") }
+                            isSelected = selectedTour == "CITY_HOPPER",
+                            onClick = { viewModel.setGameMode("CITY_HOPPER") }
                         )
                         TourButton(
                             text = "Grand Tour\n(9)",
-                            isSelected = selectedTour == "Grand Tour",
-                            onClick = { viewModel.setGameMode("Grand Tour") }
+                            isSelected = selectedTour == "GRAND_TOUR",
+                            onClick = { viewModel.setGameMode("GRAND_TOUR") }
                         )
                         TourButton(
                             text = "Epic Voyage\n(12)",
-                            isSelected = selectedTour == "Epic Voyage",
-                            onClick = { viewModel.setGameMode("Epic Voyage") }
+                            isSelected = selectedTour == "EPIC_VOYAGE",
+                            onClick = { viewModel.setGameMode("EPIC_VOYAGE") }
                         )
                     }
 

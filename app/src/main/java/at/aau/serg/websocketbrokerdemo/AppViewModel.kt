@@ -108,6 +108,10 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
 
     fun setGameMode(mode: String) {
         _gameMode.value = mode
+
+        if(_isHost.value && _lobbyId.value.isNotBlank()){
+            stomp.updateGameMode(_lobbyId.value, _playerName.value, mode)
+        }
     }
 
     init {
@@ -207,6 +211,10 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                 // Erfolgreiche Response
                 if (rootJson.has("state") && !rootJson.isNull("state")) {
                     val stateJson = rootJson.getJSONObject("state")
+
+                    if(stateJson.has("gameMode") && !stateJson.isNull("gameMode")){
+                        _gameMode.value = stateJson.getString("gameMode")
+                    }
 
                     // Spielerliste und Städte aktualisieren
                     if (stateJson.has("players")) {

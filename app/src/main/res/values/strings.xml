@@ -26,4 +26,6 @@
 
     <string name="rule_end_title">🏁 End of the Game</string>
     <string name="rule_end_content">After completing all destinations, return to your starting city. The first player to do so wins.</string>
+
+    <string name="back_button_description">Back to start screen</string>
 </resources>
