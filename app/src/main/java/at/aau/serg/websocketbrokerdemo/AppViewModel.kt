@@ -192,6 +192,21 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         stomp.moveToCity(_lobbyId.value, _playerName.value, targetCityId)
     }
 
+    fun playAgain() {
+        _isGameOver.value = false
+        _gameOverMessage.value = null
+        _goalReachedMessage.value = null
+        _ownedCities.value = emptyList()
+        _startCity.value = null
+        _playerCityCounts.value = emptyMap()
+        _playerCurrentCities.value = emptyMap()
+        _diceValue.value = null
+        _currentTurnPlayerId.value = null
+        _validMoveIds.value = emptyList()
+        _remainingSteps.value = null
+        stomp.resetLobby(_lobbyId.value, _playerName.value)
+    }
+
     fun leaveLobby() {
         val currentLobbyId = _lobbyId.value
         val currentPlayerName = _playerName.value
@@ -346,6 +361,10 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                             _playersList.value = emptyList()
                             _isHost.value = false
                             navigateTo("login")
+                        }
+                        commandType == "RESET_LOBBY" -> {
+                            if (_isHost.value) navigateTo("host")
+                            else navigateTo("waiting")
                         }
                         phase != "LOBBY" -> {
                             navigateTo("game")

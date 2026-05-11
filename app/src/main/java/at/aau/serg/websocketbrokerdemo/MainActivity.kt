@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
                         GameOverScreen(
                             currentPlayerName = playerName,
                             results = gameOverMessage?.results ?: emptyList(),
-                            onPlayAgainClick = { /* Schritt 4 */ },
+                            onPlayAgainClick = { viewModel.playAgain() },
                             onLeaveClick = { viewModel.leaveLobby() }
                         )
                     }

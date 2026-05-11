@@ -212,6 +212,20 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
+    fun resetLobby(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val command = JSONObject()
+                command.put("type", "RESET_LOBBY")
+                command.put("playerId", playerId)
+                session?.sendText("/app/lobby/$lobbyId/command", command.toString())
+                Log.i("MyStomp", "RESET_LOBBY sent for lobby: $lobbyId by: $playerId")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Reset der Lobby", e)
+            }
+        }
+    }
+
     fun leaveLobby(lobbyId: String, playerId: String) {
         scope.launch {
             try {
