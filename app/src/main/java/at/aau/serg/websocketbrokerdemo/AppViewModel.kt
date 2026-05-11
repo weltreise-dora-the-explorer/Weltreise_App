@@ -205,6 +205,14 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         _goalReachedMessage.value = null
         _gameOverMessage.value = null
         _playerStartCityNames.value = emptyMap()
+        _ownedCities.value = emptyList()
+        _startCity.value = null
+        _playerCityCounts.value = emptyMap()
+        _playerCurrentCities.value = emptyMap()
+        _diceValue.value = null
+        _currentTurnPlayerId.value = null
+        _validMoveIds.value = emptyList()
+        _remainingSteps.value = null
         navigateTo("login")
     }
 
