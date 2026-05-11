@@ -387,6 +387,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                 ))
             }
             _gameOverMessage.value = GameOverMessage(results)
+            navigateTo("gameover")
         } catch (e: Exception) {
             Log.e("AppViewModel", "Failed to parse game-over", e)
         }
