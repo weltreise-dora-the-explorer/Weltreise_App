@@ -53,8 +53,6 @@ import androidx.core.graphics.scale
 import androidx.core.graphics.withSave
 import at.aau.serg.websocketbrokerdemo.AppViewModel
 import at.aau.serg.websocketbrokerdemo.models.City
-import at.aau.serg.websocketbrokerdemo.models.GameOverMessage
-import at.aau.serg.websocketbrokerdemo.models.GoalReachedMessage
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import kotlin.math.abs
@@ -431,7 +429,7 @@ fun ZoomableMap(
     myPlayerId: String = "",
     onCityClick: (cityId: String) -> Unit = {}
 ) {
-    val showValidMoves = validMoveIds.isNotEmpty()
+    val showValidMoves = validMoveIds.isNotEmpty() && isMyTurn
     val validMoveIdSet = remember(validMoveIds) { validMoveIds.toHashSet() }
     val ownedCityIdSet = remember(ownedCities) { ownedCities.map { it.id }.toHashSet() }
 
