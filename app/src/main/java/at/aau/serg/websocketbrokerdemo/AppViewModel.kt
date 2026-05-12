@@ -181,10 +181,9 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
     }
 
     fun onEndTurn() {
-        val dice = _diceValue.value ?: return
         _validMoveIds.value = emptyList()
         _remainingSteps.value = null
-        stomp.endTurn(_lobbyId.value, _playerName.value, dice)
+        stomp.endTurn(_lobbyId.value, _playerName.value)
     }
 
     fun onMoveToCity(targetCityId: String) {

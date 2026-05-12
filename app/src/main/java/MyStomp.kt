@@ -252,13 +252,12 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
-    fun endTurn(lobbyId: String, playerId: String, diceValue: Int) {
+    fun endTurn(lobbyId: String, playerId: String) {
         scope.launch {
             try {
                 val command = JSONObject()
-                command.put("type", "MOVE_TOKEN")
+                command.put("type", "END_TURN")
                 command.put("playerId", playerId)
-                command.put("moveSteps", diceValue)
                 session?.sendText("/app/lobby/$lobbyId/command", command.toString())
             } catch (e: Exception) {
                 Log.e("MyStomp", "Fehler beim Zug beenden", e)
