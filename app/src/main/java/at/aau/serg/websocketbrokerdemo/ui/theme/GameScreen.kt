@@ -318,6 +318,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 text = "ROLL DICE",
                 imageBitmap = diceBitmap,
                 enabled = canRoll,
+                blinkBorder = canRoll,
                 onClick = { viewModel.onRollDice() }
             )
 
@@ -909,11 +910,25 @@ fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActiv
 }
 
 @Composable
-fun GameButton(text: String, imageBitmap: ImageBitmap?, onClick: () -> Unit, enabled: Boolean = true) {
+fun GameButton(text: String, imageBitmap: ImageBitmap?, onClick: () -> Unit, enabled: Boolean = true, blinkBorder: Boolean = false) {
     val bgColor = if (enabled) Color.White.copy(alpha = 0.8f) else Color.Gray.copy(alpha = 0.4f)
+    val infiniteTransition = rememberInfiniteTransition(label = "rollDiceBorder")
+    val borderAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "borderAlpha"
+    )
+    val borderModifier = if (blinkBorder)
+        Modifier.border(4.dp, Color(0xFFFFD700).copy(alpha = borderAlpha), RoundedCornerShape(16.dp))
+    else Modifier
     Box(
         modifier = Modifier
             .size(120.dp)
+            .then(borderModifier)
             .background(bgColor, RoundedCornerShape(16.dp))
             .then(if (enabled) Modifier.clickable { onClick() } else Modifier)
             .padding(12.dp),
