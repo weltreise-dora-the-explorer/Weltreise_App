@@ -339,12 +339,16 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
 
                     // Würfelergebnis und aktueller Spieler (dein bestehender Code)
                     _diceValue.value = if (stateJson.isNull("lastDiceValue")) null else stateJson.optInt("lastDiceValue")
-                    _currentTurnPlayerId.value = stateJson.optString("currentPlayerId").ifEmpty { null }
+                    val newCurrentPlayerId = stateJson.optString("currentPlayerId").ifEmpty { null }
+                    val isTurnChange = newCurrentPlayerId != _currentTurnPlayerId.value
+                    _currentTurnPlayerId.value = newCurrentPlayerId
 
                     val validIds = mutableListOf<String>()
-                    val validArray = stateJson.optJSONArray("validMoveIds")
-                    if (validArray != null) {
-                        for (i in 0 until validArray.length()) validIds.add(validArray.getString(i))
+                    if (!isTurnChange && newCurrentPlayerId == _playerName.value) {
+                        val validArray = stateJson.optJSONArray("validMoveIds")
+                        if (validArray != null) {
+                            for (i in 0 until validArray.length()) validIds.add(validArray.getString(i))
+                        }
                     }
                     _validMoveIds.value = validIds
 
@@ -388,7 +392,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
 
     override fun onGoalReached(res: String) {
         try {
-            val json = org.json.JSONObject(res)
+            val json = JSONObject(res)
             _goalReachedMessage.value = GoalReachedMessage(
                 playerName = json.optString("playerName"),
                 cityName = json.optString("cityName"),
@@ -403,7 +407,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
     override fun onGameOver(res: String) {
         _isGameOver.value = true
         try {
-            val json = org.json.JSONObject(res)
+            val json = JSONObject(res)
             val array = json.getJSONArray("results")
             val results = mutableListOf<GameOverMessage.PlayerResult>()
             for (i in 0 until array.length()) {
