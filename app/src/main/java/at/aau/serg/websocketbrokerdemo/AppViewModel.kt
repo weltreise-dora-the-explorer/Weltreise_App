@@ -408,7 +408,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         _isGameOver.value = true
         try {
             val json = JSONObject(res)
-            val array = json.getJSONArray("results")
+            val array = json.getJSONArray("scores")
             val results = mutableListOf<GameOverMessage.PlayerResult>()
             for (i in 0 until array.length()) {
                 val item = array.getJSONObject(i)
