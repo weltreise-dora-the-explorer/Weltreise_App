@@ -823,6 +823,18 @@ class AppViewModelTest {
         assertNull(viewModel.gameOverMessage.value)
     }
 
+    @Test
+    fun `onResponse does not navigate to game when game is already over`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onGameOver("""{"scores":[{"playerName":"Alice","score":5}]}""")
+
+        val response = """{"success":true,"commandType":"MOVE_TO_CITY","state":{"players":[{"playerId":"Alice"}],"phase":"IN_TURN"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("gameover", viewModel.currentScreen.value)
+    }
+
     // ========== PLAY AGAIN TESTS ==========
 
     @Test

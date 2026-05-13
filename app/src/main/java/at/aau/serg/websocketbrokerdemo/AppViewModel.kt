@@ -370,7 +370,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                             if (_isHost.value) navigateTo("host")
                             else navigateTo("waiting")
                         }
-                        phase != "LOBBY" -> {
+                        phase != "LOBBY" && !_isGameOver.value -> {
                             navigateTo("game")
                         }
                         commandType == "CREATE_LOBBY" -> {
