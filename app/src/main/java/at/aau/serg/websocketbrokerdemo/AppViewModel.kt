@@ -181,6 +181,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
     }
 
     fun onEndTurn() {
+        if (_diceValue.value == null) return
         _validMoveIds.value = emptyList()
         _remainingSteps.value = null
         stomp.endTurn(_lobbyId.value, _playerName.value)
