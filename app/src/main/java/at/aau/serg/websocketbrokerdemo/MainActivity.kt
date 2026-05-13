@@ -8,6 +8,7 @@ import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import at.aau.serg.websocketbrokerdemo.ui.theme.GameOverScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.GameScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.HostScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.LobbyScreen
@@ -22,7 +23,7 @@ class MainActivity : ComponentActivity() {
         super.onStop()
         if (!isChangingConfigurations) {
             val screen = viewModel.currentScreen.value
-            if (screen == "host" || screen == "waiting") {
+            if (screen == "host" || screen == "waiting" || screen == "gameover") {
                 viewModel.leaveLobby()
             }
         }
@@ -60,6 +61,16 @@ class MainActivity : ComponentActivity() {
                     }
                     "game" -> {
                         GameScreen(viewModel)
+                    }
+                    "gameover" -> {
+                        val gameOverMessage by viewModel.gameOverMessage.collectAsState()
+                        val playerName by viewModel.playerName.collectAsState()
+                        GameOverScreen(
+                            currentPlayerName = playerName,
+                            results = gameOverMessage?.results ?: emptyList(),
+                            onPlayAgainClick = { viewModel.playAgain() },
+                            onLeaveClick = { viewModel.leaveLobby() }
+                        )
                     }
                 }
             }

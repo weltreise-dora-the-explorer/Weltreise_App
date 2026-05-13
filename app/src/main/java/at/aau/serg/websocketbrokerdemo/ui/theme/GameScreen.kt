@@ -80,9 +80,13 @@ fun GameScreen(viewModel: AppViewModel) {
     val playerCurrentCities by viewModel.playerCurrentCities.collectAsState()
     val validMoveIds by viewModel.validMoveIds.collectAsState()
     val remainingSteps by viewModel.remainingSteps.collectAsState()
+    val isGameOver by viewModel.isGameOver.collectAsState()
+    val goalReachedMessage by viewModel.goalReachedMessage.collectAsState()
+    val gameOverMessage by viewModel.gameOverMessage.collectAsState()
     val isMyTurn = currentTurnPlayerId == currentPlayerName
-    val canRoll = isMyTurn && diceValue == null
-    val canEndTurn = isMyTurn && diceValue != null
+    val effectiveIsMyTurn = isMyTurn && !isGameOver
+    val canRoll = effectiveIsMyTurn && diceValue == null
+    val canEndTurn = effectiveIsMyTurn && diceValue != null
 
 
 
@@ -131,6 +135,19 @@ fun GameScreen(viewModel: AppViewModel) {
         }
     }
 
+    // Goal-Reached fade-out nach 4 Sekunden
+    var showGoalReachedOverlay by remember { mutableStateOf(false) }
+    val goalReachedAlpha = remember { Animatable(0f) }
+    LaunchedEffect(goalReachedMessage) {
+        if (goalReachedMessage != null) {
+            showGoalReachedOverlay = true
+            goalReachedAlpha.snapTo(1f)
+            delay(3000)
+            goalReachedAlpha.animateTo(0f, animationSpec = tween(1000))
+            showGoalReachedOverlay = false
+        }
+    }
+
     // Box (Schichten-Design)
     Box(
         modifier = Modifier
@@ -149,7 +166,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 playerCurrentCities = playerCurrentCities,
                 rawAvatars = rawAvatars,
                 validMoveIds = validMoveIds,
-                isMyTurn = isMyTurn,
+                isMyTurn = effectiveIsMyTurn,
                 myPlayerId = currentPlayerName,
                 onCityClick = { cityId -> viewModel.onMoveToCity(cityId) }
             )
@@ -230,6 +247,65 @@ fun GameScreen(viewModel: AppViewModel) {
             )
         }
 
+        // Goal-Reached Popup – für alle sichtbar, verschwindet nach 4s
+        if (showGoalReachedOverlay && goalReachedMessage != null) {
+            val msg = goalReachedMessage!!
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .alpha(goalReachedAlpha.value)
+                    .background(Color(0xCC000000), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 32.dp, vertical = 20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "${msg.playerName} hat ${msg.cityName} erreicht!",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFD4AF37)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "(${msg.reached}/${msg.total})",
+                        fontSize = 16.sp,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+
+        // Game-Over Popup – provisorisch, persistent, kein Schließen-Button
+        if (isGameOver) {
+            val winnerName = gameOverMessage?.results?.maxByOrNull { it.score }?.playerName
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .zIndex(10f)
+                    .background(Color(0xCC000000), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 40.dp, vertical = 28.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (winnerName != null) {
+                        Text(
+                            text = "$winnerName hat gewonnen!",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD4AF37)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    Text(
+                        text = "Spiel beendet!",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+
         //Actionbuttons
         Column(
             modifier = Modifier
@@ -242,6 +318,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 text = "ROLL DICE",
                 imageBitmap = diceBitmap,
                 enabled = canRoll,
+                blinkBorder = canRoll,
                 onClick = { viewModel.onRollDice() }
             )
 
@@ -353,7 +430,7 @@ fun ZoomableMap(
     myPlayerId: String = "",
     onCityClick: (cityId: String) -> Unit = {}
 ) {
-    val showValidMoves = validMoveIds.isNotEmpty()
+    val showValidMoves = validMoveIds.isNotEmpty() && isMyTurn
     val validMoveIdSet = remember(validMoveIds) { validMoveIds.toHashSet() }
     val ownedCityIdSet = remember(ownedCities) { ownedCities.map { it.id }.toHashSet() }
 
@@ -833,11 +910,25 @@ fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActiv
 }
 
 @Composable
-fun GameButton(text: String, imageBitmap: ImageBitmap?, onClick: () -> Unit, enabled: Boolean = true) {
+fun GameButton(text: String, imageBitmap: ImageBitmap?, onClick: () -> Unit, enabled: Boolean = true, blinkBorder: Boolean = false) {
     val bgColor = if (enabled) Color.White.copy(alpha = 0.8f) else Color.Gray.copy(alpha = 0.4f)
+    val infiniteTransition = rememberInfiniteTransition(label = "rollDiceBorder")
+    val borderAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "borderAlpha"
+    )
+    val borderModifier = if (blinkBorder)
+        Modifier.border(4.dp, Color(0xFFFFD700).copy(alpha = borderAlpha), RoundedCornerShape(16.dp))
+    else Modifier
     Box(
         modifier = Modifier
             .size(120.dp)
+            .then(borderModifier)
             .background(bgColor, RoundedCornerShape(16.dp))
             .then(if (enabled) Modifier.clickable { onClick() } else Modifier)
             .padding(12.dp),

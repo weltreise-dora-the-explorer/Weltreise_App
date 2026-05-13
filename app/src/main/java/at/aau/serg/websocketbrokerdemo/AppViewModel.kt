@@ -6,6 +6,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import at.aau.serg.websocketbrokerdemo.models.City
 import at.aau.serg.websocketbrokerdemo.models.Continent
+import at.aau.serg.websocketbrokerdemo.models.GameOverMessage
+import at.aau.serg.websocketbrokerdemo.models.GoalReachedMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,6 +67,18 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
 
     private val _remainingSteps = MutableStateFlow<Int?>(null)
     val remainingSteps: StateFlow<Int?> = _remainingSteps.asStateFlow()
+
+    private val _playerStartCityNames = MutableStateFlow<Map<String, String>>(emptyMap())
+    val playerStartCityNames: StateFlow<Map<String, String>> = _playerStartCityNames.asStateFlow()
+
+    private val _goalReachedMessage = MutableStateFlow<GoalReachedMessage?>(null)
+    val goalReachedMessage: StateFlow<GoalReachedMessage?> = _goalReachedMessage.asStateFlow()
+
+    private val _gameOverMessage = MutableStateFlow<GameOverMessage?>(null)
+    val gameOverMessage: StateFlow<GameOverMessage?> = _gameOverMessage.asStateFlow()
+
+    private val _isGameOver = MutableStateFlow(false)
+    val isGameOver: StateFlow<Boolean> = _isGameOver.asStateFlow()
 
     fun loadAllCities(context: Context) {
         try {
@@ -167,15 +181,30 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
     }
 
     fun onEndTurn() {
-        val dice = _diceValue.value ?: return
+        if (_diceValue.value == null) return
         _validMoveIds.value = emptyList()
         _remainingSteps.value = null
-        stomp.endTurn(_lobbyId.value, _playerName.value, dice)
+        stomp.endTurn(_lobbyId.value, _playerName.value)
     }
 
     fun onMoveToCity(targetCityId: String) {
         Log.d("CityTap", "onMoveToCity: lobbyId='${_lobbyId.value}' player='${_playerName.value}' target='$targetCityId'")
         stomp.moveToCity(_lobbyId.value, _playerName.value, targetCityId)
+    }
+
+    fun playAgain() {
+        _isGameOver.value = false
+        _gameOverMessage.value = null
+        _goalReachedMessage.value = null
+        _ownedCities.value = emptyList()
+        _startCity.value = null
+        _playerCityCounts.value = emptyMap()
+        _playerCurrentCities.value = emptyMap()
+        _diceValue.value = null
+        _currentTurnPlayerId.value = null
+        _validMoveIds.value = emptyList()
+        _remainingSteps.value = null
+        stomp.resetLobby(_lobbyId.value, _playerName.value)
     }
 
     fun leaveLobby() {
@@ -187,6 +216,18 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         _lobbyId.value = ""
         _playersList.value = emptyList()
         _isHost.value = false
+        _isGameOver.value = false
+        _goalReachedMessage.value = null
+        _gameOverMessage.value = null
+        _playerStartCityNames.value = emptyMap()
+        _ownedCities.value = emptyList()
+        _startCity.value = null
+        _playerCityCounts.value = emptyMap()
+        _playerCurrentCities.value = emptyMap()
+        _diceValue.value = null
+        _currentTurnPlayerId.value = null
+        _validMoveIds.value = emptyList()
+        _remainingSteps.value = null
         navigateTo("login")
     }
 
@@ -222,6 +263,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                         val newList = mutableListOf<String>()
                         val cityCountsMap = mutableMapOf<String, Int>()
                         val currentCitiesMap = mutableMapOf<String, City?>()
+                        val startCityNamesMap = _playerStartCityNames.value.toMutableMap()
 
                         for (i in 0 until playersArray.length()) {
                             val playerObj = playersArray.getJSONObject(i)
@@ -241,6 +283,12 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                                 )
                             } else {
                                 currentCitiesMap[pId] = null
+                            }
+
+                            // Startstadt für alle Spieler merken (wird für "letzte Stadt"-Meldung gebraucht)
+                            if (playerObj.has("startCity") && !playerObj.isNull("startCity")) {
+                                val scName = playerObj.getJSONObject("startCity").optString("name", "")
+                                if (scName.isNotBlank()) startCityNamesMap[pId] = scName
                             }
 
                             if (playerObj.has("ownedCities")) {
@@ -283,6 +331,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                                 }
                             }
                         }
+                        _playerStartCityNames.value = startCityNamesMap
                         _playersList.value = newList
                         _playerCityCounts.value = cityCountsMap
                         _playerCurrentCities.value = currentCitiesMap
@@ -290,12 +339,16 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
 
                     // Würfelergebnis und aktueller Spieler (dein bestehender Code)
                     _diceValue.value = if (stateJson.isNull("lastDiceValue")) null else stateJson.optInt("lastDiceValue")
-                    _currentTurnPlayerId.value = stateJson.optString("currentPlayerId").ifEmpty { null }
+                    val newCurrentPlayerId = stateJson.optString("currentPlayerId").ifEmpty { null }
+                    val isTurnChange = newCurrentPlayerId != _currentTurnPlayerId.value
+                    _currentTurnPlayerId.value = newCurrentPlayerId
 
                     val validIds = mutableListOf<String>()
-                    val validArray = stateJson.optJSONArray("validMoveIds")
-                    if (validArray != null) {
-                        for (i in 0 until validArray.length()) validIds.add(validArray.getString(i))
+                    if (!isTurnChange && newCurrentPlayerId == _playerName.value) {
+                        val validArray = stateJson.optJSONArray("validMoveIds")
+                        if (validArray != null) {
+                            for (i in 0 until validArray.length()) validIds.add(validArray.getString(i))
+                        }
                     }
                     _validMoveIds.value = validIds
 
@@ -313,7 +366,11 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                             _isHost.value = false
                             navigateTo("login")
                         }
-                        phase != "LOBBY" -> {
+                        commandType == "RESET_LOBBY" -> {
+                            if (_isHost.value) navigateTo("host")
+                            else navigateTo("waiting")
+                        }
+                        phase != "LOBBY" && !_isGameOver.value -> {
                             navigateTo("game")
                         }
                         commandType == "CREATE_LOBBY" -> {
@@ -330,6 +387,40 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         } catch (e: Exception) {
             Log.e("AppViewModel", "Failed to parse JSON", e)
             _errorMessage.value = "Fehler bei Server-Kommunikation"
+        }
+    }
+
+    override fun onGoalReached(res: String) {
+        try {
+            val json = JSONObject(res)
+            _goalReachedMessage.value = GoalReachedMessage(
+                playerName = json.optString("playerName"),
+                cityName = json.optString("cityName"),
+                reached = json.optInt("reached"),
+                total = json.optInt("total")
+            )
+        } catch (e: Exception) {
+            Log.e("AppViewModel", "Failed to parse goal-reached", e)
+        }
+    }
+
+    override fun onGameOver(res: String) {
+        _isGameOver.value = true
+        try {
+            val json = JSONObject(res)
+            val array = json.getJSONArray("scores")
+            val results = mutableListOf<GameOverMessage.PlayerResult>()
+            for (i in 0 until array.length()) {
+                val item = array.getJSONObject(i)
+                results.add(GameOverMessage.PlayerResult(
+                    playerName = item.optString("playerName"),
+                    score = item.optInt("score")
+                ))
+            }
+            _gameOverMessage.value = GameOverMessage(results)
+            navigateTo("gameover")
+        } catch (e: Exception) {
+            Log.e("AppViewModel", "Failed to parse game-over", e)
         }
     }
 }

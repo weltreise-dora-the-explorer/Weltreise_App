@@ -52,6 +52,25 @@ class MyStomp(val callbacks: Callbacks) {
                         callback(o.get("text").toString())
                     }
                 }
+
+                val goalReachedFlow = activeSession.subscribeText("/topic/goal-reached")
+                scope.launch {
+                    goalReachedFlow.collect { msg ->
+                        Log.d("MyStomp", "GOAL-REACHED received: $msg")
+                        callbackGoalReached(msg)
+                    }
+                }
+                Log.d("MyStomp", "Subscribed to /topic/goal-reached")
+
+                val gameOverFlow = activeSession.subscribeText("/topic/game-over")
+                scope.launch {
+                    gameOverFlow.collect { msg ->
+                        Log.d("MyStomp", "GAME-OVER received: $msg")
+                        callbackGameOver(msg)
+                    }
+                }
+                Log.d("MyStomp", "Subscribed to /topic/game-over")
+
                 callback("connected")
 
             } catch (e: Exception) {
@@ -64,6 +83,18 @@ class MyStomp(val callbacks: Callbacks) {
     private fun callback(msg: String) {
         Handler(Looper.getMainLooper()).post {
             callbacks.onResponse(msg)
+        }
+    }
+
+    private fun callbackGoalReached(msg: String) {
+        Handler(Looper.getMainLooper()).post {
+            callbacks.onGoalReached(msg)
+        }
+    }
+
+    private fun callbackGameOver(msg: String) {
+        Handler(Looper.getMainLooper()).post {
+            callbacks.onGameOver(msg)
         }
     }
 
@@ -181,6 +212,20 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
+    fun resetLobby(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val command = JSONObject()
+                command.put("type", "RESET_LOBBY")
+                command.put("playerId", playerId)
+                session?.sendText("/app/lobby/$lobbyId/command", command.toString())
+                Log.i("MyStomp", "RESET_LOBBY sent for lobby: $lobbyId by: $playerId")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Reset der Lobby", e)
+            }
+        }
+    }
+
     fun leaveLobby(lobbyId: String, playerId: String) {
         scope.launch {
             try {
@@ -207,13 +252,12 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
-    fun endTurn(lobbyId: String, playerId: String, diceValue: Int) {
+    fun endTurn(lobbyId: String, playerId: String) {
         scope.launch {
             try {
                 val command = JSONObject()
-                command.put("type", "MOVE_TOKEN")
+                command.put("type", "END_TURN")
                 command.put("playerId", playerId)
-                command.put("moveSteps", diceValue)
                 session?.sendText("/app/lobby/$lobbyId/command", command.toString())
             } catch (e: Exception) {
                 Log.e("MyStomp", "Fehler beim Zug beenden", e)
