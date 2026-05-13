@@ -1,7 +1,6 @@
 package at.aau.serg.websocketbrokerdemo
 
 import MyStomp
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
@@ -549,7 +548,7 @@ class AppViewModelTest {
 
         viewModel.onEndTurn()
 
-        verify { mockStomp.endTurn(lobbyId, "Alice", 4) }
+        verify { mockStomp.endTurn(lobbyId, "Alice") }
     }
 
     @Test
@@ -559,7 +558,7 @@ class AppViewModelTest {
 
         viewModel.onEndTurn()
 
-        verify(exactly = 0) { mockStomp.endTurn(any(), any(), any()) }
+        verify(exactly = 0) { mockStomp.endTurn(any(), any()) }
     }
 
     @Test
