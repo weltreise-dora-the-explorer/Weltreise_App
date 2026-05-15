@@ -469,6 +469,12 @@ open class AppViewModel(
                             if (_isHost.value) navigateTo("host")
                             else navigateTo("waiting")
                         }
+                        commandType == "LEAVE_LOBBY" && phase == "LOBBY" && _currentScreen.value == "game" -> {
+                            // Spiel wurde abgebrochen weil nur 1 Spieler uebrig ist
+                            // -> zurueck zur Lobby (Host- oder Wartezimmer)
+                            if (_isHost.value) navigateTo("host")
+                            else navigateTo("waiting")
+                        }
                         phase != "LOBBY" && !_isGameOver.value -> {
                             navigateTo("game")
                         }
