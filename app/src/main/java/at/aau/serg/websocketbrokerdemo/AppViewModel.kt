@@ -8,14 +8,24 @@ import at.aau.serg.websocketbrokerdemo.models.City
 import at.aau.serg.websocketbrokerdemo.models.Continent
 import at.aau.serg.websocketbrokerdemo.models.GameOverMessage
 import at.aau.serg.websocketbrokerdemo.models.GoalReachedMessage
+import at.aau.serg.websocketbrokerdemo.preferences.PreferencesHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONArray
 import org.json.JSONObject
 
-open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks {
+open class AppViewModel(
+    stompInstance: MyStomp? = null,
+    private val prefs: PreferencesHelper? = null
+) : ViewModel(), Callbacks {
     open val stomp: MyStomp = stompInstance ?: MyStomp(this)
+
+    /**
+     * Persistente clientId fuer dieses Geraet (UUID).
+     * Wird nur erzeugt wenn PreferencesHelper vorhanden ist (in Tests = leer).
+     */
+    val clientId: String by lazy { prefs?.getOrCreateClientId() ?: "" }
 
     private val _currentScreen = MutableStateFlow("login")
     val currentScreen: StateFlow<String> = _currentScreen.asStateFlow()
@@ -152,6 +162,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         _isHost.value = false
         _isLoading.value = true
         _errorMessage.value = null
+        prefs?.setLobbyId(pin)
         stomp.joinMultiplayerLobby(pin, _playerName.value)
         // Navigation passiert jetzt in onResponse() nach Server-Bestätigung
     }
@@ -163,6 +174,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         _isHost.value = true
         _isLoading.value = true
         _errorMessage.value = null
+        prefs?.setLobbyId(randomPin)
         stomp.createMultiplayerLobby(randomPin, name)
         // Navigation passiert jetzt in onResponse() nach Server-Bestätigung
     }
@@ -213,6 +225,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         if (currentLobbyId.isNotBlank() && currentPlayerName.isNotBlank()) {
             stomp.leaveLobby(currentLobbyId, currentPlayerName)
         }
+        prefs?.clearLobbyId()
         _lobbyId.value = ""
         _playersList.value = emptyList()
         _isHost.value = false

@@ -8,6 +8,9 @@ import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import at.aau.serg.websocketbrokerdemo.preferences.PreferencesHelper
 import at.aau.serg.websocketbrokerdemo.ui.theme.GameOverScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.GameScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.HostScreen
@@ -16,8 +19,15 @@ import at.aau.serg.websocketbrokerdemo.ui.theme.LoginScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.WaitingScreen
 
 class MainActivity : ComponentActivity() {
-    
-    private val viewModel: AppViewModel by viewModels()
+
+    private val viewModel: AppViewModel by viewModels {
+        object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return AppViewModel(prefs = PreferencesHelper(applicationContext)) as T
+            }
+        }
+    }
 
     override fun onStop() {
         super.onStop()
