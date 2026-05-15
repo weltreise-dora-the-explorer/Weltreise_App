@@ -4,14 +4,18 @@ import MyStomp
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import at.aau.serg.websocketbrokerdemo.models.City
 import at.aau.serg.websocketbrokerdemo.models.Continent
 import at.aau.serg.websocketbrokerdemo.models.GameOverMessage
 import at.aau.serg.websocketbrokerdemo.models.GoalReachedMessage
 import at.aau.serg.websocketbrokerdemo.preferences.PreferencesHelper
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -90,6 +94,19 @@ open class AppViewModel(
     private val _isGameOver = MutableStateFlow(false)
     val isGameOver: StateFlow<Boolean> = _isGameOver.asStateFlow()
 
+    // === Reconnect Recovery State ===
+    private val _isReconnecting = MutableStateFlow(false)
+    val isReconnecting: StateFlow<Boolean> = _isReconnecting.asStateFlow()
+
+    private val _disconnectedPlayers = MutableStateFlow<Set<String>>(emptySet())
+    val disconnectedPlayers: StateFlow<Set<String>> = _disconnectedPlayers.asStateFlow()
+
+    private val _secondsUntilRemoval = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val secondsUntilRemoval: StateFlow<Map<String, Int>> = _secondsUntilRemoval.asStateFlow()
+
+    private val countdownJobs = mutableMapOf<String, Job>()
+    private val gracePeriodSeconds: Int = 60
+
     fun loadAllCities(context: Context) {
         try {
             val json = context.assets.open("cities.json").bufferedReader().readText()
@@ -163,7 +180,7 @@ open class AppViewModel(
         _isLoading.value = true
         _errorMessage.value = null
         prefs?.setLobbyId(pin)
-        stomp.joinMultiplayerLobby(pin, _playerName.value)
+        stomp.joinMultiplayerLobby(pin, _playerName.value, clientId.takeIf { it.isNotBlank() })
         // Navigation passiert jetzt in onResponse() nach Server-Bestätigung
     }
 
@@ -175,7 +192,7 @@ open class AppViewModel(
         _isLoading.value = true
         _errorMessage.value = null
         prefs?.setLobbyId(randomPin)
-        stomp.createMultiplayerLobby(randomPin, name)
+        stomp.createMultiplayerLobby(randomPin, name, clientId.takeIf { it.isNotBlank() })
         // Navigation passiert jetzt in onResponse() nach Server-Bestätigung
     }
 
@@ -241,7 +258,16 @@ open class AppViewModel(
         _currentTurnPlayerId.value = null
         _validMoveIds.value = emptyList()
         _remainingSteps.value = null
+        clearDisconnectStates()
         navigateTo("login")
+    }
+
+    private fun clearDisconnectStates() {
+        countdownJobs.values.forEach { it.cancel() }
+        countdownJobs.clear()
+        _disconnectedPlayers.value = emptySet()
+        _secondsUntilRemoval.value = emptyMap()
+        _isReconnecting.value = false
     }
 
     override fun onResponse(res: String) {
@@ -259,6 +285,15 @@ open class AppViewModel(
                     _errorMessage.value = errorMsg
                     Log.e("CityTap", "Server-Fehler nach MOVE_TO_CITY: $errorMsg")
                     Log.e("AppViewModel", "Server-Fehler: $errorMsg")
+
+                    // REJOIN fehlgeschlagen (z.B. nach Grace Period Timeout)
+                    // → lobbyId aus Prefs loeschen und zurueck zum Login
+                    if (rootJson.optString("commandType") == "REJOIN_LOBBY") {
+                        prefs?.clearLobbyId()
+                        _lobbyId.value = ""
+                        clearDisconnectStates()
+                        navigateTo("login")
+                    }
                     return
                 }
 
@@ -277,11 +312,15 @@ open class AppViewModel(
                         val cityCountsMap = mutableMapOf<String, Int>()
                         val currentCitiesMap = mutableMapOf<String, City?>()
                         val startCityNamesMap = _playerStartCityNames.value.toMutableMap()
+                        val disconnectedNow = mutableSetOf<String>()
 
                         for (i in 0 until playersArray.length()) {
                             val playerObj = playersArray.getJSONObject(i)
                             val pId = playerObj.getString("playerId")
                             newList.add(pId)
+                            if (playerObj.has("connected") && !playerObj.getBoolean("connected")) {
+                                disconnectedNow.add(pId)
+                            }
 
                             if (playerObj.has("currentCity") && !playerObj.isNull("currentCity")) {
                                 val cc = playerObj.getJSONObject("currentCity")
@@ -348,6 +387,7 @@ open class AppViewModel(
                         _playersList.value = newList
                         _playerCityCounts.value = cityCountsMap
                         _playerCurrentCities.value = currentCitiesMap
+                        applyConnectionStatus(disconnectedNow)
                     }
 
                     // Würfelergebnis und aktueller Spieler (dein bestehender Code)
@@ -415,6 +455,55 @@ open class AppViewModel(
         } catch (e: Exception) {
             Log.e("AppViewModel", "Failed to parse goal-reached", e)
         }
+    }
+
+    override fun onConnectionLost() {
+        _isReconnecting.value = true
+    }
+
+    override fun onReconnected() {
+        _isReconnecting.value = false
+        // Wenn lobbyId in Prefs gespeichert ist und wir nicht im Login-Screen sind:
+        // automatisch REJOIN_LOBBY senden um zurueck ins Spiel zu kommen
+        val storedLobbyId = prefs?.getLobbyId() ?: return
+        val player = _playerName.value
+        if (storedLobbyId.isNotBlank() && player.isNotBlank() && clientId.isNotBlank()) {
+            stomp.rejoinLobby(storedLobbyId, player, clientId)
+        }
+    }
+
+    private fun applyConnectionStatus(disconnectedNow: Set<String>) {
+        val previouslyDisconnected = _disconnectedPlayers.value
+        _disconnectedPlayers.value = disconnectedNow
+
+        // Spieler die NEU disconnected sind: Countdown starten
+        for (playerId in disconnectedNow - previouslyDisconnected) {
+            startRemovalCountdown(playerId)
+        }
+
+        // Spieler die zurueck sind: Countdown abbrechen
+        for (playerId in previouslyDisconnected - disconnectedNow) {
+            cancelRemovalCountdown(playerId)
+        }
+    }
+
+    private fun startRemovalCountdown(playerId: String) {
+        cancelRemovalCountdown(playerId)
+        _secondsUntilRemoval.value = _secondsUntilRemoval.value + (playerId to gracePeriodSeconds)
+        countdownJobs[playerId] = viewModelScope.launch {
+            var remaining = gracePeriodSeconds
+            while (remaining > 0) {
+                delay(1000L)
+                remaining -= 1
+                _secondsUntilRemoval.value = _secondsUntilRemoval.value + (playerId to remaining)
+            }
+            _secondsUntilRemoval.value = _secondsUntilRemoval.value - playerId
+        }
+    }
+
+    private fun cancelRemovalCountdown(playerId: String) {
+        countdownJobs.remove(playerId)?.cancel()
+        _secondsUntilRemoval.value = _secondsUntilRemoval.value - playerId
     }
 
     override fun onGameOver(res: String) {
