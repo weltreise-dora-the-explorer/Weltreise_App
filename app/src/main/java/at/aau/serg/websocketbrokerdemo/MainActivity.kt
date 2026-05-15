@@ -20,6 +20,7 @@ import at.aau.serg.websocketbrokerdemo.ui.theme.GameScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.HostScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.LobbyScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.LoginScreen
+import at.aau.serg.websocketbrokerdemo.ui.theme.PlayerDisconnectedDialog
 import at.aau.serg.websocketbrokerdemo.ui.theme.ReconnectOverlay
 import at.aau.serg.websocketbrokerdemo.ui.theme.WaitingScreen
 
@@ -52,6 +53,12 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 val currentScreen by viewModel.currentScreen.collectAsState()
                 val isReconnecting by viewModel.isReconnecting.collectAsState()
+                val disconnectedPlayers by viewModel.disconnectedPlayers.collectAsState()
+                val secondsUntilRemoval by viewModel.secondsUntilRemoval.collectAsState()
+                val currentTurnPlayerId by viewModel.currentTurnPlayerId.collectAsState()
+
+                val turnPlayerIsDisconnected = currentTurnPlayerId != null
+                        && disconnectedPlayers.contains(currentTurnPlayerId)
 
                 Box(modifier = Modifier.fillMaxSize()) {
                     when (currentScreen) {
@@ -95,6 +102,14 @@ class MainActivity : ComponentActivity() {
                         visible = isReconnecting,
                         modifier = Modifier.align(Alignment.TopCenter)
                     )
+
+                    if (turnPlayerIsDisconnected && currentScreen == "game") {
+                        val playerId = currentTurnPlayerId ?: ""
+                        PlayerDisconnectedDialog(
+                            playerName = playerId,
+                            secondsLeft = secondsUntilRemoval[playerId] ?: 60
+                        )
+                    }
                 }
             }
         }
