@@ -192,6 +192,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 .padding(top = 24.dp, start = 16.dp, end = 16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
+            val disconnectedPlayers by viewModel.disconnectedPlayers.collectAsState()
             playersList.forEachIndexed { index, playerName ->
                 val avatar = avatars.getOrNull(index % avatars.size)
                 val isFirstPlayer = index == 0
@@ -202,7 +203,8 @@ fun GameScreen(viewModel: AppViewModel) {
                     avatar = avatar,
                     isActive = playerName == currentTurnPlayerId,
                     diceValue = if (playerName == currentTurnPlayerId) diceValue else null,
-                    remainingSteps = if (playerName == currentTurnPlayerId) remainingSteps else null
+                    remainingSteps = if (playerName == currentTurnPlayerId) remainingSteps else null,
+                    disconnected = playerName in disconnectedPlayers
                 )
             }
         }
@@ -864,7 +866,7 @@ fun ZoomableMap(
 
 //Hilfe damit App nicht abstürzt (bsp. derzeit noch fehlende Bilder)
 @Composable
-fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActive: Boolean, diceValue: Int? = null, remainingSteps: Int? = null) {
+fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActive: Boolean, diceValue: Int? = null, remainingSteps: Int? = null, disconnected: Boolean = false) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.height(50.dp)
@@ -877,7 +879,13 @@ fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActiv
                 .zIndex(1f)
         ) {
             if (avatar != null) {
-                Image(bitmap = avatar, contentDescription = name, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                Image(
+                    bitmap = avatar,
+                    contentDescription = name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    alpha = if (disconnected) 0.4f else 1f
+                )
             }
         }
 
@@ -885,7 +893,7 @@ fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActiv
             modifier = Modifier
                 .offset(x = (-15).dp)
                 .background(
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = Color.White.copy(alpha = if (disconnected) 0.45f else 0.85f),
                     shape = RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)
                 )
                 .border(
@@ -904,7 +912,16 @@ fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActiv
                     Text(text = stepsLabel, fontSize = 11.sp, color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold)
                 }
             }
-            Text(text = "Bucket List: $bucketListCount", fontSize = 10.sp, color = Color.Gray)
+            if (disconnected) {
+                Text(
+                    text = "(reconnecting)",
+                    fontSize = 9.sp,
+                    color = Color.Gray,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                )
+            } else {
+                Text(text = "Bucket List: $bucketListCount", fontSize = 10.sp, color = Color.Gray)
+            }
         }
     }
 }
