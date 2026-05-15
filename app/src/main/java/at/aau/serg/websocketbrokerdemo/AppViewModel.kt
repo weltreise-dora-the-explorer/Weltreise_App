@@ -289,8 +289,9 @@ open class AppViewModel(
      * automatisch REJOIN_LOBBY senden.
      */
     private fun attemptAutoRejoinFromPrefs() {
-        val storedLobbyId = prefs?.getLobbyId() ?: return
-        val storedPlayer = prefs?.getPlayerName() ?: return
+        val safePrefs = prefs ?: return
+        val storedLobbyId = safePrefs.getLobbyId() ?: return
+        val storedPlayer = safePrefs.getPlayerName() ?: return
         if (storedLobbyId.isBlank() || storedPlayer.isBlank() || clientId.isBlank()) return
 
         _lobbyId.value = storedLobbyId
