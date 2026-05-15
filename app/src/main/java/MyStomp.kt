@@ -222,7 +222,7 @@ class MyStomp(val callbacks: Callbacks) {
      * Subscribed auf /topic/lobby/{lobbyId}/events. Bei Verbindungsabbruch wird
      * der `onConnectionLost`-Callback ausgeloest und ein Reconnect versucht.
      */
-    private fun subscribeLobbyEvents(lobbyId: String) {
+    private suspend fun subscribeLobbyEvents(lobbyId: String) {
         val lobbyFlow = session?.subscribeText("/topic/lobby/$lobbyId/events") ?: return
         scope.launch {
             try {

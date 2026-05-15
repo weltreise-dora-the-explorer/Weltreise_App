@@ -46,9 +46,24 @@ class PreferencesHelper(context: Context) {
         prefs.edit().remove(KEY_LOBBY_ID).apply()
     }
 
+    /**
+     * Liefert den zuletzt verwendeten Spielernamen, oder null wenn keiner gesetzt.
+     * Wird fuer Auto-Rejoin nach App-Neustart benoetigt.
+     */
+    fun getPlayerName(): String? = prefs.getString(KEY_PLAYER_NAME, null)
+
+    fun setPlayerName(name: String) {
+        prefs.edit().putString(KEY_PLAYER_NAME, name).apply()
+    }
+
+    fun clearPlayerName() {
+        prefs.edit().remove(KEY_PLAYER_NAME).apply()
+    }
+
     companion object {
         private const val PREFS_NAME = "weltreise_prefs"
         private const val KEY_CLIENT_ID = "client_id"
         private const val KEY_LOBBY_ID = "lobby_id"
+        private const val KEY_PLAYER_NAME = "player_name"
     }
 }

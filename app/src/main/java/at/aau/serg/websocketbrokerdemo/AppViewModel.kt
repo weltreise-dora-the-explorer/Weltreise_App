@@ -156,6 +156,17 @@ open class AppViewModel(
     }
 
     init {
+        // Restore vom Prefs, falls die App neu gestartet wurde nachdem der Spieler
+        // in einer Lobby war (Crash, manuelles Schliessen, OS-Kill).
+        val storedName = prefs?.getPlayerName()
+        if (!storedName.isNullOrBlank()) {
+            _playerName.value = storedName
+        }
+        val storedLobby = prefs?.getLobbyId()
+        if (!storedLobby.isNullOrBlank()) {
+            _lobbyId.value = storedLobby
+        }
+
         // Verbinde sofort mit dem Server beim Startfenster (nur wenn kein Mock injiziert)
         if (stompInstance == null) {
             stomp.connect()
@@ -172,6 +183,7 @@ open class AppViewModel(
 
     fun setPlayerName(name: String) {
         _playerName.value = name
+        prefs?.setPlayerName(name)
     }
 
     fun joinLobby(pin: String) {
@@ -192,6 +204,7 @@ open class AppViewModel(
         _isLoading.value = true
         _errorMessage.value = null
         prefs?.setLobbyId(randomPin)
+        prefs?.setPlayerName(name)
         stomp.createMultiplayerLobby(randomPin, name, clientId.takeIf { it.isNotBlank() })
         // Navigation passiert jetzt in onResponse() nach Server-Bestätigung
     }
@@ -270,10 +283,31 @@ open class AppViewModel(
         _isReconnecting.value = false
     }
 
+    /**
+     * Wird beim initialen Connect aufgerufen. Wenn in SharedPreferences eine
+     * lobbyId + playerName gespeichert sind (Spieler war vor App-Kill in einem Spiel),
+     * automatisch REJOIN_LOBBY senden.
+     */
+    private fun attemptAutoRejoinFromPrefs() {
+        val storedLobbyId = prefs?.getLobbyId() ?: return
+        val storedPlayer = prefs?.getPlayerName() ?: return
+        if (storedLobbyId.isBlank() || storedPlayer.isBlank() || clientId.isBlank()) return
+
+        _lobbyId.value = storedLobbyId
+        _playerName.value = storedPlayer
+        stomp.rejoinLobby(storedLobbyId, storedPlayer, clientId)
+    }
+
     override fun onResponse(res: String) {
         Log.i("AppViewModel", "Received from server: $res")
         Log.d("CityTap", "onResponse: commandType=${runCatching { JSONObject(res).optString("commandType") }.getOrDefault("?")} validMoveIds=${runCatching { JSONObject(res).optJSONObject("state")?.optJSONArray("validMoveIds") }.getOrDefault("?")}")
         _isLoading.value = false
+
+        // Initialer Connect erfolgreich → versuchen automatisch rejoinen falls Prefs Daten haben
+        if (res == "connected") {
+            attemptAutoRejoinFromPrefs()
+            return
+        }
 
         try {
             if (res.startsWith("{")) {
@@ -408,6 +442,13 @@ open class AppViewModel(
                     val rs = stateJson.optInt("remainingSteps", -1)
                     _remainingSteps.value = if (rs >= 0) rs else null
 
+                    // hostId aus dem State lesen — fuer Auto-Rejoin (wir wissen sonst nicht
+                    // ob der zurueckkehrende Spieler Host war).
+                    val hostId = stateJson.optString("hostId", "")
+                    if (hostId.isNotBlank() && hostId == _playerName.value) {
+                        _isHost.value = true
+                    }
+
                     // Navigation (dein bestehender Code)
                     val commandType = rootJson.optString("commandType", "")
                     val phase = stateJson.optString("phase", "LOBBY")
@@ -420,6 +461,10 @@ open class AppViewModel(
                             navigateTo("login")
                         }
                         commandType == "RESET_LOBBY" -> {
+                            if (_isHost.value) navigateTo("host")
+                            else navigateTo("waiting")
+                        }
+                        commandType == "PLAYER_RECONNECTED" && phase == "LOBBY" -> {
                             if (_isHost.value) navigateTo("host")
                             else navigateTo("waiting")
                         }
