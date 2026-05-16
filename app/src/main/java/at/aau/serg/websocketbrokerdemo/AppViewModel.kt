@@ -47,6 +47,9 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
     private val _currentTurnPlayerId = MutableStateFlow<String?>(null)
     val currentTurnPlayerId: StateFlow<String?> = _currentTurnPlayerId.asStateFlow()
 
+    private val _gamePhase = MutableStateFlow("LOBBY")
+    val gamePhase: StateFlow<String> = _gamePhase.asStateFlow()
+
     private val _ownedCities = MutableStateFlow<List<City>>(emptyList())
     val ownedCities: StateFlow<List<City>> = _ownedCities.asStateFlow()
 
@@ -192,10 +195,19 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         stomp.moveToCity(_lobbyId.value, _playerName.value, targetCityId)
     }
 
+    fun finishMinigame(winnerPlayerId: String) {
+        stomp.finishMinigame(
+            lobbyId = _lobbyId.value,
+            playerId = _playerName.value,
+            winnerPlayerId = winnerPlayerId
+        )
+    }
+
     fun playAgain() {
         _isGameOver.value = false
         _gameOverMessage.value = null
         _goalReachedMessage.value = null
+        _gamePhase.value = "LOBBY"
         _ownedCities.value = emptyList()
         _startCity.value = null
         _playerCityCounts.value = emptyMap()
@@ -216,6 +228,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         _lobbyId.value = ""
         _playersList.value = emptyList()
         _isHost.value = false
+        _gamePhase.value = "LOBBY"
         _isGameOver.value = false
         _goalReachedMessage.value = null
         _gameOverMessage.value = null
@@ -358,6 +371,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                     // Navigation (dein bestehender Code)
                     val commandType = rootJson.optString("commandType", "")
                     val phase = stateJson.optString("phase", "LOBBY")
+                    _gamePhase.value = phase
 
                     when {
                         commandType == "LOBBY_CLOSED" -> {
