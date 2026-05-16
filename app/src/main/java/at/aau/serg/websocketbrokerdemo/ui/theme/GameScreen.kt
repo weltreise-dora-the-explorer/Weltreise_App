@@ -58,6 +58,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
+import androidx.compose.ui.res.stringResource
+import com.example.myapplication.R
+import at.aau.serg.websocketbrokerdemo.GameConstants
 
 class PlayerAnimState {
     val animX = Animatable(0f)
@@ -73,6 +76,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val gameMode by viewModel.gameMode.collectAsState()
     val diceValue by viewModel.diceValue.collectAsState()
     val currentTurnPlayerId by viewModel.currentTurnPlayerId.collectAsState()
+    val gamePhase by viewModel.gamePhase.collectAsState()
     val ownedCities by viewModel.ownedCities.collectAsState()
     val allCities by viewModel.allCities.collectAsState()
     val startCity by viewModel.startCity.collectAsState()
@@ -170,6 +174,20 @@ fun GameScreen(viewModel: AppViewModel) {
                 myPlayerId = currentPlayerName,
                 onCityClick = { cityId -> viewModel.onMoveToCity(cityId) }
             )
+        }
+
+        if(gamePhase == GameConstants.PHASE_MINIGAME) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .zIndex(20f)
+            ){
+                MinigameOverlay(
+                    onWinClick = {
+                        viewModel.finishMinigame(currentPlayerName)
+                    }
+                )
+            }
         }
 
         // Game Mode Badge oben rechts
