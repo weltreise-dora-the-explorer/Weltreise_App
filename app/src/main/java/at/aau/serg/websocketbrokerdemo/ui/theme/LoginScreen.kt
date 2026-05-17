@@ -101,7 +101,12 @@ fun LoginScreen(onHostClick: (String) -> Unit = {}, onJoinClick: (String) -> Uni
                Text("Join Game")
            }
        }
-   }}
+   }
+        //Regel-Button
+        GameRulesButton(
+            modifier = Modifier.align(Alignment.TopEnd)
+        )
+    }
 }
 @Preview(showBackground = true, widthDp = 800, heightDp = 450)
 @Composable fun LoginScreenPreview() {

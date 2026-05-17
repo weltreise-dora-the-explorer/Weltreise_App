@@ -1,6 +1,7 @@
 package at.aau.serg.websocketbrokerdemo
 
 import MyStomp
+import at.aau.serg.websocketbrokerdemo.preferences.PreferencesHelper
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -322,6 +323,760 @@ class AppViewModelTest {
         viewModel.startGame()
 
         verify { mockStomp.startGameCmd(lobbyId, any()) }
+    }
+
+    // ========== PLAYER LIST TESTS ==========
+
+    @Test
+    fun `playersList is empty initially`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        assertTrue(viewModel.playersList.value.isEmpty())
+    }
+
+    @Test
+    fun `onResponse with LOBBY_FULL error sets errorMessage`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onResponse("""{"success":false,"message":"Lobby is full"}""")
+
+        assertEquals("Lobby is full", viewModel.errorMessage.value)
+    }
+
+    @Test
+    fun `onResponse with LOBBY_FULL error does not navigate`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onResponse("""{"success":false,"message":"Lobby is full"}""")
+
+        assertEquals("login", viewModel.currentScreen.value)
+    }
+
+    // ========== LEAVE LOBBY TESTS ==========
+
+    @Test
+    fun `leaveLobby navigates to login`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Host")
+        viewModel.navigateTo("host")
+
+        viewModel.leaveLobby()
+
+        assertEquals("login", viewModel.currentScreen.value)
+    }
+
+    @Test
+    fun `leaveLobby clears lobbyId`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Host")
+
+        viewModel.leaveLobby()
+
+        assertEquals("", viewModel.lobbyId.value)
+    }
+
+    @Test
+    fun `leaveLobby clears playersList`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"JOIN_LOBBY","state":{"lobbyId":"1234","players":[{"playerId":"Host"},{"playerId":"Player2"}],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        viewModel.leaveLobby()
+
+        assertTrue(viewModel.playersList.value.isEmpty())
+    }
+
+    @Test
+    fun `leaveLobby sets isHost to false`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Host")
+
+        viewModel.leaveLobby()
+
+        assertFalse(viewModel.isHost.value)
+    }
+
+    @Test
+    fun `leaveLobby calls stomp leaveLobby when lobbyId and playerName are set`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Host")
+        val lobbyId = viewModel.lobbyId.value
+
+        viewModel.leaveLobby()
+
+        verify { mockStomp.leaveLobby(lobbyId, "Host") }
+    }
+
+    @Test
+    fun `leaveLobby does not call stomp when lobbyId is blank`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.leaveLobby()
+
+        verify(exactly = 0) { mockStomp.leaveLobby(any(), any()) }
+    }
+
+    @Test
+    fun `onResponse with LEAVE_LOBBY updates playersList`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.navigateTo("host")
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"LEAVE_LOBBY","state":{"lobbyId":"1234","players":[{"playerId":"Host"}],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals(listOf("Host"), viewModel.playersList.value)
+    }
+
+    @Test
+    fun `onResponse with LEAVE_LOBBY does not navigate away from host screen`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.navigateTo("host")
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"LEAVE_LOBBY","state":{"lobbyId":"1234","players":[{"playerId":"Host"}],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("host", viewModel.currentScreen.value)
+    }
+
+    @Test
+    fun `onResponse with LEAVE_LOBBY does not navigate away from waiting screen`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.navigateTo("waiting")
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"LEAVE_LOBBY","state":{"lobbyId":"1234","players":[{"playerId":"Player1"}],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("waiting", viewModel.currentScreen.value)
+    }
+
+    // ========== LOBBY CLOSED TESTS ==========
+
+    @Test
+    fun `onResponse with LOBBY_CLOSED navigates to login`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.navigateTo("waiting")
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"LOBBY_CLOSED","state":{"lobbyId":"1234","players":[],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("login", viewModel.currentScreen.value)
+    }
+
+    @Test
+    fun `onResponse with LOBBY_CLOSED clears playersList`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"JOIN_LOBBY","state":{"lobbyId":"1234","players":[{"playerId":"Host"},{"playerId":"Joiner"}],"phase":"LOBBY"}}""")
+
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"LOBBY_CLOSED","state":{"lobbyId":"1234","players":[],"phase":"LOBBY"}}""")
+
+        assertTrue(viewModel.playersList.value.isEmpty())
+    }
+
+    @Test
+    fun `onResponse with LOBBY_CLOSED clears lobbyId`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.joinLobby("1234")
+
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"LOBBY_CLOSED","state":{"lobbyId":"1234","players":[],"phase":"LOBBY"}}""")
+
+        assertEquals("", viewModel.lobbyId.value)
+    }
+
+    @Test
+    fun `onResponse with LOBBY_CLOSED navigates host to login`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.navigateTo("host")
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"LOBBY_CLOSED","state":{"lobbyId":"1234","players":[],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("login", viewModel.currentScreen.value)
+    }
+
+    // ========== DICE / TURN TESTS ==========
+
+    @Test
+    fun `diceValue is null initially`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        assertNull(viewModel.diceValue.value)
+    }
+
+    @Test
+    fun `currentTurnPlayerId is null initially`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        assertNull(viewModel.currentTurnPlayerId.value)
+    }
+
+    @Test
+    fun `onRollDice calls stomp rollDice with lobbyId and playerName`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Alice")
+        val lobbyId = viewModel.lobbyId.value
+
+        viewModel.onRollDice()
+
+        verify { mockStomp.rollDice(lobbyId, "Alice") }
+    }
+
+    @Test
+    fun `onEndTurn calls stomp endTurn with correct dice value`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Alice")
+        val lobbyId = viewModel.lobbyId.value
+        val response = """{"success":true,"message":"OK","lobbyId":"$lobbyId","commandType":"ROLL_DICE","state":{"lobbyId":"$lobbyId","players":[{"playerId":"Alice"}],"phase":"IN_TURN","currentPlayerId":"Alice","lastDiceValue":4}}"""
+        viewModel.onResponse(response)
+
+        viewModel.onEndTurn()
+
+        verify { mockStomp.endTurn(lobbyId, "Alice") }
+    }
+
+    @Test
+    fun `onEndTurn does nothing when diceValue is null`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onEndTurn()
+
+        verify(exactly = 0) { mockStomp.endTurn(any(), any()) }
+    }
+
+    @Test
+    fun `onResponse parses lastDiceValue from state`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"ROLL_DICE","state":{"lobbyId":"1234","players":[{"playerId":"Alice"}],"phase":"IN_TURN","currentPlayerId":"Alice","lastDiceValue":5}}"""
+        viewModel.onResponse(response)
+
+        assertEquals(5, viewModel.diceValue.value)
+    }
+
+    @Test
+    fun `onResponse sets diceValue to null when lastDiceValue is null in JSON`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"ROLL_DICE","state":{"lobbyId":"1234","players":[{"playerId":"Alice"}],"phase":"IN_TURN","currentPlayerId":"Alice","lastDiceValue":3}}""")
+
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"MOVE_TOKEN","state":{"lobbyId":"1234","players":[{"playerId":"Alice"}],"phase":"IN_TURN","currentPlayerId":"Bob","lastDiceValue":null}}""")
+
+        assertNull(viewModel.diceValue.value)
+    }
+
+    @Test
+    fun `onResponse parses currentPlayerId from state`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"START_GAME","state":{"lobbyId":"1234","players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN","currentPlayerId":"Alice"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("Alice", viewModel.currentTurnPlayerId.value)
+    }
+
+    @Test
+    fun `onResponse updates currentTurnPlayerId after move token`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"START_GAME","state":{"lobbyId":"1234","players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN","currentPlayerId":"Alice","lastDiceValue":null}}""")
+
+        viewModel.onResponse("""{"success":true,"message":"OK","lobbyId":"1234","commandType":"MOVE_TOKEN","state":{"lobbyId":"1234","players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN","currentPlayerId":"Bob","lastDiceValue":null}}""")
+
+        assertEquals("Bob", viewModel.currentTurnPlayerId.value)
+    }
+
+    @Test
+    fun `onResponse sets currentTurnPlayerId to null when field is empty`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        val response = """{"success":true,"message":"OK","lobbyId":"1234","commandType":"CREATE_LOBBY","state":{"lobbyId":"1234","players":[{"playerId":"Host"}],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertNull(viewModel.currentTurnPlayerId.value)
+    }
+
+    // ========== PLAYER START CITY NAMES TESTS ==========
+
+    @Test
+    fun `onResponse parses startCity names for all players`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        val response = """{"success":true,"commandType":"START_GAME","state":{"players":[
+            {"playerId":"Alice","startCity":{"id":"1","name":"Berlin","continent":"EUROPE_AFRICA"},"ownedCities":[]},
+            {"playerId":"Bob","startCity":{"id":"2","name":"Madrid","continent":"EUROPE_AFRICA"},"ownedCities":[]}
+        ],"phase":"IN_TURN"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("Berlin", viewModel.playerStartCityNames.value["Alice"])
+        assertEquals("Madrid", viewModel.playerStartCityNames.value["Bob"])
+    }
+
+    @Test
+    fun `onResponse retains startCity name if later state omits it`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        val first = """{"success":true,"commandType":"START_GAME","state":{"players":[
+            {"playerId":"Alice","startCity":{"id":"1","name":"Berlin","continent":"EUROPE_AFRICA"},"ownedCities":[]}
+        ],"phase":"IN_TURN"}}"""
+        viewModel.onResponse(first)
+
+        val second = """{"success":true,"commandType":"ROLL_DICE","state":{"players":[
+            {"playerId":"Alice","ownedCities":[]}
+        ],"phase":"IN_TURN","currentPlayerId":"Alice","lastDiceValue":3}}"""
+        viewModel.onResponse(second)
+
+        assertEquals("Berlin", viewModel.playerStartCityNames.value["Alice"])
+    }
+
+    @Test
+    fun `leaveLobby clears playerStartCityNames`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        val response = """{"success":true,"commandType":"START_GAME","state":{"players":[
+            {"playerId":"Alice","startCity":{"id":"1","name":"Berlin","continent":"EUROPE_AFRICA"},"ownedCities":[]}
+        ],"phase":"IN_TURN"}}"""
+        viewModel.onResponse(response)
+
+        viewModel.leaveLobby()
+
+        assertTrue(viewModel.playerStartCityNames.value.isEmpty())
+    }
+
+    // ========== GOAL-REACHED TESTS ==========
+
+    @Test
+    fun `onGoalReached parses message and updates goalReachedMessage`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onGoalReached("""{"playerName":"Alice","cityName":"Paris","reached":3,"total":9}""")
+
+        val msg = viewModel.goalReachedMessage.value
+        assertNotNull(msg)
+        assertEquals("Alice", msg!!.playerName)
+        assertEquals("Paris", msg.cityName)
+        assertEquals(3, msg.reached)
+        assertEquals(9, msg.total)
+    }
+
+    @Test
+    fun `onGoalReached with invalid JSON does not update goalReachedMessage`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onGoalReached("{invalid json")
+
+        assertNull(viewModel.goalReachedMessage.value)
+    }
+
+    @Test
+    fun `onGoalReached second call overwrites previous message`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onGoalReached("""{"playerName":"Alice","cityName":"Paris","reached":1,"total":9}""")
+
+        viewModel.onGoalReached("""{"playerName":"Bob","cityName":"Tokyo","reached":2,"total":9}""")
+
+        val msg = viewModel.goalReachedMessage.value
+        assertEquals("Bob", msg!!.playerName)
+        assertEquals("Tokyo", msg.cityName)
+    }
+
+    // ========== GAME-OVER TESTS ==========
+
+    @Test
+    fun `onGameOver sets isGameOver to true`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onGameOver("""{"scores":[{"playerName":"Alice","score":5}]}""")
+
+        assertTrue(viewModel.isGameOver.value)
+    }
+
+    @Test
+    fun `onGameOver parses results correctly`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onGameOver("""{"scores":[{"playerName":"Alice","score":5},{"playerName":"Bob","score":3}]}""")
+
+        val msg = viewModel.gameOverMessage.value
+        assertNotNull(msg)
+        assertEquals(2, msg!!.results.size)
+        assertEquals("Alice", msg.results[0].playerName)
+        assertEquals(5, msg.results[0].score)
+        assertEquals("Bob", msg.results[1].playerName)
+        assertEquals(3, msg.results[1].score)
+    }
+
+    @Test
+    fun `onGameOver navigates to gameover screen`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.navigateTo("game")
+
+        viewModel.onGameOver("""{"scores":[{"playerName":"Alice","score":5}]}""")
+
+        assertEquals("gameover", viewModel.currentScreen.value)
+    }
+
+    @Test
+    fun `onGameOver with invalid JSON still sets isGameOver to true`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onGameOver("{invalid json")
+
+        assertTrue(viewModel.isGameOver.value)
+        assertNull(viewModel.gameOverMessage.value)
+    }
+
+    @Test
+    fun `onGameOver with invalid JSON does not navigate to gameover`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.navigateTo("game")
+
+        viewModel.onGameOver("{invalid json")
+
+        assertEquals("game", viewModel.currentScreen.value)
+    }
+
+    @Test
+    fun `isGameOver is false initially`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        assertFalse(viewModel.isGameOver.value)
+    }
+
+    @Test
+    fun `goalReachedMessage is null initially`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        assertNull(viewModel.goalReachedMessage.value)
+    }
+
+    @Test
+    fun `gameOverMessage is null initially`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        assertNull(viewModel.gameOverMessage.value)
+    }
+
+    @Test
+    fun `leaveLobby resets isGameOver to false`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onGameOver("""{"scores":[{"playerName":"Alice","score":5}]}""")
+
+        viewModel.leaveLobby()
+
+        assertFalse(viewModel.isGameOver.value)
+    }
+
+    @Test
+    fun `leaveLobby resets goalReachedMessage to null`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onGoalReached("""{"playerName":"Alice","cityName":"Paris","reached":1,"total":9}""")
+
+        viewModel.leaveLobby()
+
+        assertNull(viewModel.goalReachedMessage.value)
+    }
+
+    @Test
+    fun `leaveLobby resets gameOverMessage to null`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onGameOver("""{"scores":[{"playerName":"Alice","score":5}]}""")
+
+        viewModel.leaveLobby()
+
+        assertNull(viewModel.gameOverMessage.value)
+    }
+
+    @Test
+    fun `onResponse does not navigate to game when game is already over`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onGameOver("""{"scores":[{"playerName":"Alice","score":5}]}""")
+
+        val response = """{"success":true,"commandType":"MOVE_TO_CITY","state":{"players":[{"playerId":"Alice"}],"phase":"IN_TURN"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("gameover", viewModel.currentScreen.value)
+    }
+
+    // ========== PLAY AGAIN TESTS ==========
+
+    @Test
+    fun `playAgain resets isGameOver to false`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onGameOver("""{"scores":[{"playerName":"Alice","score":5}]}""")
+
+        viewModel.playAgain()
+
+        assertFalse(viewModel.isGameOver.value)
+    }
+
+    @Test
+    fun `playAgain resets gameOverMessage to null`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onGameOver("""{"scores":[{"playerName":"Alice","score":5}]}""")
+
+        viewModel.playAgain()
+
+        assertNull(viewModel.gameOverMessage.value)
+    }
+
+    @Test
+    fun `playAgain resets goalReachedMessage to null`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.onGoalReached("""{"playerName":"Alice","cityName":"Paris","reached":1,"total":9}""")
+
+        viewModel.playAgain()
+
+        assertNull(viewModel.goalReachedMessage.value)
+    }
+
+    @Test
+    fun `playAgain calls stomp resetLobby`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Alice")
+        val lobbyId = viewModel.lobbyId.value
+
+        viewModel.playAgain()
+
+        verify { mockStomp.resetLobby(lobbyId, "Alice") }
+    }
+
+    // ========== RESET LOBBY RESPONSE TESTS ==========
+
+    @Test
+    fun `onResponse with RESET_LOBBY navigates host to host screen`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Alice")
+        viewModel.navigateTo("gameover")
+
+        val response = """{"success":true,"commandType":"RESET_LOBBY","state":{"players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("host", viewModel.currentScreen.value)
+    }
+
+    @Test
+    fun `onResponse with RESET_LOBBY navigates guest to waiting screen`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.joinLobby("1234")
+        viewModel.navigateTo("gameover")
+
+        val response = """{"success":true,"commandType":"RESET_LOBBY","state":{"players":[{"playerId":"Host"},{"playerId":"Guest"}],"phase":"LOBBY"}}"""
+        viewModel.onResponse(response)
+
+        assertEquals("waiting", viewModel.currentScreen.value)
+    }
+
+    // ========== RECONNECT RECOVERY TESTS ==========
+
+    @Test
+    fun `onConnectionLost sets isReconnecting true`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onConnectionLost()
+
+        assertTrue(viewModel.isReconnecting.value)
+    }
+
+    @Test
+    fun `onReconnected sets isReconnecting false`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onConnectionLost()
+        assertTrue(viewModel.isReconnecting.value)
+
+        viewModel.onReconnected()
+        assertFalse(viewModel.isReconnecting.value)
+    }
+
+    @Test
+    fun `onReconnected without stored lobbyId does NOT trigger rejoin`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "client-abc"
+        every { mockPrefs.getLobbyId() } returns null
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+
+        viewModel.onReconnected()
+
+        verify(exactly = 0) { mockStomp.rejoinLobby(any(), any(), any()) }
+    }
+
+    @Test
+    fun `onReconnected with stored lobbyId and player triggers rejoin`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "client-abc"
+        every { mockPrefs.getLobbyId() } returns "1234"
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+        viewModel.setPlayerName("Marco")
+
+        viewModel.onReconnected()
+
+        verify { mockStomp.rejoinLobby("1234", "Marco", "client-abc") }
+    }
+
+    @Test
+    fun `onResponse with disconnected player updates disconnectedPlayers set`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        val response = """{"success":true,"commandType":"PLAYER_DISCONNECTED","state":{"players":[{"playerId":"Alice","connected":true},{"playerId":"Bob","connected":false}],"phase":"GAME"}}"""
+        viewModel.onResponse(response)
+
+        assertTrue(viewModel.disconnectedPlayers.value.contains("Bob"))
+        assertFalse(viewModel.disconnectedPlayers.value.contains("Alice"))
+    }
+
+    @Test
+    fun `onResponse with reconnected player removes from disconnectedPlayers set`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        val disconnectResponse = """{"success":true,"commandType":"PLAYER_DISCONNECTED","state":{"players":[{"playerId":"Alice","connected":true},{"playerId":"Bob","connected":false}],"phase":"GAME"}}"""
+        viewModel.onResponse(disconnectResponse)
+        assertTrue(viewModel.disconnectedPlayers.value.contains("Bob"))
+
+        val reconnectResponse = """{"success":true,"commandType":"PLAYER_RECONNECTED","state":{"players":[{"playerId":"Alice","connected":true},{"playerId":"Bob","connected":true}],"phase":"GAME"}}"""
+        viewModel.onResponse(reconnectResponse)
+
+        assertFalse(viewModel.disconnectedPlayers.value.contains("Bob"))
+    }
+
+    @Test
+    fun `onResponse with failed REJOIN navigates to login and clears lobbyId`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "client-abc"
+        every { mockPrefs.getLobbyId() } returns "1234"
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+        viewModel.navigateTo("game")
+
+        val errorResponse = """{"success":false,"commandType":"REJOIN_LOBBY","message":"Player is not in lobby"}"""
+        viewModel.onResponse(errorResponse)
+
+        assertEquals("login", viewModel.currentScreen.value)
+        verify { mockPrefs.clearLobbyId() }
+    }
+
+    @Test
+    fun `leaveLobby clears disconnect states`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.joinLobby("1234")
+        viewModel.setPlayerName("Marco")
+
+        val disconnectResponse = """{"success":true,"commandType":"PLAYER_DISCONNECTED","state":{"players":[{"playerId":"Marco","connected":true},{"playerId":"Bob","connected":false}],"phase":"GAME"}}"""
+        viewModel.onResponse(disconnectResponse)
+        assertTrue(viewModel.disconnectedPlayers.value.contains("Bob"))
+
+        viewModel.leaveLobby()
+
+        assertTrue(viewModel.disconnectedPlayers.value.isEmpty())
+        assertFalse(viewModel.isReconnecting.value)
+    }
+
+    @Test
+    fun `clientId is empty string when prefs is null`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        assertEquals("", viewModel.clientId)
+    }
+
+    @Test
+    fun `clientId returns value from prefs when provided`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "uuid-123"
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+
+        assertEquals("uuid-123", viewModel.clientId)
+    }
+
+    @Test
+    fun `hostLobby persists lobbyId to prefs`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "uuid-123"
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+
+        viewModel.hostLobby("Marco")
+
+        verify { mockPrefs.setLobbyId(any()) }
+    }
+
+    @Test
+    fun `joinLobby persists lobbyId to prefs`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "uuid-123"
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+
+        viewModel.joinLobby("5678")
+
+        verify { mockPrefs.setLobbyId("5678") }
+    }
+
+    @Test
+    fun `leaveLobby clears lobbyId in prefs`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "uuid-123"
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+        viewModel.joinLobby("5678")
+        viewModel.setPlayerName("Marco")
+
+        viewModel.leaveLobby()
+
+        verify { mockPrefs.clearLobbyId() }
     }
 
     // ========== HELPER ==========

@@ -16,7 +16,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -25,6 +24,7 @@ import at.aau.serg.websocketbrokerdemo.AppViewModel
 @Composable
 fun HostScreen(viewModel: AppViewModel) {
     val selectedTour by viewModel.gameMode.collectAsState()
+    val playersList by viewModel.playersList.collectAsState()
     val context = LocalContext.current
     val avatars = listOf(
         loadAssetBitmap(context, "turtle_with_luggage_loginscreen.png"),
@@ -46,6 +46,22 @@ fun HostScreen(viewModel: AppViewModel) {
                 )
             )
     ) {
+        Button(
+            onClick = { viewModel.leaveLobby() },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+                .height(40.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C))
+        ) {
+            Text("Leave Lobby", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        }
+
+        GameRulesButton(
+            modifier = Modifier.align(Alignment.TopEnd)
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -97,18 +113,18 @@ fun HostScreen(viewModel: AppViewModel) {
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         TourButton(
                             text = "City Hopper\n(6)",
-                            isSelected = selectedTour == "City Hopper",
-                            onClick = { viewModel.setGameMode("City Hopper") }
+                            isSelected = selectedTour == "CITY_HOPPER",
+                            onClick = { viewModel.setGameMode("CITY_HOPPER") }
                         )
                         TourButton(
-                            text = "Grand Tour\n(12)",
-                            isSelected = selectedTour == "Grand Tour",
-                            onClick = { viewModel.setGameMode("Grand Tour") }
+                            text = "Grand Tour\n(9)",
+                            isSelected = selectedTour == "GRAND_TOUR",
+                            onClick = { viewModel.setGameMode("GRAND_TOUR") }
                         )
                         TourButton(
-                            text = "Epic Voyage\n(18)",
-                            isSelected = selectedTour == "Epic Voyage",
-                            onClick = { viewModel.setGameMode("Epic Voyage") }
+                            text = "Epic Voyage\n(12)",
+                            isSelected = selectedTour == "EPIC_VOYAGE",
+                            onClick = { viewModel.setGameMode("EPIC_VOYAGE") }
                         )
                     }
 
@@ -117,19 +133,25 @@ fun HostScreen(viewModel: AppViewModel) {
                     // Start Button
                     Button(
                         onClick = { viewModel.startGame() },
+                        enabled = playersList.size >= 2,
                         modifier = Modifier
                             .fillMaxWidth(0.8f)
                             .height(60.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8DB6CD))
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF8DB6CD),
+                            disabledContainerColor = Color(0x1F000000),
+                            disabledContentColor = Color(0x1F000000)
+                        )
                     ) {
                         Text(
-                            text = "Start The Journey",
+                            text = if (playersList.size >= 2) "Start The Journey" else "Not Enough Players",
                             color = Color.White,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
+
                 }
 
                 //rechte Spalte -> Mitspieler
@@ -148,9 +170,13 @@ fun HostScreen(viewModel: AppViewModel) {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Dynamically render players
-                    val playersList by viewModel.playersList.collectAsState()
+                    val disconnectedPlayers by viewModel.disconnectedPlayers.collectAsState()
                     playersList.forEachIndexed { index, playerName ->
-                        TravellerCard(playerName, avatars.getOrNull(index % avatars.size))
+                        TravellerCard(
+                            name = playerName,
+                            avatar = avatars.getOrNull(index % avatars.size),
+                            disconnected = playerName in disconnectedPlayers
+                        )
                         Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
@@ -186,7 +212,7 @@ fun TourButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
 
 // Helfer-Funktion für die Spieler-Karten rechts
 @Composable
-fun TravellerCard(name: String, avatar: ImageBitmap? = null) {
+fun TravellerCard(name: String, avatar: ImageBitmap? = null, disconnected: Boolean = false) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
@@ -203,7 +229,8 @@ fun TravellerCard(name: String, avatar: ImageBitmap? = null) {
                     bitmap = avatar,
                     contentDescription = name,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    alpha = if (disconnected) 0.4f else 1f
                 )
             }
         }
@@ -215,16 +242,28 @@ fun TravellerCard(name: String, avatar: ImageBitmap? = null) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(45.dp),
-            color = Color.White.copy(alpha = 0.7f),
+            color = Color.White.copy(alpha = if (disconnected) 0.4f else 0.7f),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Box(contentAlignment = Alignment.CenterStart, modifier = Modifier.padding(start = 16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = 16.dp, end = 12.dp)
+            ) {
                 Text(
                     text = name,
                     color = Color(0xFF1E56A0),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
+                if (disconnected) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "(reconnecting)",
+                        color = Color.Gray,
+                        fontSize = 11.sp,
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                    )
+                }
             }
         }
     }
