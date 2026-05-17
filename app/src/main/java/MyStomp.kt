@@ -2,9 +2,11 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import at.aau.serg.websocketbrokerdemo.Callbacks
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -15,7 +17,8 @@ import org.hildan.krossbow.stomp.subscribeText
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 
-private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
+//private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
+private const val WEBSOCKET_URI = "ws://se2-demo.aau.at:53205/websocket-example-broker"
 private const val RECONNECT_INITIAL_DELAY_MS = 2000L
 private const val RECONNECT_MAX_DELAY_MS = 30_000L
 
@@ -28,7 +31,17 @@ class MyStomp(val callbacks: Callbacks) {
     private lateinit var client: StompClient
     private var session: StompSession? = null
 
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    /**
+     * Defensiver Coroutine-Scope:
+     *  - SupervisorJob: ein abstuerzender Topic-Flow cancelt nicht alle anderen
+     *  - CoroutineExceptionHandler: unhandled Exceptions werden nur geloggt,
+     *    statt durchgereicht zu werden -> Android killt den Prozess nicht mehr.
+     */
+    private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        Log.e("MyStomp", "Uncaught coroutine exception", throwable)
+    }
+    private val scope: CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.IO + exceptionHandler)
 
     @Volatile
     private var reconnecting: Boolean = false
@@ -45,35 +58,43 @@ class MyStomp(val callbacks: Callbacks) {
                 // connect to topic
                 topicFlow = activeSession.subscribeText("/topic/hello-response")
                 collector = scope.launch {
-                    topicFlow?.collect { msg ->
-                        // TODO logic
-                        callback(msg)
+                    collectSafely("hello-response") {
+                        topicFlow?.collect { msg ->
+                            // TODO logic
+                            callback(msg)
+                        }
                     }
                 }
 
                 // connect to JSON topic
                 jsonFlow = activeSession.subscribeText("/topic/rcv-object")
                 jsonCollector = scope.launch {
-                    jsonFlow?.collect { msg ->
-                        val o = JSONObject(msg)
-                        callback(o.get("text").toString())
+                    collectSafely("rcv-object") {
+                        jsonFlow?.collect { msg ->
+                            val o = JSONObject(msg)
+                            callback(o.get("text").toString())
+                        }
                     }
                 }
 
                 val goalReachedFlow = activeSession.subscribeText("/topic/goal-reached")
                 scope.launch {
-                    goalReachedFlow.collect { msg ->
-                        Log.d("MyStomp", "GOAL-REACHED received: $msg")
-                        callbackGoalReached(msg)
+                    collectSafely("goal-reached") {
+                        goalReachedFlow.collect { msg ->
+                            Log.d("MyStomp", "GOAL-REACHED received: $msg")
+                            callbackGoalReached(msg)
+                        }
                     }
                 }
                 Log.d("MyStomp", "Subscribed to /topic/goal-reached")
 
                 val gameOverFlow = activeSession.subscribeText("/topic/game-over")
                 scope.launch {
-                    gameOverFlow.collect { msg ->
-                        Log.d("MyStomp", "GAME-OVER received: $msg")
-                        callbackGameOver(msg)
+                    collectSafely("game-over") {
+                        gameOverFlow.collect { msg ->
+                            Log.d("MyStomp", "GAME-OVER received: $msg")
+                            callbackGameOver(msg)
+                        }
                     }
                 }
                 Log.d("MyStomp", "Subscribed to /topic/game-over")
@@ -234,6 +255,21 @@ class MyStomp(val callbacks: Callbacks) {
                 Log.w("MyStomp", "Lobby events flow ended with exception: ${e.message}")
                 handleConnectionLost()
             }
+        }
+    }
+
+    /**
+     * Sammelt einen Flow innerhalb eines try/catch. Faengt jeden Fehler ab
+     * (z.B. Server-Stop -> WebSocket bricht weg) und triggert einen Reconnect,
+     * statt die Exception bis zum UncaughtExceptionHandler propagieren zu lassen
+     * (was zu einem Android-Prozesscrash und dem "App-Sturz auf Home-Screen" fuehrt).
+     */
+    private suspend fun collectSafely(topicName: String, block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (e: Exception) {
+            Log.w("MyStomp", "Topic $topicName ended with exception: ${e.message}")
+            handleConnectionLost()
         }
     }
 
