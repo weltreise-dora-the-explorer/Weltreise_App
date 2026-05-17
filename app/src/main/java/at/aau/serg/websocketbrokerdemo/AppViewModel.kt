@@ -4,18 +4,32 @@ import MyStomp
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import at.aau.serg.websocketbrokerdemo.models.City
 import at.aau.serg.websocketbrokerdemo.models.Continent
 import at.aau.serg.websocketbrokerdemo.models.GameOverMessage
 import at.aau.serg.websocketbrokerdemo.models.GoalReachedMessage
+import at.aau.serg.websocketbrokerdemo.preferences.PreferencesHelper
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
-open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks {
+open class AppViewModel(
+    stompInstance: MyStomp? = null,
+    private val prefs: PreferencesHelper? = null
+) : ViewModel(), Callbacks {
     open val stomp: MyStomp = stompInstance ?: MyStomp(this)
+
+    /**
+     * Persistente clientId fuer dieses Geraet (UUID).
+     * Wird nur erzeugt wenn PreferencesHelper vorhanden ist (in Tests = leer).
+     */
+    val clientId: String by lazy { prefs?.getOrCreateClientId() ?: "" }
 
     private val _currentScreen = MutableStateFlow("login")
     val currentScreen: StateFlow<String> = _currentScreen.asStateFlow()
@@ -80,6 +94,19 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
     private val _isGameOver = MutableStateFlow(false)
     val isGameOver: StateFlow<Boolean> = _isGameOver.asStateFlow()
 
+    // === Reconnect Recovery State ===
+    private val _isReconnecting = MutableStateFlow(false)
+    val isReconnecting: StateFlow<Boolean> = _isReconnecting.asStateFlow()
+
+    private val _disconnectedPlayers = MutableStateFlow<Set<String>>(emptySet())
+    val disconnectedPlayers: StateFlow<Set<String>> = _disconnectedPlayers.asStateFlow()
+
+    private val _secondsUntilRemoval = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val secondsUntilRemoval: StateFlow<Map<String, Int>> = _secondsUntilRemoval.asStateFlow()
+
+    private val countdownJobs = mutableMapOf<String, Job>()
+    private val gracePeriodSeconds: Int = 60
+
     fun loadAllCities(context: Context) {
         try {
             val json = context.assets.open("cities.json").bufferedReader().readText()
@@ -129,6 +156,17 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
     }
 
     init {
+        // Restore vom Prefs, falls die App neu gestartet wurde nachdem der Spieler
+        // in einer Lobby war (Crash, manuelles Schliessen, OS-Kill).
+        val storedName = prefs?.getPlayerName()
+        if (!storedName.isNullOrBlank()) {
+            _playerName.value = storedName
+        }
+        val storedLobby = prefs?.getLobbyId()
+        if (!storedLobby.isNullOrBlank()) {
+            _lobbyId.value = storedLobby
+        }
+
         // Verbinde sofort mit dem Server beim Startfenster (nur wenn kein Mock injiziert)
         if (stompInstance == null) {
             stomp.connect()
@@ -145,6 +183,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
 
     fun setPlayerName(name: String) {
         _playerName.value = name
+        prefs?.setPlayerName(name)
     }
 
     fun joinLobby(pin: String) {
@@ -152,7 +191,8 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         _isHost.value = false
         _isLoading.value = true
         _errorMessage.value = null
-        stomp.joinMultiplayerLobby(pin, _playerName.value)
+        prefs?.setLobbyId(pin)
+        stomp.joinMultiplayerLobby(pin, _playerName.value, clientId.takeIf { it.isNotBlank() })
         // Navigation passiert jetzt in onResponse() nach Server-Bestätigung
     }
 
@@ -163,7 +203,9 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         _isHost.value = true
         _isLoading.value = true
         _errorMessage.value = null
-        stomp.createMultiplayerLobby(randomPin, name)
+        prefs?.setLobbyId(randomPin)
+        prefs?.setPlayerName(name)
+        stomp.createMultiplayerLobby(randomPin, name, clientId.takeIf { it.isNotBlank() })
         // Navigation passiert jetzt in onResponse() nach Server-Bestätigung
     }
 
@@ -213,6 +255,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         if (currentLobbyId.isNotBlank() && currentPlayerName.isNotBlank()) {
             stomp.leaveLobby(currentLobbyId, currentPlayerName)
         }
+        prefs?.clearLobbyId()
         _lobbyId.value = ""
         _playersList.value = emptyList()
         _isHost.value = false
@@ -228,13 +271,44 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         _currentTurnPlayerId.value = null
         _validMoveIds.value = emptyList()
         _remainingSteps.value = null
+        clearDisconnectStates()
         navigateTo("login")
+    }
+
+    private fun clearDisconnectStates() {
+        countdownJobs.values.forEach { it.cancel() }
+        countdownJobs.clear()
+        _disconnectedPlayers.value = emptySet()
+        _secondsUntilRemoval.value = emptyMap()
+        _isReconnecting.value = false
+    }
+
+    /**
+     * Wird beim initialen Connect aufgerufen. Wenn in SharedPreferences eine
+     * lobbyId + playerName gespeichert sind (Spieler war vor App-Kill in einem Spiel),
+     * automatisch REJOIN_LOBBY senden.
+     */
+    private fun attemptAutoRejoinFromPrefs() {
+        val safePrefs = prefs ?: return
+        val storedLobbyId = safePrefs.getLobbyId() ?: return
+        val storedPlayer = safePrefs.getPlayerName() ?: return
+        if (storedLobbyId.isBlank() || storedPlayer.isBlank() || clientId.isBlank()) return
+
+        _lobbyId.value = storedLobbyId
+        _playerName.value = storedPlayer
+        stomp.rejoinLobby(storedLobbyId, storedPlayer, clientId)
     }
 
     override fun onResponse(res: String) {
         Log.i("AppViewModel", "Received from server: $res")
         Log.d("CityTap", "onResponse: commandType=${runCatching { JSONObject(res).optString("commandType") }.getOrDefault("?")} validMoveIds=${runCatching { JSONObject(res).optJSONObject("state")?.optJSONArray("validMoveIds") }.getOrDefault("?")}")
         _isLoading.value = false
+
+        // Initialer Connect erfolgreich → versuchen automatisch rejoinen falls Prefs Daten haben
+        if (res == "connected") {
+            attemptAutoRejoinFromPrefs()
+            return
+        }
 
         try {
             if (res.startsWith("{")) {
@@ -246,6 +320,15 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                     _errorMessage.value = errorMsg
                     Log.e("CityTap", "Server-Fehler nach MOVE_TO_CITY: $errorMsg")
                     Log.e("AppViewModel", "Server-Fehler: $errorMsg")
+
+                    // REJOIN fehlgeschlagen (z.B. nach Grace Period Timeout)
+                    // → lobbyId aus Prefs loeschen und zurueck zum Login
+                    if (rootJson.optString("commandType") == "REJOIN_LOBBY") {
+                        prefs?.clearLobbyId()
+                        _lobbyId.value = ""
+                        clearDisconnectStates()
+                        navigateTo("login")
+                    }
                     return
                 }
 
@@ -264,11 +347,15 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                         val cityCountsMap = mutableMapOf<String, Int>()
                         val currentCitiesMap = mutableMapOf<String, City?>()
                         val startCityNamesMap = _playerStartCityNames.value.toMutableMap()
+                        val disconnectedNow = mutableSetOf<String>()
 
                         for (i in 0 until playersArray.length()) {
                             val playerObj = playersArray.getJSONObject(i)
                             val pId = playerObj.getString("playerId")
                             newList.add(pId)
+                            if (playerObj.has("connected") && !playerObj.getBoolean("connected")) {
+                                disconnectedNow.add(pId)
+                            }
 
                             if (playerObj.has("currentCity") && !playerObj.isNull("currentCity")) {
                                 val cc = playerObj.getJSONObject("currentCity")
@@ -335,6 +422,7 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                         _playersList.value = newList
                         _playerCityCounts.value = cityCountsMap
                         _playerCurrentCities.value = currentCitiesMap
+                        applyConnectionStatus(disconnectedNow)
                     }
 
                     // Würfelergebnis und aktueller Spieler (dein bestehender Code)
@@ -355,6 +443,13 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                     val rs = stateJson.optInt("remainingSteps", -1)
                     _remainingSteps.value = if (rs >= 0) rs else null
 
+                    // hostId aus dem State lesen — fuer Auto-Rejoin (wir wissen sonst nicht
+                    // ob der zurueckkehrende Spieler Host war).
+                    val hostId = stateJson.optString("hostId", "")
+                    if (hostId.isNotBlank() && hostId == _playerName.value) {
+                        _isHost.value = true
+                    }
+
                     // Navigation (dein bestehender Code)
                     val commandType = rootJson.optString("commandType", "")
                     val phase = stateJson.optString("phase", "LOBBY")
@@ -367,6 +462,16 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
                             navigateTo("login")
                         }
                         commandType == "RESET_LOBBY" -> {
+                            if (_isHost.value) navigateTo("host")
+                            else navigateTo("waiting")
+                        }
+                        commandType == "PLAYER_RECONNECTED" && phase == "LOBBY" -> {
+                            if (_isHost.value) navigateTo("host")
+                            else navigateTo("waiting")
+                        }
+                        commandType == "LEAVE_LOBBY" && phase == "LOBBY" && _currentScreen.value == "game" -> {
+                            // Spiel wurde abgebrochen weil nur 1 Spieler uebrig ist
+                            // -> zurueck zur Lobby (Host- oder Wartezimmer)
                             if (_isHost.value) navigateTo("host")
                             else navigateTo("waiting")
                         }
@@ -402,6 +507,55 @@ open class AppViewModel(stompInstance: MyStomp? = null) : ViewModel(), Callbacks
         } catch (e: Exception) {
             Log.e("AppViewModel", "Failed to parse goal-reached", e)
         }
+    }
+
+    override fun onConnectionLost() {
+        _isReconnecting.value = true
+    }
+
+    override fun onReconnected() {
+        _isReconnecting.value = false
+        // Wenn lobbyId in Prefs gespeichert ist und wir nicht im Login-Screen sind:
+        // automatisch REJOIN_LOBBY senden um zurueck ins Spiel zu kommen
+        val storedLobbyId = prefs?.getLobbyId() ?: return
+        val player = _playerName.value
+        if (storedLobbyId.isNotBlank() && player.isNotBlank() && clientId.isNotBlank()) {
+            stomp.rejoinLobby(storedLobbyId, player, clientId)
+        }
+    }
+
+    private fun applyConnectionStatus(disconnectedNow: Set<String>) {
+        val previouslyDisconnected = _disconnectedPlayers.value
+        _disconnectedPlayers.value = disconnectedNow
+
+        // Spieler die NEU disconnected sind: Countdown starten
+        for (playerId in disconnectedNow - previouslyDisconnected) {
+            startRemovalCountdown(playerId)
+        }
+
+        // Spieler die zurueck sind: Countdown abbrechen
+        for (playerId in previouslyDisconnected - disconnectedNow) {
+            cancelRemovalCountdown(playerId)
+        }
+    }
+
+    private fun startRemovalCountdown(playerId: String) {
+        cancelRemovalCountdown(playerId)
+        _secondsUntilRemoval.value = _secondsUntilRemoval.value + (playerId to gracePeriodSeconds)
+        countdownJobs[playerId] = viewModelScope.launch {
+            var remaining = gracePeriodSeconds
+            while (remaining > 0) {
+                delay(1000L)
+                remaining -= 1
+                _secondsUntilRemoval.value = _secondsUntilRemoval.value + (playerId to remaining)
+            }
+            _secondsUntilRemoval.value = _secondsUntilRemoval.value - playerId
+        }
+    }
+
+    private fun cancelRemovalCountdown(playerId: String) {
+        countdownJobs.remove(playerId)?.cancel()
+        _secondsUntilRemoval.value = _secondsUntilRemoval.value - playerId
     }
 
     override fun onGameOver(res: String) {
