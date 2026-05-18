@@ -53,6 +53,12 @@ fun GameScreen(viewModel: AppViewModel) {
     //Bucketlist offen? Default false
     var showBucketListDialog by remember { mutableStateOf(false) }
 
+    var chosenCity by remember { mutableStateOf<String?>(null) }
+    val visitedCities = remember { mutableSetOf<String>() }
+    //dummy Daten!
+    val testStaedte = listOf("Berlin", "Madrid", "London", "Wien", "Paris", "New York", "Sydney", "Kapstadt", "Rio de Janeiro", "Moskau", "Peking", "Kairo", "Roma")
+
+
     // Box (Schichten-Design)
     Box(
         modifier = Modifier
@@ -132,43 +138,18 @@ fun GameScreen(viewModel: AppViewModel) {
     }
 
     //Pop Up Bucket List
-    if (showBucketListDialog) {
-        AlertDialog(
-            onDismissRequest = { showBucketListDialog = false },
-            title = {
-                Text(text = "Bucket List", fontWeight = FontWeight.Bold)
-            },
-            text = {
-                //vertikales Scrollen
-                Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState())
-                ) {
-                    Text("Your Destinations:") //Beispiel STädte die für Sprint 1 nicht existieren!
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("📍 Hometown: Berlin", fontWeight = FontWeight.Bold)
-                    Text("Paris")
-                    Text("Tokyo")
-                    Text("New York")
-                    Text("Sydney")
-                    Text("Kapstadt")
-                    Text("Rio de Janeiro")
-                    Text("Moskau")
-                    Text("Peking")
-                    Text("Kairo")
-                    Text("Rom")
-                    Text("London")
-                    Text("Los Angeles")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "wird später automatisch befüllt", fontSize = 12.sp, color = Color.Gray)
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showBucketListDialog = false }) {
-                    Text("close")
-                }
-            }
-        )
-    }
+    WeltreiseBucketList(
+        drawnCities = testStaedte,
+        isVisible = showBucketListDialog,
+        chosenCity = chosenCity,
+        visitedCities = setOf("Berlin", "Paris"), //dummy Daten!
+        onCityChosen = { clickedCity ->
+            chosenCity = clickedCity
+                       },
+        onDismiss = {
+            showBucketListDialog = false
+        }
+    )
 }
 
 
