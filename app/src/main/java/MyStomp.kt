@@ -16,6 +16,7 @@ import org.hildan.krossbow.stomp.sendText
 import org.hildan.krossbow.stomp.subscribeText
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
+import at.aau.serg.websocketbrokerdemo.GameConstants
 
 //private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
 private const val WEBSOCKET_URI = "ws://se2-demo.aau.at:53205/websocket-example-broker"
@@ -408,4 +409,26 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
+    fun finishMinigame(lobbyId: String, playerId: String, winnerPlayerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_FINISH_MINIGAME)
+                command.put("playerId", playerId)
+                command.put("winnerPlayerId", winnerPlayerId)
+
+                if(session == null) {
+                    Log.e("MyStomp", "finishMinigame ABGEBROCHEN: session ist null!")
+                    return@launch
+                }
+
+                session!!.sendText(dest,command.toString())
+                Log.e("MyStomp", "finishMinigame gesendet -> $command")
+            }catch (e : Exception) {
+                Log.e("MyStomp", "Fehler beim Beenden des Minigames", e)
+            }
+        }
+    }
 }
