@@ -572,6 +572,7 @@ open class AppViewModel(
         _isGameOver.value = true
         try {
             val json = JSONObject(res)
+            val winnerId = json.optString("winnerId")
             val array = json.getJSONArray("scores")
             val results = mutableListOf<GameOverMessage.PlayerResult>()
             for (i in 0 until array.length()) {
@@ -581,7 +582,7 @@ open class AppViewModel(
                     score = item.optInt("score")
                 ))
             }
-            _gameOverMessage.value = GameOverMessage(results)
+            _gameOverMessage.value = GameOverMessage(winnerId, results)
             navigateTo("gameover")
         } catch (e: Exception) {
             Log.e("AppViewModel", "Failed to parse game-over", e)

@@ -27,12 +27,18 @@ private val Red = Color(0xFFB71C1C)
 @Composable
 fun GameOverScreen(
     currentPlayerName: String,
+    winnerId: String?,
     results: List<GameOverMessage.PlayerResult>,
     onPlayAgainClick: () -> Unit = {},
     onLeaveClick: () -> Unit = {}
 ) {
-    val sortedResults = results.sortedByDescending { it.score }
-    val winner = sortedResults.firstOrNull()?.playerName
+    val winner = winnerId?.takeIf { it.isNotBlank() }
+        ?: results.maxByOrNull { it.score }?.playerName
+    // Echten Sieger immer auf Platz 1, restliche Spieler nach Score absteigend.
+    val sortedResults = results.sortedWith(
+        compareByDescending<GameOverMessage.PlayerResult> { it.playerName == winner }
+            .thenByDescending { it.score }
+    )
     val hasWon = currentPlayerName == winner
 
     Box(
@@ -167,6 +173,7 @@ fun GameOverScreenPreview() {
     MaterialTheme {
         GameOverScreen(
             currentPlayerName = "Marco Polo",
+            winnerId = "DoraTheExplorer",
             results = listOf(
                 GameOverMessage.PlayerResult("DoraTheExplorer", 8),
                 GameOverMessage.PlayerResult("Marco Polo", 5),
@@ -182,6 +189,7 @@ fun GameOverScreenWinnerPreview() {
     MaterialTheme {
         GameOverScreen(
             currentPlayerName = "DoraTheExplorer",
+            winnerId = "DoraTheExplorer",
             results = listOf(
                 GameOverMessage.PlayerResult("DoraTheExplorer", 8),
                 GameOverMessage.PlayerResult("Marco Polo", 5),
