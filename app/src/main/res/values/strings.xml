@@ -45,7 +45,7 @@
     <string name="minigame_result_target_wins_text">The target player won the mini-game and claimed the city.</string>
 
     <string name="minigame_result_other_wins_title">Detour ahead!</string>
-    <string name="minigame_result_other_wins_text">Another player won the mini-game. The target player receives a new destination.</string>
+    <string name="minigame_result_other_wins_text">%1$s won the mini-game. %2$s loses %3$s and receives a new destination.</string>
 
     <string name="minigame_result_continue_button">Continue</string>
 

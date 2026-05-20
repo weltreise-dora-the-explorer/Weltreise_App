@@ -28,6 +28,7 @@ private enum class MinigameResultType {
 fun MinigameOverlay(
     targetPlayerName: String,
     otherPlayerName: String,
+    targetCityName: String,
     canFinishMinigame: Boolean,
     onFinishMinigame: (winnerPlayerId: String) -> Unit
 ) {
@@ -143,7 +144,7 @@ fun MinigameOverlay(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = stringResource(R.string.minigame_result_other_wins_text),
+                        text = stringResource(R.string.minigame_result_other_wins_text, otherPlayerName, targetPlayerName, targetCityName.ifBlank {"the target city"}),
                         color = Color.White,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium

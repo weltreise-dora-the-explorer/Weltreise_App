@@ -90,6 +90,9 @@ fun GameScreen(viewModel: AppViewModel) {
     val gameOverMessage by viewModel.gameOverMessage.collectAsState()
     val isMinigamePhase = gamePhase == GameConstants.PHASE_MINIGAME
     val isMyTurn = currentTurnPlayerId == currentPlayerName
+    val myCurrentCity = playerCurrentCities[currentPlayerName]
+    val isStandingOnOwnTargetCity = myCurrentCity != null && ownedCities.any {it.id == myCurrentCity.id}
+    val shouldShowFreePassDecision = freePassCount > 0 && isMyTurn && !isGameOver && !isMinigamePhase && diceValue != null && isStandingOnOwnTargetCity
     val effectiveIsMyTurn = isMyTurn && !isGameOver && !isMinigamePhase
     val canRoll = effectiveIsMyTurn && diceValue == null
     val canEndTurn = effectiveIsMyTurn && diceValue != null
@@ -127,6 +130,7 @@ fun GameScreen(viewModel: AppViewModel) {
 
     //Bucketlist offen? Default false
     val showBucketListDialog = remember { mutableStateOf(false) }
+    val showFreePassDialog = remember {mutableStateOf(false)}
 
     // Würfelergebnis fade-out nach 5 Sekunden
     var showDiceOverlay by remember { mutableStateOf(false) }
@@ -204,6 +208,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 MinigameOverlay(
                     targetPlayerName = minigameTargetPlayer,
                     otherPlayerName = minigameOtherPlayer,
+                    targetCityName = playerCurrentCities[minigameTargetPlayer]?.name ?: "",
                     canFinishMinigame = canFinishMinigame,
                     onFinishMinigame = { winnerPlayerId ->
                         viewModel.finishMinigame(winnerPlayerId)
@@ -381,13 +386,19 @@ fun GameScreen(viewModel: AppViewModel) {
 
                 Button(
                     onClick = {
-                        viewModel.useFreePass()
+                        if(shouldShowFreePassDecision) {
+                            showFreePassDialog.value = true
+                        }
                     },
+                    enabled = shouldShowFreePassDecision,
                     modifier = Modifier
                         .width(120.dp)
                         .height(60.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD4AF37))
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFD4AF37),
+                        disabledContainerColor = Color(0xFF8A7A3D)
+                    )
                 ) {
                     Text(
                         text = stringResource(R.string.free_pass_count, freePassCount),
@@ -474,6 +485,52 @@ fun GameScreen(viewModel: AppViewModel) {
             confirmButton = {
                 TextButton(onClick = { showBucketListDialog.value = false }) {
                     Text("close")
+                }
+            }
+        )
+    }
+
+    //FreePass Dialog
+    if (showFreePassDialog.value) {
+        AlertDialog(
+            onDismissRequest = {
+                showFreePassDialog.value = false
+            },
+            title = {
+                Text(
+                    text = "Free Pass verwenden?",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "Du stehst auf deiner Zielstadt ${myCurrentCity?.name ?: ""}."
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Möchtest du deinen Free Pass einsetzen und die Stadt ohne Minigame abschließen?"
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showFreePassDialog.value = false
+                        viewModel.useFreePass()
+                    }
+                ) {
+                    Text("Free Pass verwenden")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showFreePassDialog.value = false
+                        viewModel.startMinigame()
+                    }
+                ) {
+                    Text("Minigame spielen")
                 }
             }
         )

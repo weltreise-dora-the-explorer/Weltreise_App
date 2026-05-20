@@ -18,8 +18,8 @@ import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 import at.aau.serg.websocketbrokerdemo.GameConstants
 
-//private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
-private const val WEBSOCKET_URI = "ws://se2-demo.aau.at:53205/websocket-example-broker"
+private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
+//private const val WEBSOCKET_URI = "ws://se2-demo.aau.at:53205/websocket-example-broker"
 private const val RECONNECT_INITIAL_DELAY_MS = 2000L
 private const val RECONNECT_MAX_DELAY_MS = 30_000L
 
@@ -450,6 +450,28 @@ class MyStomp(val callbacks: Callbacks) {
                 Log.d("MyStomp", "useFreePass gesendet -> $command")
             } catch (e : Exception) {
                 Log.e("MyStomp", "Fehler beim Verwenden des Freepasses", e)
+            }
+        }
+    }
+
+    fun startMinigame(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_START_MINIGAME)
+                command.put("playerId", playerId)
+
+                if (session == null) {
+                    Log.e("MyStomp", "startMinigame ABGEBROCHEN: session ist null!")
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                Log.d("MyStomp", "startMinigame gesendet -> $command")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Starten des Minigames", e)
             }
         }
     }

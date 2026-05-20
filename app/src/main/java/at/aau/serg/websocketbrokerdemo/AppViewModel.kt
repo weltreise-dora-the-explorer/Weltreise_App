@@ -259,6 +259,13 @@ open class AppViewModel(
         )
     }
 
+    fun startMinigame() {
+        stomp.startMinigame(
+            lobbyId = _lobbyId.value,
+            playerId = _playerName.value
+        )
+    }
+
     fun playAgain() {
         _isGameOver.value = false
         _gameOverMessage.value = null
