@@ -2,9 +2,11 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import at.aau.serg.websocketbrokerdemo.Callbacks
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -16,7 +18,10 @@ import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 import at.aau.serg.websocketbrokerdemo.GameConstants
 
-private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
+//private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
+private const val WEBSOCKET_URI = "ws://se2-demo.aau.at:53205/websocket-example-broker"
+private const val RECONNECT_INITIAL_DELAY_MS = 2000L
+private const val RECONNECT_MAX_DELAY_MS = 30_000L
 
 class MyStomp(val callbacks: Callbacks) {
     private var topicFlow: Flow<String>? = null
@@ -27,7 +32,22 @@ class MyStomp(val callbacks: Callbacks) {
     private lateinit var client: StompClient
     private var session: StompSession? = null
 
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    /**
+     * Defensiver Coroutine-Scope:
+     *  - SupervisorJob: ein abstuerzender Topic-Flow cancelt nicht alle anderen
+     *  - CoroutineExceptionHandler: unhandled Exceptions werden nur geloggt,
+     *    statt durchgereicht zu werden -> Android killt den Prozess nicht mehr.
+     */
+    private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        Log.e("MyStomp", "Uncaught coroutine exception", throwable)
+    }
+    private val scope: CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.IO + exceptionHandler)
+
+    @Volatile
+    private var reconnecting: Boolean = false
+
+    fun isConnected(): Boolean = session != null
 
     fun connect() {
         client = StompClient(OkHttpWebSocketClient()) // other config can be passed in here
@@ -39,35 +59,43 @@ class MyStomp(val callbacks: Callbacks) {
                 // connect to topic
                 topicFlow = activeSession.subscribeText("/topic/hello-response")
                 collector = scope.launch {
-                    topicFlow?.collect { msg ->
-                        // TODO logic
-                        callback(msg)
+                    collectSafely("hello-response") {
+                        topicFlow?.collect { msg ->
+                            // TODO logic
+                            callback(msg)
+                        }
                     }
                 }
 
                 // connect to JSON topic
                 jsonFlow = activeSession.subscribeText("/topic/rcv-object")
                 jsonCollector = scope.launch {
-                    jsonFlow?.collect { msg ->
-                        val o = JSONObject(msg)
-                        callback(o.get("text").toString())
+                    collectSafely("rcv-object") {
+                        jsonFlow?.collect { msg ->
+                            val o = JSONObject(msg)
+                            callback(o.get("text").toString())
+                        }
                     }
                 }
 
                 val goalReachedFlow = activeSession.subscribeText("/topic/goal-reached")
                 scope.launch {
-                    goalReachedFlow.collect { msg ->
-                        Log.d("MyStomp", "GOAL-REACHED received: $msg")
-                        callbackGoalReached(msg)
+                    collectSafely("goal-reached") {
+                        goalReachedFlow.collect { msg ->
+                            Log.d("MyStomp", "GOAL-REACHED received: $msg")
+                            callbackGoalReached(msg)
+                        }
                     }
                 }
                 Log.d("MyStomp", "Subscribed to /topic/goal-reached")
 
                 val gameOverFlow = activeSession.subscribeText("/topic/game-over")
                 scope.launch {
-                    gameOverFlow.collect { msg ->
-                        Log.d("MyStomp", "GAME-OVER received: $msg")
-                        callbackGameOver(msg)
+                    collectSafely("game-over") {
+                        gameOverFlow.collect { msg ->
+                            Log.d("MyStomp", "GAME-OVER received: $msg")
+                            callbackGameOver(msg)
+                        }
                     }
                 }
                 Log.d("MyStomp", "Subscribed to /topic/game-over")
@@ -99,7 +127,7 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
-    fun joinMultiplayerLobby(lobbyId: String, playerId: String) {
+    fun joinMultiplayerLobby(lobbyId: String, playerId: String, clientId: String? = null) {
         scope.launch {
             try {
                 // Warte, falls die App gerade erst gestartet ist und der Socket noch verbindet
@@ -108,21 +136,15 @@ class MyStomp(val callbacks: Callbacks) {
                     delay(100)
                     attempts++
                 }
-                
+
                 if (session == null) {
                     Log.e("MyStomp", "ABBRUCH: Keine StompSession! Ist der Server an?")
                     return@launch
                 }
 
                 // 1. Subscribe to lobby events
-                val lobbyFlow = session?.subscribeText("/topic/lobby/$lobbyId/events")
-                scope.launch {
-                    lobbyFlow?.collect { msg ->
-                        Log.i("Lobby-Update", "Vom Server gesynctes Spielfeld: $msg")
-                        callback(msg) // Send to ViewModel
-                    }
-                }
-                
+                subscribeLobbyEvents(lobbyId)
+
                 // 2. Warten, damit der Server das Subscribe sicher verarbeitet hat
                 delay(500)
 
@@ -130,10 +152,13 @@ class MyStomp(val callbacks: Callbacks) {
                 val joinCommand = JSONObject()
                 joinCommand.put("type", "JOIN_LOBBY")
                 joinCommand.put("playerId", playerId)
-                
+                if (!clientId.isNullOrBlank()) {
+                    joinCommand.put("clientId", clientId)
+                }
+
                 session?.sendText("/app/lobby/$lobbyId/command", joinCommand.toString())
                 Log.i("Lobby", "Join-Befehl an Server geschickt für Spieler: $playerId")
-                
+
             } catch (e: Exception) {
                 Log.e("MyStomp", "Fehler beim Lobby Join", e)
                 callback("Error: Lobby Join Failed")
@@ -141,7 +166,7 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
-    fun createMultiplayerLobby(lobbyId: String, playerId: String) {
+    fun createMultiplayerLobby(lobbyId: String, playerId: String, clientId: String? = null) {
         scope.launch {
             try {
                 // Warte auf Session falls nötig
@@ -158,13 +183,7 @@ class MyStomp(val callbacks: Callbacks) {
                 }
 
                 // 1. Subscribe to lobby events
-                val lobbyFlow = session?.subscribeText("/topic/lobby/$lobbyId/events")
-                scope.launch {
-                    lobbyFlow?.collect { msg ->
-                        Log.i("Lobby-Update", "Vom Server gesynctes Spielfeld: $msg")
-                        callback(msg)
-                    }
-                }
+                subscribeLobbyEvents(lobbyId)
 
                 // 2. Warten, damit der Server das Subscribe sicher verarbeitet hat
                 delay(500)
@@ -173,6 +192,9 @@ class MyStomp(val callbacks: Callbacks) {
                 val createCommand = JSONObject()
                 createCommand.put("type", "CREATE_LOBBY")
                 createCommand.put("playerId", playerId)
+                if (!clientId.isNullOrBlank()) {
+                    createCommand.put("clientId", clientId)
+                }
 
                 session?.sendText("/app/lobby/$lobbyId/command", createCommand.toString())
                 Log.i("Lobby", "Create-Befehl an Server geschickt für Spieler: $playerId")
@@ -181,6 +203,106 @@ class MyStomp(val callbacks: Callbacks) {
                 Log.e("MyStomp", "Fehler beim Lobby erstellen", e)
                 callback("Error: Lobby Creation Failed")
             }
+        }
+    }
+
+    /**
+     * Schickt einen REJOIN_LOBBY Befehl an den Server.
+     * Wird nach einem Verbindungsabbruch verwendet, um zurueck in die laufende Lobby zu kommen.
+     */
+    fun rejoinLobby(lobbyId: String, playerId: String, clientId: String) {
+        scope.launch {
+            try {
+                var attempts = 0
+                while (session == null && attempts < 50) {
+                    delay(100)
+                    attempts++
+                }
+                if (session == null) {
+                    Log.e("MyStomp", "ABBRUCH: rejoinLobby ohne Session.")
+                    return@launch
+                }
+
+                subscribeLobbyEvents(lobbyId)
+                delay(500)
+
+                val rejoinCommand = JSONObject()
+                rejoinCommand.put("type", "REJOIN_LOBBY")
+                rejoinCommand.put("playerId", playerId)
+                rejoinCommand.put("clientId", clientId)
+
+                session?.sendText("/app/lobby/$lobbyId/command", rejoinCommand.toString())
+                Log.i("MyStomp", "REJOIN_LOBBY sent for lobby=$lobbyId player=$playerId")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Rejoin", e)
+                callback("Error: Lobby Rejoin Failed")
+            }
+        }
+    }
+
+    /**
+     * Subscribed auf /topic/lobby/{lobbyId}/events. Bei Verbindungsabbruch wird
+     * der `onConnectionLost`-Callback ausgeloest und ein Reconnect versucht.
+     */
+    private suspend fun subscribeLobbyEvents(lobbyId: String) {
+        val lobbyFlow = session?.subscribeText("/topic/lobby/$lobbyId/events") ?: return
+        scope.launch {
+            try {
+                lobbyFlow.collect { msg ->
+                    Log.i("Lobby-Update", "Vom Server gesynctes Spielfeld: $msg")
+                    callback(msg)
+                }
+            } catch (e: Exception) {
+                Log.w("MyStomp", "Lobby events flow ended with exception: ${e.message}")
+                handleConnectionLost()
+            }
+        }
+    }
+
+    /**
+     * Sammelt einen Flow innerhalb eines try/catch. Faengt jeden Fehler ab
+     * (z.B. Server-Stop -> WebSocket bricht weg) und triggert einen Reconnect,
+     * statt die Exception bis zum UncaughtExceptionHandler propagieren zu lassen
+     * (was zu einem Android-Prozesscrash und dem "App-Sturz auf Home-Screen" fuehrt).
+     */
+    private suspend fun collectSafely(topicName: String, block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (e: Exception) {
+            Log.w("MyStomp", "Topic $topicName ended with exception: ${e.message}")
+            handleConnectionLost()
+        }
+    }
+
+    private fun handleConnectionLost() {
+        session = null
+        Handler(Looper.getMainLooper()).post {
+            callbacks.onConnectionLost()
+        }
+        scheduleReconnect()
+    }
+
+    private fun scheduleReconnect() {
+        if (reconnecting) return
+        reconnecting = true
+        scope.launch {
+            var delayMs = RECONNECT_INITIAL_DELAY_MS
+            while (session == null) {
+                try {
+                    delay(delayMs)
+                    Log.i("MyStomp", "Reconnect attempt...")
+                    val activeSession = client.connect(WEBSOCKET_URI)
+                    session = activeSession
+                    Handler(Looper.getMainLooper()).post {
+                        callbacks.onReconnected()
+                    }
+                    break
+                } catch (e: Exception) {
+                    Log.w("MyStomp", "Reconnect failed: ${e.message}")
+                    delayMs = (delayMs * 2).coerceAtMost(RECONNECT_MAX_DELAY_MS)
+                }
+            }
+            reconnecting = false
         }
     }
 

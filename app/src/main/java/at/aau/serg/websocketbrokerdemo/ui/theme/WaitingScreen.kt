@@ -120,8 +120,13 @@ fun WaitingScreen(viewModel: AppViewModel) {
                 verticalAlignment = Alignment.Bottom
             ) {
                 val playersList by viewModel.playersList.collectAsState()
+                val disconnectedPlayers by viewModel.disconnectedPlayers.collectAsState()
                 playersList.forEachIndexed { index, playerName ->
-                    TravellerItem(playerName, avatars.getOrNull(index % avatars.size))
+                    TravellerItem(
+                        name = playerName,
+                        avatar = avatars.getOrNull(index % avatars.size),
+                        disconnected = playerName in disconnectedPlayers
+                    )
                 }
             }
 
@@ -151,7 +156,7 @@ fun WaitingScreen(viewModel: AppViewModel) {
 
 // Eine kleine Hilfs-Funktion für die Spieler-Avatare (KI)
 @Composable
-fun TravellerItem(name: String, avatar: ImageBitmap? = null) {
+fun TravellerItem(name: String, avatar: ImageBitmap? = null, disconnected: Boolean = false) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
@@ -164,17 +169,27 @@ fun TravellerItem(name: String, avatar: ImageBitmap? = null) {
                     bitmap = avatar,
                     contentDescription = name,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    alpha = if (disconnected) 0.4f else 1f
                 )
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = name,
-            color = Color.White,
+            color = if (disconnected) Color.White.copy(alpha = 0.6f) else Color.White,
             fontSize = 14.sp,
             textAlign = TextAlign.Center
         )
+        if (disconnected) {
+            Text(
+                text = "(reconnecting)",
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 11.sp,
+                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 

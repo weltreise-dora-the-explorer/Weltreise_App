@@ -1,6 +1,8 @@
 package at.aau.serg.websocketbrokerdemo
 
 import MyStomp
+import at.aau.serg.websocketbrokerdemo.preferences.PreferencesHelper
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
@@ -908,6 +910,173 @@ class AppViewModelTest {
         viewModel.onResponse(response)
 
         assertEquals("waiting", viewModel.currentScreen.value)
+    }
+
+    // ========== RECONNECT RECOVERY TESTS ==========
+
+    @Test
+    fun `onConnectionLost sets isReconnecting true`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onConnectionLost()
+
+        assertTrue(viewModel.isReconnecting.value)
+    }
+
+    @Test
+    fun `onReconnected sets isReconnecting false`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onConnectionLost()
+        assertTrue(viewModel.isReconnecting.value)
+
+        viewModel.onReconnected()
+        assertFalse(viewModel.isReconnecting.value)
+    }
+
+    @Test
+    fun `onReconnected without stored lobbyId does NOT trigger rejoin`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "client-abc"
+        every { mockPrefs.getLobbyId() } returns null
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+
+        viewModel.onReconnected()
+
+        verify(exactly = 0) { mockStomp.rejoinLobby(any(), any(), any()) }
+    }
+
+    @Test
+    fun `onReconnected with stored lobbyId and player triggers rejoin`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "client-abc"
+        every { mockPrefs.getLobbyId() } returns "1234"
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+        viewModel.setPlayerName("Marco")
+
+        viewModel.onReconnected()
+
+        verify { mockStomp.rejoinLobby("1234", "Marco", "client-abc") }
+    }
+
+    @Test
+    fun `onResponse with disconnected player updates disconnectedPlayers set`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        val response = """{"success":true,"commandType":"PLAYER_DISCONNECTED","state":{"players":[{"playerId":"Alice","connected":true},{"playerId":"Bob","connected":false}],"phase":"GAME"}}"""
+        viewModel.onResponse(response)
+
+        assertTrue(viewModel.disconnectedPlayers.value.contains("Bob"))
+        assertFalse(viewModel.disconnectedPlayers.value.contains("Alice"))
+    }
+
+    @Test
+    fun `onResponse with reconnected player removes from disconnectedPlayers set`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        val disconnectResponse = """{"success":true,"commandType":"PLAYER_DISCONNECTED","state":{"players":[{"playerId":"Alice","connected":true},{"playerId":"Bob","connected":false}],"phase":"GAME"}}"""
+        viewModel.onResponse(disconnectResponse)
+        assertTrue(viewModel.disconnectedPlayers.value.contains("Bob"))
+
+        val reconnectResponse = """{"success":true,"commandType":"PLAYER_RECONNECTED","state":{"players":[{"playerId":"Alice","connected":true},{"playerId":"Bob","connected":true}],"phase":"GAME"}}"""
+        viewModel.onResponse(reconnectResponse)
+
+        assertFalse(viewModel.disconnectedPlayers.value.contains("Bob"))
+    }
+
+    @Test
+    fun `onResponse with failed REJOIN navigates to login and clears lobbyId`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "client-abc"
+        every { mockPrefs.getLobbyId() } returns "1234"
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+        viewModel.navigateTo("game")
+
+        val errorResponse = """{"success":false,"commandType":"REJOIN_LOBBY","message":"Player is not in lobby"}"""
+        viewModel.onResponse(errorResponse)
+
+        assertEquals("login", viewModel.currentScreen.value)
+        verify { mockPrefs.clearLobbyId() }
+    }
+
+    @Test
+    fun `leaveLobby clears disconnect states`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.joinLobby("1234")
+        viewModel.setPlayerName("Marco")
+
+        val disconnectResponse = """{"success":true,"commandType":"PLAYER_DISCONNECTED","state":{"players":[{"playerId":"Marco","connected":true},{"playerId":"Bob","connected":false}],"phase":"GAME"}}"""
+        viewModel.onResponse(disconnectResponse)
+        assertTrue(viewModel.disconnectedPlayers.value.contains("Bob"))
+
+        viewModel.leaveLobby()
+
+        assertTrue(viewModel.disconnectedPlayers.value.isEmpty())
+        assertFalse(viewModel.isReconnecting.value)
+    }
+
+    @Test
+    fun `clientId is empty string when prefs is null`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        assertEquals("", viewModel.clientId)
+    }
+
+    @Test
+    fun `clientId returns value from prefs when provided`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "uuid-123"
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+
+        assertEquals("uuid-123", viewModel.clientId)
+    }
+
+    @Test
+    fun `hostLobby persists lobbyId to prefs`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "uuid-123"
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+
+        viewModel.hostLobby("Marco")
+
+        verify { mockPrefs.setLobbyId(any()) }
+    }
+
+    @Test
+    fun `joinLobby persists lobbyId to prefs`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "uuid-123"
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+
+        viewModel.joinLobby("5678")
+
+        verify { mockPrefs.setLobbyId("5678") }
+    }
+
+    @Test
+    fun `leaveLobby clears lobbyId in prefs`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
+        every { mockPrefs.getOrCreateClientId() } returns "uuid-123"
+        val viewModel = AppViewModel(mockStomp, mockPrefs)
+        viewModel.joinLobby("5678")
+        viewModel.setPlayerName("Marco")
+
+        viewModel.leaveLobby()
+
+        verify { mockPrefs.clearLobbyId() }
     }
 
     // ========== HELPER ==========

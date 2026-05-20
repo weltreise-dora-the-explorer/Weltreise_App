@@ -170,8 +170,13 @@ fun HostScreen(viewModel: AppViewModel) {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Dynamically render players
+                    val disconnectedPlayers by viewModel.disconnectedPlayers.collectAsState()
                     playersList.forEachIndexed { index, playerName ->
-                        TravellerCard(playerName, avatars.getOrNull(index % avatars.size))
+                        TravellerCard(
+                            name = playerName,
+                            avatar = avatars.getOrNull(index % avatars.size),
+                            disconnected = playerName in disconnectedPlayers
+                        )
                         Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
@@ -207,7 +212,7 @@ fun TourButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
 
 // Helfer-Funktion für die Spieler-Karten rechts
 @Composable
-fun TravellerCard(name: String, avatar: ImageBitmap? = null) {
+fun TravellerCard(name: String, avatar: ImageBitmap? = null, disconnected: Boolean = false) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
@@ -224,7 +229,8 @@ fun TravellerCard(name: String, avatar: ImageBitmap? = null) {
                     bitmap = avatar,
                     contentDescription = name,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    alpha = if (disconnected) 0.4f else 1f
                 )
             }
         }
@@ -236,16 +242,28 @@ fun TravellerCard(name: String, avatar: ImageBitmap? = null) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(45.dp),
-            color = Color.White.copy(alpha = 0.7f),
+            color = Color.White.copy(alpha = if (disconnected) 0.4f else 0.7f),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Box(contentAlignment = Alignment.CenterStart, modifier = Modifier.padding(start = 16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = 16.dp, end = 12.dp)
+            ) {
                 Text(
                     text = name,
                     color = Color(0xFF1E56A0),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
+                if (disconnected) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "(reconnecting)",
+                        color = Color.Gray,
+                        fontSize = 11.sp,
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                    )
+                }
             }
         }
     }
