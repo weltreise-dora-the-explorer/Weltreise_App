@@ -29,7 +29,7 @@
 
     <string name="back_button_description">Back to start screen</string>
 
-    <string name="minigame_active_test">MINIGAME ACTIVE</string>
-
     <string name="minigame_win_button">Win Mini-Game</string>
+
+    <string name="minigame_popup_title">Mini-Game</string>
 </resources>

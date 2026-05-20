@@ -87,10 +87,12 @@ fun GameScreen(viewModel: AppViewModel) {
     val isGameOver by viewModel.isGameOver.collectAsState()
     val goalReachedMessage by viewModel.goalReachedMessage.collectAsState()
     val gameOverMessage by viewModel.gameOverMessage.collectAsState()
+    val isMinigamePhase = gamePhase == GameConstants.PHASE_MINIGAME
     val isMyTurn = currentTurnPlayerId == currentPlayerName
     val effectiveIsMyTurn = isMyTurn && !isGameOver
     val canRoll = effectiveIsMyTurn && diceValue == null
     val canEndTurn = effectiveIsMyTurn && diceValue != null
+    val canFinishMinigame = currentTurnPlayerId == currentPlayerName
 
 
 
@@ -152,6 +154,18 @@ fun GameScreen(viewModel: AppViewModel) {
         }
     }
 
+    var showMinigameOverlay by remember {mutableStateOf(false)}
+
+    LaunchedEffect(gamePhase) {
+        if(gamePhase == GameConstants.PHASE_MINIGAME) {
+            showMinigameOverlay = false
+            delay(4000)
+            showMinigameOverlay = true
+        } else {
+            showMinigameOverlay = false
+        }
+    }
+
     // Box (Schichten-Design)
     Box(
         modifier = Modifier
@@ -176,13 +190,16 @@ fun GameScreen(viewModel: AppViewModel) {
             )
         }
 
-        if(gamePhase == GameConstants.PHASE_MINIGAME) {
+        if(gamePhase == GameConstants.PHASE_MINIGAME && showMinigameOverlay) {
             Box(
                 modifier = Modifier
-                    .align(Alignment.Center)
+                    .fillMaxSize()
                     .zIndex(20f)
+                    .background(Color(0x99000000)),
+                contentAlignment = Alignment.Center
             ){
                 MinigameOverlay(
+                    canFinishMinigame = canFinishMinigame,
                     onWinClick = {
                         viewModel.finishMinigame(currentPlayerName)
                     }

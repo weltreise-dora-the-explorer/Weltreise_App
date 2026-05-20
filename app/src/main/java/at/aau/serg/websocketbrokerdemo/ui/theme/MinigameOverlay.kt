@@ -21,6 +21,7 @@ import androidx.compose.material3.Button
 
 @Composable
 fun MinigameOverlay(
+    canFinishMinigame: Boolean,
     onWinClick: () -> Unit
 ) {
     Box(
@@ -33,7 +34,7 @@ fun MinigameOverlay(
             horizontalAlignment = Alignment.CenterHorizontally
         ){
             Text(
-                text = stringResource(R.string.minigame_active_test),
+                text = stringResource(R.string.minigame_popup_title),
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
@@ -42,7 +43,8 @@ fun MinigameOverlay(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = onWinClick
+                onClick = onWinClick,
+                enabled = canFinishMinigame
             ){
                 Text(text = stringResource(R.string.minigame_win_button))
             }
