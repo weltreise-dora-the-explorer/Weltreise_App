@@ -427,7 +427,29 @@ class MyStomp(val callbacks: Callbacks) {
                 session!!.sendText(dest,command.toString())
                 Log.e("MyStomp", "finishMinigame gesendet -> $command")
             }catch (e : Exception) {
-                Log.e("MyStomp", "Fehler beim Beenden des Minigames", e)
+                Log.d("MyStomp", "Fehler beim Beenden des Minigames", e)
+            }
+        }
+    }
+
+    fun useFreePass(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_USE_FREE_PASS)
+                command.put("playerId", playerId)
+
+                if(session == null) {
+                    Log.e("MyStomp", "useFreePass ABGEBROCHEN: session ist null!")
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                Log.d("MyStomp", "useFreePass gesendet -> $command")
+            } catch (e : Exception) {
+                Log.e("MyStomp", "Fehler beim Verwenden des Freepasses", e)
             }
         }
     }

@@ -85,6 +85,9 @@ open class AppViewModel(
     private val _remainingSteps = MutableStateFlow<Int?>(null)
     val remainingSteps: StateFlow<Int?> = _remainingSteps.asStateFlow()
 
+    private val _freePassCount = MutableStateFlow(0)
+    val freePassCount: StateFlow<Int> = _freePassCount.asStateFlow()
+
     private val _playerStartCityNames = MutableStateFlow<Map<String, String>>(emptyMap())
     val playerStartCityNames: StateFlow<Map<String, String>> = _playerStartCityNames.asStateFlow()
 
@@ -245,6 +248,17 @@ open class AppViewModel(
         )
     }
 
+    fun useFreePass() {
+        if(_freePassCount.value <= 0) {
+            return
+        }
+
+        stomp.useFreePass(
+            lobbyId = _lobbyId.value,
+            playerId = _playerName.value
+        )
+    }
+
     fun playAgain() {
         _isGameOver.value = false
         _gameOverMessage.value = null
@@ -258,6 +272,7 @@ open class AppViewModel(
         _currentTurnPlayerId.value = null
         _validMoveIds.value = emptyList()
         _remainingSteps.value = null
+        _freePassCount.value = 0
         stomp.resetLobby(_lobbyId.value, _playerName.value)
     }
 
@@ -284,6 +299,7 @@ open class AppViewModel(
         _currentTurnPlayerId.value = null
         _validMoveIds.value = emptyList()
         _remainingSteps.value = null
+        _freePassCount.value = 0
         clearDisconnectStates()
         navigateTo("login")
     }
@@ -366,6 +382,10 @@ open class AppViewModel(
                             val playerObj = playersArray.getJSONObject(i)
                             val pId = playerObj.getString("playerId")
                             newList.add(pId)
+                            if(pId == _playerName.value){
+                                _freePassCount.value = playerObj.optInt("freePassCount", 0)
+                            }
+
                             if (playerObj.has("connected") && !playerObj.getBoolean("connected")) {
                                 disconnectedNow.add(pId)
                             }
