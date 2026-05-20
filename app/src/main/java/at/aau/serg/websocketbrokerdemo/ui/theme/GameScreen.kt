@@ -85,11 +85,12 @@ fun GameScreen(viewModel: AppViewModel) {
     val validMoveIds by viewModel.validMoveIds.collectAsState()
     val remainingSteps by viewModel.remainingSteps.collectAsState()
     val isGameOver by viewModel.isGameOver.collectAsState()
+    val freePassCount by viewModel.freePassCount.collectAsState()
     val goalReachedMessage by viewModel.goalReachedMessage.collectAsState()
     val gameOverMessage by viewModel.gameOverMessage.collectAsState()
     val isMinigamePhase = gamePhase == GameConstants.PHASE_MINIGAME
     val isMyTurn = currentTurnPlayerId == currentPlayerName
-    val effectiveIsMyTurn = isMyTurn && !isGameOver
+    val effectiveIsMyTurn = isMyTurn && !isGameOver && !isMinigamePhase
     val canRoll = effectiveIsMyTurn && diceValue == null
     val canEndTurn = effectiveIsMyTurn && diceValue != null
     val canFinishMinigame = currentTurnPlayerId == currentPlayerName
@@ -373,6 +374,30 @@ fun GameScreen(viewModel: AppViewModel) {
                     showBucketListDialog.value = true
                 }
             )
+
+            //FreePass-Button, nur sichtbar wenn man mindestens 1 hat
+            if(freePassCount > 0 && !isMinigamePhase) {
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = {
+                        viewModel.useFreePass()
+                    },
+                    modifier = Modifier
+                        .width(120.dp)
+                        .height(60.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD4AF37))
+                ) {
+                    Text(
+                        text = stringResource(R.string.free_pass_count, freePassCount),
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            }
 
             // Zug beenden – nur sichtbar wenn gewürfelt und dran, unter Bucket List
             if (canEndTurn) {

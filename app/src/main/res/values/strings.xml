@@ -52,4 +52,7 @@
     <string name="minigame_visa_denied_title">Visa Denied!</string>
     <string name="minigame_visa_denied_text">The target player receives a new destination.</string>
     <string name="minigame_visa_denied_continue_button">Back to Map</string>
+
+    <string name="free_pass_button">FREEPASS</string>
+    <string name="free_pass_count">Freepass %1$d</string>
 </resources>
