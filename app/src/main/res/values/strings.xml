@@ -32,4 +32,24 @@
     <string name="minigame_win_button">Win Mini-Game</string>
 
     <string name="minigame_popup_title">Mini-Game</string>
+
+    <string name="minigame_vs_title">VS</string>
+    <string name="minigame_vs_subtitle">Get ready for the mini-game!</string>
+
+    <string name="minigame_vs_opponents">Everyone</string>
+
+    <string name="minigame_target_player_wins_button">Target player wins</string>
+    <string name="minigame_other_player_wins_button">Other player wins</string>
+
+    <string name="minigame_result_target_wins_title">Solo Survivor!</string>
+    <string name="minigame_result_target_wins_text">The target player won the mini-game and claimed the city.</string>
+
+    <string name="minigame_result_other_wins_title">Detour ahead!</string>
+    <string name="minigame_result_other_wins_text">Another player won the mini-game. The target player receives a new destination.</string>
+
+    <string name="minigame_result_continue_button">Continue</string>
+
+    <string name="minigame_visa_denied_title">Visa Denied!</string>
+    <string name="minigame_visa_denied_text">The target player receives a new destination.</string>
+    <string name="minigame_visa_denied_continue_button">Back to Map</string>
 </resources>

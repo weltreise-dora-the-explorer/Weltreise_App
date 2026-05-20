@@ -93,6 +93,8 @@ fun GameScreen(viewModel: AppViewModel) {
     val canRoll = effectiveIsMyTurn && diceValue == null
     val canEndTurn = effectiveIsMyTurn && diceValue != null
     val canFinishMinigame = currentTurnPlayerId == currentPlayerName
+    val minigameTargetPlayer = currentTurnPlayerId ?: currentPlayerName
+    val minigameOtherPlayer = playersList.firstOrNull{ it != minigameTargetPlayer} ?: minigameTargetPlayer
 
 
 
@@ -199,9 +201,11 @@ fun GameScreen(viewModel: AppViewModel) {
                 contentAlignment = Alignment.Center
             ){
                 MinigameOverlay(
+                    targetPlayerName = minigameTargetPlayer,
+                    otherPlayerName = minigameOtherPlayer,
                     canFinishMinigame = canFinishMinigame,
-                    onWinClick = {
-                        viewModel.finishMinigame(currentPlayerName)
+                    onFinishMinigame = { winnerPlayerId ->
+                        viewModel.finishMinigame(winnerPlayerId)
                     }
                 )
             }
