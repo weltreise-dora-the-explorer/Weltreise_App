@@ -94,6 +94,9 @@ open class AppViewModel(
     private val _goalReachedMessage = MutableStateFlow<GoalReachedMessage?>(null)
     val goalReachedMessage: StateFlow<GoalReachedMessage?> = _goalReachedMessage.asStateFlow()
 
+    private val _newDestinationMessage = MutableStateFlow<String?>(null)
+    val newDestinationMessage: StateFlow<String?> = _newDestinationMessage.asStateFlow()
+
     private val _gameOverMessage = MutableStateFlow<GameOverMessage?>(null)
     val gameOverMessage: StateFlow<GameOverMessage?> = _gameOverMessage.asStateFlow()
 
@@ -270,6 +273,7 @@ open class AppViewModel(
         _isGameOver.value = false
         _gameOverMessage.value = null
         _goalReachedMessage.value = null
+        _newDestinationMessage.value = null
         _gamePhase.value = "LOBBY"
         _ownedCities.value = emptyList()
         _startCity.value = null
@@ -296,6 +300,7 @@ open class AppViewModel(
         _gamePhase.value = "LOBBY"
         _isGameOver.value = false
         _goalReachedMessage.value = null
+        _newDestinationMessage.value = null
         _gameOverMessage.value = null
         _playerStartCityNames.value = emptyMap()
         _ownedCities.value = emptyList()
@@ -438,7 +443,22 @@ open class AppViewModel(
                                             color = cityObj.optString("color", "")
                                         ))
                                     }
+                                    val oldOwnedCities = _ownedCities.value
                                     _ownedCities.value = cities
+
+                                    val addedCity = cities.firstOrNull { newCity ->
+                                        oldOwnedCities.none { oldCity -> oldCity.id == newCity.id}
+                                    }
+
+                                    val removedCity = oldOwnedCities.firstOrNull { oldCity ->
+                                        cities.none { newCity -> newCity.id == oldCity.id}
+                                    }
+
+                                    if(addedCity != null && removedCity != null) {
+                                        _newDestinationMessage.value =
+                                            "$pId lost ${removedCity.name} and received ${addedCity.name} as a new destination."
+                                    }
+
                                     Log.d("AppViewModel", "Eigene Städte empfangen: ${cities.map { it.name }}")
 
                                     if (playerObj.has("startCity") && !playerObj.isNull("startCity")) {

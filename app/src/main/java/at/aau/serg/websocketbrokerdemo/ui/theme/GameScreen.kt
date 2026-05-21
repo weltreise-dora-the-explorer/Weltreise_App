@@ -87,6 +87,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val isGameOver by viewModel.isGameOver.collectAsState()
     val freePassCount by viewModel.freePassCount.collectAsState()
     val goalReachedMessage by viewModel.goalReachedMessage.collectAsState()
+    val newDestinationMessage by viewModel.newDestinationMessage.collectAsState()
     val gameOverMessage by viewModel.gameOverMessage.collectAsState()
     val isMinigamePhase = gamePhase == GameConstants.PHASE_MINIGAME
     val isMyTurn = currentTurnPlayerId == currentPlayerName
@@ -166,6 +167,20 @@ fun GameScreen(viewModel: AppViewModel) {
             delay(3000)
             goalReachedAlpha.animateTo(0f, animationSpec = tween(1000))
             showGoalReachedOverlay = false
+        }
+    }
+
+    //New-Destination fade-out nach 4 Sekunden
+    var showNewDestinationOverlay by remember {mutableStateOf(false)}
+    val newDestinationAlpha = remember {Animatable(0f)}
+
+    LaunchedEffect(newDestinationMessage) {
+        if(newDestinationMessage != null) {
+            showNewDestinationOverlay = true
+            newDestinationAlpha.snapTo(1f)
+            delay(3000)
+            newDestinationAlpha.animateTo(0f, animationSpec = tween(1000))
+            showNewDestinationOverlay = false
         }
     }
 
@@ -329,6 +344,25 @@ fun GameScreen(viewModel: AppViewModel) {
                         color = Color.White
                     )
                 }
+            }
+        }
+
+        //New Destination Popup -sichtbar nach verlorenem Minigame
+        if(showNewDestinationOverlay && newDestinationMessage != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .alpha(newDestinationAlpha.value)
+                    .background(Color(0xCC000000), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 32.dp, vertical = 20.dp),
+                contentAlignment = Alignment.Center
+            ){
+                Text(
+                    text = newDestinationMessage ?: "",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFD4AF37)
+                )
             }
         }
 
