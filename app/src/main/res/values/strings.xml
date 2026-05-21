@@ -42,15 +42,15 @@
     <string name="minigame_other_player_wins_button">Other player wins</string>
 
     <string name="minigame_result_target_wins_title">Solo Survivor!</string>
-    <string name="minigame_result_target_wins_text">The target player won the mini-game and claimed the city.</string>
+    <string name="minigame_result_target_wins_text">%1$s won the mini-game and claimed %2$s.</string>
 
     <string name="minigame_result_other_wins_title">Detour ahead!</string>
-    <string name="minigame_result_other_wins_text">%1$s won the mini-game. %2$s loses %3$s and receives a new destination.</string>
+    <string name="minigame_result_other_wins_text">%1$s won the mini-game. %2$s loses %3$s and %1$s receives a Free Pass.</string>
 
     <string name="minigame_result_continue_button">Continue</string>
 
     <string name="minigame_visa_denied_title">Visa Denied!</string>
-    <string name="minigame_visa_denied_text">The target player receives a new destination.</string>
+    <string name="minigame_visa_denied_text">%1$s receives a new destination. %2$s can use the Free Pass later for one of their own target cities.</string>
     <string name="minigame_visa_denied_continue_button">Back to Map</string>
 
     <string name="free_pass_button">FREEPASS</string>

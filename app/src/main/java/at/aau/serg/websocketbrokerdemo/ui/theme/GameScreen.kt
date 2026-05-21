@@ -128,6 +128,14 @@ fun GameScreen(viewModel: AppViewModel) {
         )
     }
 
+    val minigameTargetAvatar = avatars.getOrNull(
+        playersList.indexOf(minigameTargetPlayer).takeIf {it >= 0} ?: 0
+    )
+
+    val minigameOtherAvatar = avatars.getOrNull(
+        playersList.indexOf(minigameOtherPlayer).takeIf {it >= 0} ?: 0
+    )
+
     //Bucketlist offen? Default false
     val showBucketListDialog = remember { mutableStateOf(false) }
     val showFreePassDialog = remember {mutableStateOf(false)}
@@ -209,6 +217,8 @@ fun GameScreen(viewModel: AppViewModel) {
                     targetPlayerName = minigameTargetPlayer,
                     otherPlayerName = minigameOtherPlayer,
                     targetCityName = playerCurrentCities[minigameTargetPlayer]?.name ?: "",
+                    targetPlayerAvatar = minigameTargetAvatar,
+                    otherPlayerAvatar = minigameOtherAvatar,
                     canFinishMinigame = canFinishMinigame,
                     onFinishMinigame = { winnerPlayerId ->
                         viewModel.finishMinigame(winnerPlayerId)

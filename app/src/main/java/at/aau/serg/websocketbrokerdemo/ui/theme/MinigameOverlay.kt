@@ -19,6 +19,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
 
 private enum class MinigameResultType {
     TARGET_PLAYER_WINS,
@@ -29,6 +35,8 @@ fun MinigameOverlay(
     targetPlayerName: String,
     otherPlayerName: String,
     targetCityName: String,
+    targetPlayerAvatar: ImageBitmap?,
+    otherPlayerAvatar: ImageBitmap?,
     canFinishMinigame: Boolean,
     onFinishMinigame: (winnerPlayerId: String) -> Unit
 ) {
@@ -62,7 +70,11 @@ fun MinigameOverlay(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = stringResource(R.string.minigame_visa_denied_text),
+                        text = stringResource(
+                            R.string.minigame_visa_denied_text,
+                            targetPlayerName,
+                            otherPlayerName
+                        ),
                         color = Color.White,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
@@ -79,14 +91,12 @@ fun MinigameOverlay(
                     }
                 }
                 showVsScreen -> {
-                    Text(
-                        text = targetPlayerName,
-                        color = Color.White,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
+                    MinigamePlayerAvatar(
+                        playerName = targetPlayerName,
+                        avatar = targetPlayerAvatar
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
                         text = stringResource(R.string.minigame_vs_title),
@@ -95,13 +105,11 @@ fun MinigameOverlay(
                         fontWeight = FontWeight.Bold
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                    Text(
-                        text = stringResource(R.string.minigame_vs_opponents),
-                        color = Color.White,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
+                    MinigamePlayerAvatar(
+                        playerName = otherPlayerName,
+                        avatar = otherPlayerAvatar
                     )
                 }
 
@@ -116,7 +124,11 @@ fun MinigameOverlay(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = stringResource(R.string.minigame_result_target_wins_text),
+                        text = stringResource(
+                            R.string.minigame_result_target_wins_text,
+                            targetPlayerName,
+                            targetCityName.ifBlank { "the target city" }
+                        ),
                         color = Color.White,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
@@ -144,7 +156,12 @@ fun MinigameOverlay(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = stringResource(R.string.minigame_result_other_wins_text, otherPlayerName, targetPlayerName, targetCityName.ifBlank {"the target city"}),
+                        text = stringResource(
+                            R.string.minigame_result_other_wins_text,
+                            otherPlayerName,
+                            targetPlayerName,
+                            targetCityName.ifBlank { "the target city" }
+                        ),
                         color = Color.White,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
@@ -193,5 +210,48 @@ fun MinigameOverlay(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun MinigamePlayerAvatar(
+    playerName: String,
+    avatar: ImageBitmap?
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(CircleShape)
+                .background(Color.DarkGray),
+            contentAlignment = Alignment.Center
+        ) {
+            if(avatar != null){
+                Image(
+                    bitmap = avatar,
+                    contentDescription = playerName,
+                    modifier = Modifier.size(72.dp),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Text(
+                    text = playerName.take(1).uppercase(),
+                    color = Color.White,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = playerName,
+            color = Color.White,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
