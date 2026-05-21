@@ -141,6 +141,12 @@ fun GameScreen(viewModel: AppViewModel) {
     val showBucketListDialog = remember { mutableStateOf(false) }
     val showFreePassDialog = remember {mutableStateOf(false)}
 
+    LaunchedEffect(shouldShowFreePassDecision, myCurrentCity?.id) {
+        if(shouldShowFreePassDecision) {
+            showFreePassDialog.value = true
+        }
+    }
+
     // Würfelergebnis fade-out nach 5 Sekunden
     var showDiceOverlay by remember { mutableStateOf(false) }
     val diceAlpha = remember { Animatable(0f) }
@@ -239,6 +245,95 @@ fun GameScreen(viewModel: AppViewModel) {
                         viewModel.finishMinigame(winnerPlayerId)
                     }
                 )
+            }
+        }
+
+        //Free-Pass-Overlay
+        if (showFreePassDialog.value) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(25f)
+                    .background(Color(0x99000000)),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xDD000000), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 32.dp, vertical = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stringResource(R.string.free_pass_dialog_title),
+                            color = Color.White,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = stringResource(
+                                R.string.free_pass_dialog_city_text,
+                                myCurrentCity?.name ?: "your target city"
+                            ),
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = stringResource(R.string.free_pass_dialog_question),
+                            color = Color.White,
+                            fontSize = 15.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Button(
+                            onClick = {
+                                showFreePassDialog.value = false
+                                viewModel.useFreePass()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD4AF37)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.width(180.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.free_pass_use_button),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Button(
+                            onClick = {
+                                showFreePassDialog.value = false
+                                viewModel.startMinigame()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF8DB6CD)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.width(180.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.free_pass_play_minigame_button),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -529,52 +624,6 @@ fun GameScreen(viewModel: AppViewModel) {
             confirmButton = {
                 TextButton(onClick = { showBucketListDialog.value = false }) {
                     Text("close")
-                }
-            }
-        )
-    }
-
-    //FreePass Dialog
-    if (showFreePassDialog.value) {
-        AlertDialog(
-            onDismissRequest = {
-                showFreePassDialog.value = false
-            },
-            title = {
-                Text(
-                    text = "Free Pass verwenden?",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Column {
-                    Text(
-                        text = "Du stehst auf deiner Zielstadt ${myCurrentCity?.name ?: ""}."
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Möchtest du deinen Free Pass einsetzen und die Stadt ohne Minigame abschließen?"
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showFreePassDialog.value = false
-                        viewModel.useFreePass()
-                    }
-                ) {
-                    Text("Free Pass verwenden")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showFreePassDialog.value = false
-                        viewModel.startMinigame()
-                    }
-                ) {
-                    Text("Minigame spielen")
                 }
             }
         )

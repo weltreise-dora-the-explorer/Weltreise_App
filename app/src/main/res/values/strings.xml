@@ -55,4 +55,10 @@
 
     <string name="free_pass_button">FREEPASS</string>
     <string name="free_pass_count">Freepass %1$d</string>
+
+    <string name="free_pass_dialog_title">Use Free Pass?</string>
+    <string name="free_pass_dialog_city_text">You reached your target city %1$s.</string>
+    <string name="free_pass_dialog_question">Do you want to use your Free Pass or play the mini-game?</string>
+    <string name="free_pass_use_button">Use Free Pass</string>
+    <string name="free_pass_play_minigame_button">Play Mini-Game</string>
 </resources>
