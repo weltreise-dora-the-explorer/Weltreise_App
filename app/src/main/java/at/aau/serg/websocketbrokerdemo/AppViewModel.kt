@@ -19,6 +19,12 @@ import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
+data class NewDestinationMessage(
+    val playerName: String,
+    val lostCityName: String,
+    val newCityName: String
+)
+
 open class AppViewModel(
     stompInstance: MyStomp? = null,
     private val prefs: PreferencesHelper? = null
@@ -94,8 +100,8 @@ open class AppViewModel(
     private val _goalReachedMessage = MutableStateFlow<GoalReachedMessage?>(null)
     val goalReachedMessage: StateFlow<GoalReachedMessage?> = _goalReachedMessage.asStateFlow()
 
-    private val _newDestinationMessage = MutableStateFlow<String?>(null)
-    val newDestinationMessage: StateFlow<String?> = _newDestinationMessage.asStateFlow()
+    private val _newDestinationMessage = MutableStateFlow<NewDestinationMessage?>(null)
+    val newDestinationMessage: StateFlow<NewDestinationMessage?> = _newDestinationMessage.asStateFlow()
 
     private val _gameOverMessage = MutableStateFlow<GameOverMessage?>(null)
     val gameOverMessage: StateFlow<GameOverMessage?> = _gameOverMessage.asStateFlow()
@@ -455,8 +461,11 @@ open class AppViewModel(
                                     }
 
                                     if(addedCity != null && removedCity != null) {
-                                        _newDestinationMessage.value =
-                                            "$pId lost ${removedCity.name} and received ${addedCity.name} as a new destination."
+                                        _newDestinationMessage.value = NewDestinationMessage(
+                                            playerName = pId,
+                                            lostCityName = removedCity.name,
+                                            newCityName = addedCity.name
+                                        )
                                     }
 
                                     Log.d("AppViewModel", "Eigene Städte empfangen: ${cities.map { it.name }}")

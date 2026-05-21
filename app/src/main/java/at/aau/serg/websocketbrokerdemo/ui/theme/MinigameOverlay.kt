@@ -25,6 +25,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ButtonDefaults
 
 private enum class MinigameResultType {
     TARGET_PLAYER_WINS,
@@ -33,13 +37,15 @@ private enum class MinigameResultType {
 @Composable
 fun MinigameOverlay(
     targetPlayerName: String,
-    otherPlayerName: String,
+    opponentPlayerNames: List<String>,
     targetCityName: String,
     targetPlayerAvatar: ImageBitmap?,
-    otherPlayerAvatar: ImageBitmap?,
+    opponentPlayerAvatars: List<ImageBitmap?>,
     canFinishMinigame: Boolean,
     onFinishMinigame: (winnerPlayerId: String) -> Unit
 ) {
+    val otherPlayerName = opponentPlayerNames.firstOrNull() ?: targetPlayerName
+    val otherPlayerAvatar = opponentPlayerAvatars.firstOrNull()
     var showVsScreen by remember { mutableStateOf(true) }
     var resultType by remember { mutableStateOf<MinigameResultType?>(null)}
     var showVisaDeniedScreen by remember { mutableStateOf(false) }
@@ -91,90 +97,172 @@ fun MinigameOverlay(
                     }
                 }
                 showVsScreen -> {
-                    MinigamePlayerAvatar(
-                        playerName = targetPlayerName,
-                        avatar = targetPlayerAvatar
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        MinigamePlayerAvatar(
+                            playerName = targetPlayerName,
+                            avatar = targetPlayerAvatar
+                        )
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.width(36.dp))
 
-                    Text(
-                        text = stringResource(R.string.minigame_vs_title),
-                        color = Color.White,
-                        fontSize = 40.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                        Text(
+                            text = stringResource(R.string.minigame_vs_title),
+                            color = Color.White,
+                            fontSize = 40.sp,
+                            fontWeight = FontWeight.Bold
+                        )
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.width(36.dp))
 
-                    MinigamePlayerAvatar(
-                        playerName = otherPlayerName,
-                        avatar = otherPlayerAvatar
-                    )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            opponentPlayerNames.forEachIndexed { index, opponentName ->
+                                MinigamePlayerAvatar(
+                                    playerName = opponentName,
+                                    avatar = opponentPlayerAvatars.getOrNull(index)
+                                )
+
+                                if(index != opponentPlayerNames.lastIndex) {
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                }
+                            }
+                        }
+                    }
                 }
 
                 resultType == MinigameResultType.TARGET_PLAYER_WINS -> {
-                    Text(
-                        text = stringResource(R.string.minigame_result_target_wins_title),
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ){
+                        MinigamePlayerAvatar(
+                            playerName = targetPlayerName,
+                            avatar = targetPlayerAvatar
+                        )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.width(48.dp))
 
-                    Text(
-                        text = stringResource(
-                            R.string.minigame_result_target_wins_text,
-                            targetPlayerName,
-                            targetCityName.ifBlank { "the target city" }
-                        ),
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ){
+                            Text(
+                                text = stringResource(R.string.minigame_result_target_wins_title),
+                                color = Color.White,
+                                fontSize = 34.sp,
+                                fontWeight = FontWeight.Bold
+                            )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
-                    Button(
-                        onClick = {
-                            onFinishMinigame(targetPlayerName)
+                            Text(
+                                text = stringResource(
+                                    R.string.minigame_result_target_wins_text,
+                                    targetPlayerName,
+                                    targetCityName.ifBlank { "the target city" }
+                                ),
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Spacer(modifier = Modifier.height(26.dp))
+
+                            Button(
+                                onClick = {
+                                    onFinishMinigame(targetPlayerName)
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF8DB6CD)
+                                ),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier
+                                    .width(220.dp)
+                                    .height(56.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.minigame_result_continue_button),
+                                    color = Color.White,
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold
+                                    )
+                            }
                         }
-                    ) {
-                        Text(text = stringResource(R.string.minigame_result_continue_button))
                     }
                 }
 
                 resultType == MinigameResultType.OTHER_PLAYER_WINS -> {
-                    Text(
-                        text = stringResource(R.string.minigame_result_other_wins_title),
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = stringResource(
-                            R.string.minigame_result_other_wins_text,
-                            otherPlayerName,
-                            targetPlayerName,
-                            targetCityName.ifBlank { "the target city" }
-                        ),
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = {
-                            showVisaDeniedScreen = true
-                        }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        Text(text = stringResource(R.string.minigame_result_continue_button))
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            opponentPlayerNames.forEachIndexed { index, opponentName ->
+                                MinigamePlayerAvatar(
+                                    playerName = opponentName,
+                                    avatar = opponentPlayerAvatars.getOrNull(index)
+                                )
+
+                                if (index != opponentPlayerNames.lastIndex) {
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(48.dp))
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = stringResource(R.string.minigame_result_other_wins_title),
+                                color = Color.White,
+                                fontSize = 34.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = stringResource(
+                                    R.string.minigame_result_other_wins_text,
+                                    otherPlayerName,
+                                    targetPlayerName,
+                                    targetCityName.ifBlank { "the target city" }
+                                ),
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Spacer(modifier = Modifier.height(26.dp))
+
+                            Button(
+                                onClick = {
+                                    onFinishMinigame(otherPlayerName)
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF8DB6CD)
+                                ),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier
+                                    .width(220.dp)
+                                    .height(56.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.minigame_result_continue_button),
+                                    color = Color.White,
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
                 }
 

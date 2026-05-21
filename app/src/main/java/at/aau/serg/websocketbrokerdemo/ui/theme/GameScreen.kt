@@ -97,7 +97,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val effectiveIsMyTurn = isMyTurn && !isGameOver && !isMinigamePhase
     val canRoll = effectiveIsMyTurn && diceValue == null
     val canEndTurn = effectiveIsMyTurn && diceValue != null
-    val canFinishMinigame = currentTurnPlayerId == currentPlayerName
+    val canFinishMinigame = true
     val minigameTargetPlayer = currentTurnPlayerId ?: currentPlayerName
     val minigameOtherPlayer = playersList.firstOrNull{ it != minigameTargetPlayer} ?: minigameTargetPlayer
 
@@ -184,9 +184,6 @@ fun GameScreen(viewModel: AppViewModel) {
         if(newDestinationMessage != null) {
             showNewDestinationOverlay = true
             newDestinationAlpha.snapTo(1f)
-            delay(3000)
-            newDestinationAlpha.animateTo(0f, animationSpec = tween(1000))
-            showNewDestinationOverlay = false
         }
     }
 
@@ -236,10 +233,10 @@ fun GameScreen(viewModel: AppViewModel) {
             ){
                 MinigameOverlay(
                     targetPlayerName = minigameTargetPlayer,
-                    otherPlayerName = minigameOtherPlayer,
+                    opponentPlayerNames = playersList.filter { it != minigameTargetPlayer },
                     targetCityName = playerCurrentCities[minigameTargetPlayer]?.name ?: "",
                     targetPlayerAvatar = minigameTargetAvatar,
-                    otherPlayerAvatar = minigameOtherAvatar,
+                    opponentPlayerAvatars = playersList.filter {it != minigameTargetPlayer}.map {opponentName -> avatars.getOrNull(playersList.indexOf(opponentName))},
                     canFinishMinigame = canFinishMinigame,
                     onFinishMinigame = { winnerPlayerId ->
                         viewModel.finishMinigame(winnerPlayerId)
@@ -444,20 +441,137 @@ fun GameScreen(viewModel: AppViewModel) {
 
         //New Destination Popup -sichtbar nach verlorenem Minigame
         if(showNewDestinationOverlay && newDestinationMessage != null) {
+            val msg = newDestinationMessage!!
+
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .alpha(newDestinationAlpha.value)
                     .background(Color(0xCC000000), RoundedCornerShape(20.dp))
-                    .padding(horizontal = 32.dp, vertical = 20.dp),
+                    .padding(start = 24.dp, end = 32.dp, top = 20.dp, bottom = 20.dp),
                 contentAlignment = Alignment.Center
             ){
-                Text(
-                    text = newDestinationMessage ?: "",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFD4AF37)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(350.dp)
+                            .background(Color(0xDDEAF2F8), RoundedCornerShape(14.dp))
+                            .padding(horizontal = 28.dp, vertical = 24.dp)
+                    ) {
+                        Column{
+                            Text(
+                                text = "VISA DENIED!",
+                                color = Color(0xFF0050A8),
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = "Attention ${msg.playerName},",
+                                color = Color(0xFF0050A8),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = "Entry completely denied! Your mini-game skills were inspected and found to be highly insufficient.",
+                                color = Color(0xFF0050A8),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = "You lost ${msg.lostCityName}. Since you are officially locked out of this city, your Bucket List has been changed.",
+                                color = Color(0xFF0050A8),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = "Time to pull out the map, grab a pen, and figure out a new route.",
+                                color = Color(0xFF0050A8),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = "Cordially,\nThe Department of Detours",
+                                color = Color(0xFF0050A8),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(28.dp))
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "NEW DESTINATION:",
+                            color = Color.White,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .width(130.dp)
+                                .height(190.dp)
+                                .background(Color(0xFF0050A8), RoundedCornerShape(12.dp))
+                                .border(
+                                    width = 1.dp,
+                                    color = Color(0xFFD4AF37),
+                                    shape = RoundedCornerShape(12.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = msg.newCityName.uppercase(),
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(18.dp))
+
+                        Button(
+                            onClick = {
+                                showNewDestinationOverlay = false
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF8DB6CD)
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .width(170.dp)
+                                .height(50.dp)
+                        ) {
+                            Text(
+                                text = "Accept",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
             }
         }
 
