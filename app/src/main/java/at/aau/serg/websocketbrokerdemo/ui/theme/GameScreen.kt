@@ -738,6 +738,8 @@ fun ZoomableMap(
                             idA == "miami" && idB == "newyork" -> midX - curvature to midY
                             idA == "newyork" && idB == "sanfrancisco" -> midX to midY - curvature * 2.2f
                             idA == "lima" && idB == "losangeles" -> midX - curvature * 1.5f to midY
+                            idA == "bangkok" && idB == "nairobi" -> midX to midY + curvature * 1.5f
+                            idA == "capetown" && idB == "nairobi" -> midX to midY
                             else -> midX to midY - curvature
                         }
                         val path = Path().apply {
@@ -784,8 +786,8 @@ fun ZoomableMap(
                     )
 
                     if (scale >= 2.5f) {
-                        val labelAbove = city.id == "saltlakecity" || city.id == "calgary" || city.id == "winnipeg" || city.id == "manaus"
-                        val labelBelow = city.id == "denver" || city.id == "stlouis"
+                        val labelAbove = city.id == "saltlakecity" || city.id == "calgary" || city.id == "winnipeg" || city.id == "manaus" || city.id == "dakar" || city.id == "lobito"
+                        val labelBelow = city.id == "denver" || city.id == "stlouis" || city.id == "bamako"
                         val labelLeft = !labelAbove && !labelBelow && city.x_relativ < 0.28f
                         val labelX = when {
                             labelAbove -> cx
