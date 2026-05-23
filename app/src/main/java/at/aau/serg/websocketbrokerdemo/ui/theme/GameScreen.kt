@@ -1,6 +1,7 @@
 package at.aau.serg.websocketbrokerdemo.ui.theme
 
 import android.content.Context
+import at.aau.serg.websocketbrokerdemo.models.Continent
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.foundation.Canvas
@@ -740,6 +741,8 @@ fun ZoomableMap(
                             idA == "lima" && idB == "losangeles" -> midX - curvature * 1.5f to midY
                             idA == "bangkok" && idB == "nairobi" -> midX to midY + curvature * 1.5f
                             idA == "capetown" && idB == "nairobi" -> midX to midY
+                            idA == "dakar" && idB == "lisboa" -> midX to midY
+                            idA == "laspalmas" && idB == "madrid" -> midX to midY + curvature
                             else -> midX to midY - curvature
                         }
                         val path = Path().apply {
@@ -785,28 +788,39 @@ fun ZoomableMap(
                         center = Offset(cx, cy)
                     )
 
-                    if (scale >= 2.5f) {
-                        val labelAbove = city.id == "saltlakecity" || city.id == "calgary" || city.id == "winnipeg" || city.id == "manaus" || city.id == "dakar" || city.id == "lobito"
-                        val labelBelow = city.id == "denver" || city.id == "stlouis" || city.id == "bamako"
-                        val labelLeft = !labelAbove && !labelBelow && city.x_relativ < 0.28f
+                    val importantEuropeCities = setOf("lisboa", "madrid", "palermo", "paris", "frankfurt", "wien", "london", "dublin", "roma")
+                    val isMinorEuropean = city.continent == Continent.EUROPE_AFRICA
+                        && city.y_relativ < 0.422f
+                        && city.id !in importantEuropeCities
+                    val labelThreshold = if (isMinorEuropean) 4.0f else 2.5f
+                    if (scale >= labelThreshold) {
+                        val labelAbove = city.id in setOf("saltlakecity", "calgary", "winnipeg", "manaus", "dakar", "lobito", "london", "amsterdam", "kobenhaven", "berlin", "paris", "bern", "frankfurt", "hamburg", "bergen", "stockholm")
+                        val labelBelow = city.id in setOf("denver", "stlouis", "bamako", "kuwait")
+                        val labelBelowCenter = city.id == "wien" || city.id == "sofiya"
+                        val labelLeft = !labelAbove && !labelBelow && !labelBelowCenter && (city.x_relativ < 0.28f || city.id in setOf("bordeaux", "brest", "dublin", "edinburgh", "oslo"))
                         val labelX = when {
-                            labelAbove -> cx
+                            labelAbove || labelBelowCenter -> cx
                             labelLeft -> cx - dotRadius - 3f
                             else -> cx + dotRadius + 3f
                         }
                         val labelY = when {
                             labelAbove -> cy - dotRadius - 3f
-                            labelBelow -> cy + 14f
+                            labelBelow || labelBelowCenter -> cy + 14f
                             else -> cy + 4f
+                        }
+                        val labelSize = when (city.id) {
+                            "hamburg", "bern" -> 6f
+                            "frankfurt" -> 7f
+                            else -> if (isMinorEuropean) 7f else 9f
                         }
 
                         val paint = android.graphics.Paint().apply {
                             color = if (isOcean) android.graphics.Color.WHITE
                                     else android.graphics.Color.rgb(20, 20, 20)
-                            textSize = 9f
+                            textSize = labelSize
                             isAntiAlias = true
                             textAlign = when {
-                                labelAbove -> android.graphics.Paint.Align.CENTER
+                                labelAbove || labelBelowCenter -> android.graphics.Paint.Align.CENTER
                                 labelLeft -> android.graphics.Paint.Align.RIGHT
                                 else -> android.graphics.Paint.Align.LEFT
                             }
