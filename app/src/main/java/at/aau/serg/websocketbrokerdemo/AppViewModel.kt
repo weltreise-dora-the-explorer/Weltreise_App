@@ -76,6 +76,13 @@ open class AppViewModel(
     private val _playerCurrentCities = MutableStateFlow<Map<String, City?>>(emptyMap())
     val playerCurrentCities: StateFlow<Map<String, City?>> = _playerCurrentCities.asStateFlow()
 
+    private val _optimisticPlayerCity = MutableStateFlow<City?>(null)
+    val optimisticPlayerCity: StateFlow<City?> = _optimisticPlayerCity.asStateFlow()
+
+    fun setOptimisticPlayerCity(city: City) {
+        _optimisticPlayerCity.value = city
+    }
+
     private val _validMoveIds = MutableStateFlow<List<String>>(emptyList())
     val validMoveIds: StateFlow<List<String>> = _validMoveIds.asStateFlow()
 
@@ -432,6 +439,7 @@ open class AppViewModel(
                         _playersList.value = newList
                         _playerCityCounts.value = cityCountsMap
                         _playerCurrentCities.value = currentCitiesMap
+                        _optimisticPlayerCity.value = null
                         applyConnectionStatus(disconnectedNow)
                     }
 

@@ -168,6 +168,8 @@ fun GameScreen(viewModel: AppViewModel) {
                 validMoveIds = validMoveIds,
                 isMyTurn = effectiveIsMyTurn,
                 myPlayerId = currentPlayerName,
+                optimisticLocalCity = viewModel.optimisticPlayerCity.collectAsState().value,
+                onOptimisticMove = { city -> viewModel.setOptimisticPlayerCity(city) },
                 onCityClick = { cityId -> viewModel.onMoveToCity(cityId) }
             )
         }
@@ -430,6 +432,8 @@ fun ZoomableMap(
     validMoveIds: List<String> = emptyList(),
     isMyTurn: Boolean = false,
     myPlayerId: String = "",
+    optimisticLocalCity: City? = null,
+    onOptimisticMove: (City) -> Unit = {},
     onCityClick: (cityId: String) -> Unit = {}
 ) {
     val showValidMoves = validMoveIds.isNotEmpty() && isMyTurn
@@ -587,6 +591,7 @@ fun ZoomableMap(
 
                                 if (path.size > 1) {
                                     try {
+                                        onOptimisticMove(targetCity)
                                         isLocalPlayerAnimating = true
                                         val startCity = cityMap[path.first()]
                                         if (startCity != null) {
@@ -804,7 +809,10 @@ fun ZoomableMap(
                 playersList.forEachIndexed { index, name ->
                     if (isLocalPlayerAnimating && index == myPlayerIndex) return@forEachIndexed
                     if (remotePlayerAnims[name]?.isAnimating == true) return@forEachIndexed
-                    val current = playerCurrentCities[name] ?: return@forEachIndexed
+                    val current = if (name == myPlayerId && !isLocalPlayerAnimating)
+                        optimisticLocalCity ?: playerCurrentCities[name] ?: return@forEachIndexed
+                    else
+                        playerCurrentCities[name] ?: return@forEachIndexed
                     val key = current.id.ifEmpty { current.name }
                     cityGroups.getOrPut(key) { mutableListOf() }.add(index)
                 }
