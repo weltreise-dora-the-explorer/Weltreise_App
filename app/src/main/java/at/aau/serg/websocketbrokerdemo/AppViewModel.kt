@@ -276,21 +276,28 @@ open class AppViewModel(
     }
 
     fun playAgain() {
-        _isGameOver.value = false
-        _gameOverMessage.value = null
-        _goalReachedMessage.value = null
-        _newDestinationMessage.value = null
-        _gamePhase.value = "LOBBY"
-        _ownedCities.value = emptyList()
-        _startCity.value = null
-        _playerCityCounts.value = emptyMap()
-        _playerCurrentCities.value = emptyMap()
-        _diceValue.value = null
-        _currentTurnPlayerId.value = null
-        _validMoveIds.value = emptyList()
-        _remainingSteps.value = null
-        _freePassCount.value = 0
-        stomp.resetLobby(_lobbyId.value, _playerName.value)
+        if (_isHost.value) {
+            _isGameOver.value = false
+            _gameOverMessage.value = null
+            _goalReachedMessage.value = null
+            _newDestinationMessage.value = null
+            _gamePhase.value = "LOBBY"
+            _ownedCities.value = emptyList()
+            _startCity.value = null
+            _playerCityCounts.value = emptyMap()
+            _playerCurrentCities.value = emptyMap()
+            _diceValue.value = null
+            _currentTurnPlayerId.value = null
+            _validMoveIds.value = emptyList()
+            _remainingSteps.value = null
+            _freePassCount.value = 0
+            stomp.resetLobby(_lobbyId.value, _playerName.value)
+        } else {
+            _isGameOver.value = false
+            _gameOverMessage.value = null
+            _goalReachedMessage.value = null
+            navigateTo("waiting")
+        }
     }
 
     fun leaveLobby() {
@@ -641,7 +648,8 @@ open class AppViewModel(
                     score = item.optInt("score")
                 ))
             }
-            _gameOverMessage.value = GameOverMessage(results)
+            val winnerId = json.optString("winnerId", "")
+            _gameOverMessage.value = GameOverMessage(winnerId, results)
             navigateTo("gameover")
         } catch (e: Exception) {
             Log.e("AppViewModel", "Failed to parse game-over", e)
