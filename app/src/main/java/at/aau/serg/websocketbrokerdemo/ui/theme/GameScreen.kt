@@ -93,7 +93,16 @@ fun GameScreen(viewModel: AppViewModel) {
     val isMyTurn = currentTurnPlayerId == currentPlayerName
     val myCurrentCity = playerCurrentCities[currentPlayerName]
     val isStandingOnOwnTargetCity = myCurrentCity != null && ownedCities.any {it.id == myCurrentCity.id}
-    val shouldShowFreePassDecision = freePassCount > 0 && isMyTurn && !isGameOver && !isMinigamePhase && diceValue != null && isStandingOnOwnTargetCity
+
+    val freePassDecisionMade = remember { mutableStateOf(false) }
+
+    val shouldShowFreePassDecision =
+        freePassCount > 0 &&
+                isMyTurn &&
+                !isGameOver &&
+                isStandingOnOwnTargetCity &&
+                !freePassDecisionMade.value
+
     val effectiveIsMyTurn = isMyTurn && !isGameOver && !isMinigamePhase
     val canRoll = effectiveIsMyTurn && diceValue == null
     val canEndTurn = effectiveIsMyTurn && diceValue != null
@@ -140,6 +149,10 @@ fun GameScreen(viewModel: AppViewModel) {
     //Bucketlist offen? Default false
     val showBucketListDialog = remember { mutableStateOf(false) }
     val showFreePassDialog = remember {mutableStateOf(false)}
+
+    LaunchedEffect(myCurrentCity?.id) {
+        freePassDecisionMade.value = false
+    }
 
     LaunchedEffect(shouldShowFreePassDecision, myCurrentCity?.id) {
         if(shouldShowFreePassDecision) {
@@ -294,6 +307,7 @@ fun GameScreen(viewModel: AppViewModel) {
 
                         Button(
                             onClick = {
+                                freePassDecisionMade.value = true
                                 showFreePassDialog.value = false
                                 viewModel.useFreePass()
                             },
@@ -314,8 +328,12 @@ fun GameScreen(viewModel: AppViewModel) {
 
                         Button(
                             onClick = {
+                                freePassDecisionMade.value = true
                                 showFreePassDialog.value = false
-                                viewModel.startMinigame()
+
+                                if (!isMinigamePhase) {
+                                    viewModel.startMinigame()
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF8DB6CD)
