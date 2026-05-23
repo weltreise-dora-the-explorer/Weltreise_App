@@ -221,8 +221,7 @@
       "singapore",
       "manila",
       "taipei",
-      "peking",
-      "moskva"
+      "peking"
     ],
     "x": 1621.6,
     "y": 534,
@@ -599,7 +598,6 @@
       "moskva",
       "tiffis",
       "samarkand",
-      "bangkok",
       "moskva"
     ],
     "flightConnections": [],
@@ -710,8 +708,7 @@
     "color": "ORANGE",
     "trainConnections": [
       "singapore",
-      "hochiminhcity",
-      "volgograd"
+      "hochiminhcity"
     ],
     "flightConnections": [
       "manila",
@@ -1029,8 +1026,8 @@
     "color": "GREEN",
     "trainConnections": [
       "dublin",
-      "edinburgh",
-      "amsterdam"
+      "edinburgh"
+
     ],
     "flightConnections": [
       "newyork",
@@ -1084,7 +1081,7 @@
       "frankurt",
       "berlin",
       "kobenhaven",
-      "amsterdam",
+
       "frankfurt"
     ],
     "flightConnections": [],
@@ -1108,24 +1105,6 @@
     "y": 359.9,
     "x_relativ": 0.5296360726577445,
     "y_relativ": 0.33328510881237017
-  },
-  {
-    "id": "amsterdam",
-    "name": "Amsterdam",
-    "continent": "EUROPE_AFRICA",
-    "color": "GREEN",
-    "trainConnections": [
-      "london",
-      "hamburg",
-      "frankurt",
-      "paris",
-      "frankfurt"
-    ],
-    "flightConnections": [],
-    "x": 1068.8,
-    "y": 371.8,
-    "x_relativ": 0.5566507119657774,
-    "y_relativ": 0.34423841285929185
   },
   {
     "id": "oslo",
@@ -1307,7 +1286,7 @@
       "marseille",
       "bordeaux",
       "brest",
-      "amsterdam",
+
       "frankurt",
       "bern",
       "frankfurt"
@@ -1344,12 +1323,10 @@
     "color": "GREEN",
     "trainConnections": [
       "paris",
-      "frankfurt",
       "milano"
     ],
     "flightConnections": [
-      "roma",
-      "frankfurt"
+      "roma"
     ],
     "x": 1069.7,
     "y": 397.7,
@@ -1415,9 +1392,7 @@
       "sofiya",
       "ankara"
     ],
-    "flightConnections": [
-      "frankfurt"
-    ],
+    "flightConnections": [],
     "x": 1176.6,
     "y": 424.6,
     "x_relativ": 0.6128127252640561,
@@ -1493,7 +1468,7 @@
     "trainConnections": [
       "milano",
       "frankurt",
-      "praha",
+
       "budapest",
       "frankfurt"
     ],
@@ -1672,7 +1647,7 @@
     "continent": "EUROPE_AFRICA",
     "color": "GREEN",
     "trainConnections": [
-      "praha",
+
       "hamburg",
       "gdansk",
       "warszawa",
@@ -1691,9 +1666,8 @@
     "color": "GREEN",
     "trainConnections": [
       "hamburg",
-      "amsterdam",
+
       "paris",
-      "bern",
       "milano",
       "wien",
       "berlin"
@@ -1702,7 +1676,6 @@
       "bergen",
       "helsinki",
       "moskva",
-      "istanbul",
       "bern",
       "madrid"
     ],
@@ -1764,7 +1737,7 @@
     "continent": "EUROPE_AFRICA",
     "color": "GREEN",
     "trainConnections": [
-      "praha",
+
       "berlin",
       "gdansk",
       "moskva"
@@ -1774,22 +1747,6 @@
     "y": 369.3,
     "x_relativ": 0.593958,
     "y_relativ": 0.341944
-  },
-  {
-    "id": "praha",
-    "name": "Praha",
-    "continent": "EUROPE_AFRICA",
-    "color": "GREEN",
-    "trainConnections": [
-      "wien",
-      "berlin",
-      "warszawa"
-    ],
-    "flightConnections": [],
-    "x": 1115.1,
-    "y": 376,
-    "x_relativ": 0.580781,
-    "y_relativ": 0.348148
   },
   {
     "id": "helsinki",
@@ -2593,10 +2550,10 @@
       "moskva"
     ],
     "flightConnections": [],
-    "x": 1671.3,
-    "y": 409.5,
-    "x_relativ": 0.870469,
-    "y_relativ": 0.379167
+    "x": 1679.7,
+    "y": 419,
+    "x_relativ": 0.8748669316228388,
+    "y_relativ": 0.38799094960219677
   },
   {
     "id": "quito",

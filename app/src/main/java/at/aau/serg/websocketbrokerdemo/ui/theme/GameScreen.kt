@@ -740,7 +740,9 @@ fun ZoomableMap(
                             idA == "newyork" && idB == "sanfrancisco" -> midX to midY - curvature * 2.2f
                             idA == "lima" && idB == "losangeles" -> midX - curvature * 1.5f to midY
                             idA == "bangkok" && idB == "nairobi" -> midX to midY + curvature * 1.5f
+                            idA == "bombay" && idB == "dubayy" -> midX to midY + curvature
                             idA == "capetown" && idB == "nairobi" -> midX to midY
+                            idA == "nairobi" && idB == "paris" -> midX - curvature to midY
                             idA == "dakar" && idB == "lisboa" -> midX to midY
                             idA == "laspalmas" && idB == "madrid" -> midX to midY + curvature
                             else -> midX to midY - curvature
@@ -794,7 +796,7 @@ fun ZoomableMap(
                         && city.id !in importantEuropeCities
                     val labelThreshold = if (isMinorEuropean) 4.0f else 2.5f
                     if (scale >= labelThreshold) {
-                        val labelAbove = city.id in setOf("saltlakecity", "calgary", "winnipeg", "manaus", "dakar", "lobito", "london", "amsterdam", "kobenhaven", "berlin", "paris", "bern", "frankfurt", "hamburg", "bergen", "stockholm")
+                        val labelAbove = city.id in setOf("saltlakecity", "calgary", "winnipeg", "manaus", "dakar", "lobito", "london", "kobenhaven", "berlin", "paris", "bern", "frankfurt", "hamburg", "bergen", "stockholm", "perm", "sverdlovsk", "novosibirsk", "irkutsk")
                         val labelBelow = city.id in setOf("denver", "stlouis", "bamako", "kuwait")
                         val labelBelowCenter = city.id == "wien" || city.id == "sofiya"
                         val labelLeft = !labelAbove && !labelBelow && !labelBelowCenter && (city.x_relativ < 0.28f || city.id in setOf("bordeaux", "brest", "dublin", "edinburgh", "oslo"))
