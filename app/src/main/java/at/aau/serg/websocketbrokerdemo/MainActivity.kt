@@ -91,6 +91,7 @@ class MainActivity : ComponentActivity() {
                             val playerName by viewModel.playerName.collectAsState()
                             GameOverScreen(
                                 currentPlayerName = playerName,
+                                winnerId = gameOverMessage?.winnerId,
                                 results = gameOverMessage?.results ?: emptyList(),
                                 onPlayAgainClick = { viewModel.playAgain() },
                                 onLeaveClick = { viewModel.leaveLobby() }

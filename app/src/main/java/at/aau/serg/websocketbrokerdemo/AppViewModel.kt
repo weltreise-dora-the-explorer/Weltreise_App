@@ -235,18 +235,28 @@ open class AppViewModel(
     }
 
     fun playAgain() {
-        _isGameOver.value = false
-        _gameOverMessage.value = null
-        _goalReachedMessage.value = null
-        _ownedCities.value = emptyList()
-        _startCity.value = null
-        _playerCityCounts.value = emptyMap()
-        _playerCurrentCities.value = emptyMap()
-        _diceValue.value = null
-        _currentTurnPlayerId.value = null
-        _validMoveIds.value = emptyList()
-        _remainingSteps.value = null
-        stomp.resetLobby(_lobbyId.value, _playerName.value)
+        if (_isHost.value) {
+            _isGameOver.value = false
+            _gameOverMessage.value = null
+            _goalReachedMessage.value = null
+            _ownedCities.value = emptyList()
+            _startCity.value = null
+            _playerCityCounts.value = emptyMap()
+            _playerCurrentCities.value = emptyMap()
+            _diceValue.value = null
+            _currentTurnPlayerId.value = null
+            _validMoveIds.value = emptyList()
+            _remainingSteps.value = null
+            stomp.resetLobby(_lobbyId.value, _playerName.value)
+        } else {
+            // Nicht-Host: nur GameOver-Anzeige schliessen und in den Waiting-Screen wechseln.
+            // Sobald der Host RESET_LOBBY ausloest, kommt ein frischer State per Broadcast.
+            // Falls der Host stattdessen die Lobby schliesst, navigiert LOBBY_CLOSED uns zum Login.
+            _isGameOver.value = false
+            _gameOverMessage.value = null
+            _goalReachedMessage.value = null
+            navigateTo("waiting")
+        }
     }
 
     fun leaveLobby() {
@@ -562,6 +572,7 @@ open class AppViewModel(
         _isGameOver.value = true
         try {
             val json = JSONObject(res)
+            val winnerId = json.optString("winnerId")
             val array = json.getJSONArray("scores")
             val results = mutableListOf<GameOverMessage.PlayerResult>()
             for (i in 0 until array.length()) {
@@ -571,7 +582,7 @@ open class AppViewModel(
                     score = item.optInt("score")
                 ))
             }
-            _gameOverMessage.value = GameOverMessage(results)
+            _gameOverMessage.value = GameOverMessage(winnerId, results)
             navigateTo("gameover")
         } catch (e: Exception) {
             Log.e("AppViewModel", "Failed to parse game-over", e)
