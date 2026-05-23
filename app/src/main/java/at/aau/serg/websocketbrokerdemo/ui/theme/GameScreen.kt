@@ -734,9 +734,15 @@ fun ZoomableMap(
                         val midY = (ay + by) / 2f
                         val dist = sqrt((bx - ax).pow(2) + (by - ay).pow(2))
                         val curvature = (dist * 0.25f).coerceAtMost(renderedHeight * 0.35f)
+                        val (cpX, cpY) = when {
+                            idA == "miami" && idB == "newyork" -> midX - curvature to midY
+                            idA == "newyork" && idB == "sanfrancisco" -> midX to midY - curvature * 2.2f
+                            idA == "lima" && idB == "losangeles" -> midX - curvature * 1.5f to midY
+                            else -> midX to midY - curvature
+                        }
                         val path = Path().apply {
                             moveTo(ax, ay)
-                            quadraticTo(midX, midY - curvature, bx, by)
+                            quadraticTo(cpX, cpY, bx, by)
                         }
                         drawPath(path, color = Color(0xFFE53935), style = Stroke(width = 1.5f))
                     }
@@ -778,23 +784,37 @@ fun ZoomableMap(
                     )
 
                     if (scale >= 2.5f) {
-                        val labelLeft = city.x_relativ < 0.28f
-                        val labelX = if (labelLeft) cx - dotRadius - 3f else cx + dotRadius + 3f
+                        val labelAbove = city.id == "saltlakecity" || city.id == "calgary" || city.id == "winnipeg" || city.id == "manaus"
+                        val labelBelow = city.id == "denver" || city.id == "stlouis"
+                        val labelLeft = !labelAbove && !labelBelow && city.x_relativ < 0.28f
+                        val labelX = when {
+                            labelAbove -> cx
+                            labelLeft -> cx - dotRadius - 3f
+                            else -> cx + dotRadius + 3f
+                        }
+                        val labelY = when {
+                            labelAbove -> cy - dotRadius - 3f
+                            labelBelow -> cy + 14f
+                            else -> cy + 4f
+                        }
 
                         val paint = android.graphics.Paint().apply {
                             color = if (isOcean) android.graphics.Color.WHITE
                                     else android.graphics.Color.rgb(20, 20, 20)
                             textSize = 9f
                             isAntiAlias = true
-                            textAlign = if (labelLeft) android.graphics.Paint.Align.RIGHT
-                                        else android.graphics.Paint.Align.LEFT
+                            textAlign = when {
+                                labelAbove -> android.graphics.Paint.Align.CENTER
+                                labelLeft -> android.graphics.Paint.Align.RIGHT
+                                else -> android.graphics.Paint.Align.LEFT
+                            }
                             setShadowLayer(1.5f, 0.5f, 0.5f,
                                 if (isOcean) android.graphics.Color.BLACK
                                 else android.graphics.Color.WHITE)
                         }
 
                         drawIntoCanvas { canvas ->
-                            canvas.nativeCanvas.drawText(city.name, labelX, cy + 4f, paint)
+                            canvas.nativeCanvas.drawText(city.name, labelX, labelY, paint)
                         }
                     }
                 }
