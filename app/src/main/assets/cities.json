@@ -482,22 +482,6 @@
     "y_relativ": 0.538056
   },
   {
-    "id": "bangkok",
-    "name": "Bangkok",
-    "continent": "ASIA",
-    "color": "ORANGE",
-    "trainConnections": [
-      "volgograd"
-    ],
-    "flightConnections": [
-      "moskava"
-    ],
-    "x": 1250.5,
-    "y": 417.2,
-    "x_relativ": 0.651302,
-    "y_relativ": 0.386296
-  },
-  {
     "id": "murmansk",
     "name": "Murmansk",
     "continent": "ASIA",
