@@ -61,6 +61,7 @@ import kotlin.math.sqrt
 import androidx.compose.ui.res.stringResource
 import com.example.myapplication.R
 import at.aau.serg.websocketbrokerdemo.GameConstants
+import at.aau.serg.websocketbrokerdemo.NewDestinationMessage
 
 class PlayerAnimState {
     val animX = Animatable(0f)
@@ -77,6 +78,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val diceValue by viewModel.diceValue.collectAsState()
     val currentTurnPlayerId by viewModel.currentTurnPlayerId.collectAsState()
     val gamePhase by viewModel.gamePhase.collectAsState()
+    val minigameWinnerPlayerId by viewModel.minigameWinnerPlayerId.collectAsState()
     val ownedCities by viewModel.ownedCities.collectAsState()
     val allCities by viewModel.allCities.collectAsState()
     val startCity by viewModel.startCity.collectAsState()
@@ -109,6 +111,8 @@ fun GameScreen(viewModel: AppViewModel) {
     val canFinishMinigame = true
     val minigameTargetPlayer = currentTurnPlayerId ?: currentPlayerName
     val minigameOtherPlayer = playersList.firstOrNull{ it != minigameTargetPlayer} ?: minigameTargetPlayer
+    val minigameLostCityName by viewModel.minigameLostCityName.collectAsState()
+    val minigameNewCityName by viewModel.minigameNewCityName.collectAsState()
 
 
 
@@ -200,6 +204,13 @@ fun GameScreen(viewModel: AppViewModel) {
         }
     }
 
+    LaunchedEffect(minigameLostCityName, minigameNewCityName) {
+        if(minigameLostCityName != null && minigameNewCityName != null) {
+            showNewDestinationOverlay = true
+            newDestinationAlpha.snapTo(1f)
+        }
+    }
+
     var showMinigameOverlay by remember {mutableStateOf(false)}
 
     LaunchedEffect(gamePhase) {
@@ -250,7 +261,11 @@ fun GameScreen(viewModel: AppViewModel) {
                     targetCityName = playerCurrentCities[minigameTargetPlayer]?.name ?: "",
                     targetPlayerAvatar = minigameTargetAvatar,
                     opponentPlayerAvatars = playersList.filter {it != minigameTargetPlayer}.map {opponentName -> avatars.getOrNull(playersList.indexOf(opponentName))},
+                    announcedWinnerPlayerId = minigameWinnerPlayerId,
                     canFinishMinigame = canFinishMinigame,
+                    onAnnounceMinigameResult = { winnerPlayerId ->
+                        viewModel.announceMinigameResult(winnerPlayerId)
+                    },
                     onFinishMinigame = { winnerPlayerId ->
                         viewModel.finishMinigame(winnerPlayerId)
                     }
@@ -458,8 +473,12 @@ fun GameScreen(viewModel: AppViewModel) {
         }
 
         //New Destination Popup -sichtbar nach verlorenem Minigame
-        if(showNewDestinationOverlay && newDestinationMessage != null) {
-            val msg = newDestinationMessage!!
+        if(showNewDestinationOverlay && (newDestinationMessage != null || (minigameLostCityName != null && minigameNewCityName != null))) {
+            val msg = newDestinationMessage ?: NewDestinationMessage(
+                playerName = minigameTargetPlayer,
+                lostCityName = minigameLostCityName ?: "",
+                newCityName = minigameNewCityName ?: ""
+            )
 
             Box(
                 modifier = Modifier
@@ -570,23 +589,32 @@ fun GameScreen(viewModel: AppViewModel) {
 
                         Spacer(modifier = Modifier.height(18.dp))
 
-                        Button(
-                            onClick = {
-                                showNewDestinationOverlay = false
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF8DB6CD)
-                            ),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier
-                                .width(170.dp)
-                                .height(50.dp)
-                        ) {
-                            Text(
-                                text = "Accept",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
+                        if(currentPlayerName == minigameTargetPlayer) {
+                            Button(
+                                onClick = {
+                                    showNewDestinationOverlay = false
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF8DB6CD)
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier
+                                    .width(170.dp)
+                                    .height(50.dp)
+                            ) {
+                                Text(
+                                    text = "Accept",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        } else {
+                            LaunchedEffect(showNewDestinationOverlay) {
+                                if(showNewDestinationOverlay) {
+                                    delay(3000)
+                                    showNewDestinationOverlay = false
+                                }
+                            }
                         }
                     }
                 }

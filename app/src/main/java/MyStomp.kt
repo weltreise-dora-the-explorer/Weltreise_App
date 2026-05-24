@@ -409,6 +409,29 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
+    fun announceMinigameResult(lobbyId: String, playerId: String, winnerPlayerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_ANNOUNCE_MINIGAME_RESULT)
+                command.put("playerId", playerId)
+                command.put("winnerPlayerId", winnerPlayerId)
+
+                if(session == null) {
+                    Log.e("MyStomp", "announceMinigameResult ABGEBROCHEN: session ist null!")
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                Log.d("MyStomp", "announceMinigameResult gesendet -> $command")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Ankuendigen des Minigame-Ergebnisses", e)
+            }
+        }
+    }
+
     fun finishMinigame(lobbyId: String, playerId: String, winnerPlayerId: String) {
         scope.launch {
             try {

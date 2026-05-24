@@ -41,14 +41,27 @@ fun MinigameOverlay(
     targetCityName: String,
     targetPlayerAvatar: ImageBitmap?,
     opponentPlayerAvatars: List<ImageBitmap?>,
+    announcedWinnerPlayerId: String?,
     canFinishMinigame: Boolean,
+    onAnnounceMinigameResult: (winnerPlayerId: String) -> Unit,
     onFinishMinigame: (winnerPlayerId: String) -> Unit
 ) {
     val otherPlayerName = opponentPlayerNames.firstOrNull() ?: targetPlayerName
     val otherPlayerAvatar = opponentPlayerAvatars.firstOrNull()
     var showVsScreen by remember { mutableStateOf(true) }
     var resultType by remember { mutableStateOf<MinigameResultType?>(null)}
-    var showVisaDeniedScreen by remember { mutableStateOf(false) }
+
+    LaunchedEffect(announcedWinnerPlayerId) {
+        if (announcedWinnerPlayerId == null) return@LaunchedEffect
+
+        showVsScreen = false
+        resultType =
+            if (announcedWinnerPlayerId == targetPlayerName) {
+                MinigameResultType.TARGET_PLAYER_WINS
+            } else {
+                MinigameResultType.OTHER_PLAYER_WINS
+            }
+    }
 
     LaunchedEffect(Unit){
         delay(2000)
@@ -65,37 +78,6 @@ fun MinigameOverlay(
             horizontalAlignment = Alignment.CenterHorizontally
         ){
             when {
-                showVisaDeniedScreen -> {
-                    Text(
-                        text = stringResource(R.string.minigame_visa_denied_title),
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = stringResource(
-                            R.string.minigame_visa_denied_text,
-                            targetPlayerName,
-                            otherPlayerName
-                        ),
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = {
-                            onFinishMinigame(otherPlayerName)
-                        }
-                    ){
-                        Text(text = stringResource(R.string.minigame_visa_denied_continue_button))
-                    }
-                }
                 showVsScreen -> {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -278,7 +260,7 @@ fun MinigameOverlay(
 
                     Button(
                         onClick = {
-                            resultType = MinigameResultType.TARGET_PLAYER_WINS
+                            onAnnounceMinigameResult(targetPlayerName)
                         },
                         enabled = canFinishMinigame
                     ) {
@@ -289,7 +271,7 @@ fun MinigameOverlay(
 
                     Button(
                         onClick = {
-                            resultType = MinigameResultType.OTHER_PLAYER_WINS
+                            onAnnounceMinigameResult(otherPlayerName)
                         },
                         enabled = canFinishMinigame
                     ) {

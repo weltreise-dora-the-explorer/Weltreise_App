@@ -70,6 +70,9 @@ open class AppViewModel(
     private val _gamePhase = MutableStateFlow("LOBBY")
     val gamePhase: StateFlow<String> = _gamePhase.asStateFlow()
 
+    private val _minigameWinnerPlayerId = MutableStateFlow<String?>(null)
+    val minigameWinnerPlayerId: StateFlow<String?> = _minigameWinnerPlayerId.asStateFlow()
+
     private val _ownedCities = MutableStateFlow<List<City>>(emptyList())
     val ownedCities: StateFlow<List<City>> = _ownedCities.asStateFlow()
 
@@ -121,6 +124,12 @@ open class AppViewModel(
 
     private val countdownJobs = mutableMapOf<String, Job>()
     private val gracePeriodSeconds: Int = 60
+
+    private val _minigameLostCityName = MutableStateFlow<String?>(null)
+    val minigameLostCityName: StateFlow<String?> = _minigameLostCityName.asStateFlow()
+
+    private val _minigameNewCityName = MutableStateFlow<String?>(null)
+    val minigameNewCityName: StateFlow<String?> = _minigameNewCityName.asStateFlow()
 
     fun loadAllCities(context: Context) {
         try {
@@ -272,6 +281,14 @@ open class AppViewModel(
         stomp.startMinigame(
             lobbyId = _lobbyId.value,
             playerId = _playerName.value
+        )
+    }
+
+    fun announceMinigameResult(winnerPlayerId: String) {
+        stomp.announceMinigameResult(
+            lobbyId = _lobbyId.value,
+            playerId = _playerName.value,
+            winnerPlayerId = winnerPlayerId
         )
     }
 
@@ -530,6 +547,18 @@ open class AppViewModel(
                     val commandType = rootJson.optString("commandType", "")
                     val phase = stateJson.optString("phase", "LOBBY")
                     _gamePhase.value = phase
+
+                    _minigameWinnerPlayerId.value =
+                        if (stateJson.isNull("minigameWinnerPlayerId")) null
+                        else stateJson.optString("minigameWinnerPlayerId").ifBlank { null }
+
+                    _minigameLostCityName.value =
+                        if (stateJson.isNull("minigameLostCityName")) null
+                        else stateJson.optString("minigameLostCityName").ifBlank { null }
+
+                    _minigameNewCityName.value =
+                        if (stateJson.isNull("minigameNewCityName")) null
+                        else stateJson.optString("minigameNewCityName").ifBlank { null }
 
                     when {
                         commandType == "LOBBY_CLOSED" -> {
