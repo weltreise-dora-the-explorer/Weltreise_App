@@ -113,6 +113,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val minigameOtherPlayer = playersList.firstOrNull{ it != minigameTargetPlayer} ?: minigameTargetPlayer
     val minigameLostCityName by viewModel.minigameLostCityName.collectAsState()
     val minigameNewCityName by viewModel.minigameNewCityName.collectAsState()
+    val playerFreePassCounts by viewModel.playerFreePassCounts.collectAsState()
 
 
 
@@ -125,6 +126,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val rawMapBitmap = remember { loadRawBitmap(context, "world_map.png") }
     val diceBitmap = loadAssetBitmap(context, "dice_icon.png")
     val bucketBitmap = loadAssetBitmap(context, "bucket_list_icon.png")
+    val freePassBitmap = loadAssetBitmap(context, "freepassneu.png")
 
     // Avatar-Liste für verschiedene Spieler
     val avatars = listOf(
@@ -399,7 +401,9 @@ fun GameScreen(viewModel: AppViewModel) {
                     isActive = playerName == currentTurnPlayerId,
                     diceValue = if (playerName == currentTurnPlayerId) diceValue else null,
                     remainingSteps = if (playerName == currentTurnPlayerId) remainingSteps else null,
-                    disconnected = playerName in disconnectedPlayers
+                    disconnected = playerName in disconnectedPlayers,
+                    freePassCount = playerFreePassCounts[playerName] ?: 0,
+                    freePassIcon = freePassBitmap
                 )
             }
         }
@@ -678,36 +682,6 @@ fun GameScreen(viewModel: AppViewModel) {
                     showBucketListDialog.value = true
                 }
             )
-
-            //FreePass-Button, nur sichtbar wenn man mindestens 1 hat
-            if(freePassCount > 0 && !isMinigamePhase) {
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = {
-                        if(shouldShowFreePassDecision) {
-                            showFreePassDialog.value = true
-                        }
-                    },
-                    enabled = shouldShowFreePassDecision,
-                    modifier = Modifier
-                        .width(120.dp)
-                        .height(60.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFD4AF37),
-                        disabledContainerColor = Color(0xFF8A7A3D)
-                    )
-                ) {
-                    Text(
-                        text = stringResource(R.string.free_pass_count, freePassCount),
-                        color = Color.White,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                }
-            }
 
             // Zug beenden – nur sichtbar wenn gewürfelt und dran, unter Bucket List
             if (canEndTurn) {
@@ -1240,7 +1214,7 @@ fun ZoomableMap(
 
 //Hilfe damit App nicht abstürzt (bsp. derzeit noch fehlende Bilder)
 @Composable
-fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActive: Boolean, diceValue: Int? = null, remainingSteps: Int? = null, disconnected: Boolean = false) {
+fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActive: Boolean, diceValue: Int? = null, remainingSteps: Int? = null, disconnected: Boolean = false, freePassCount: Int = 0, freePassIcon: ImageBitmap? = null) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.height(50.dp)
@@ -1279,6 +1253,27 @@ fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActiv
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(text = name, fontSize = 12.sp, color = Color(0xFF1E56A0), fontWeight = FontWeight.Bold)
+                if(freePassCount > 0 && freePassIcon != null) {
+                    Spacer(modifier = Modifier.width(5.dp))
+
+                    repeat(minOf(freePassCount, 3)) {
+                        Image(
+                            bitmap = freePassIcon,
+                            contentDescription = "Free Pass",
+                            modifier = Modifier.size(18.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+
+                    if(freePassCount > 3) {
+                        Text(
+                            text = "+${freePassCount - 3}",
+                            fontSize = 10.sp,
+                            color = Color(0xFFD4AF37),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
                 if (diceValue != null) {
                     Spacer(modifier = Modifier.width(6.dp))
                     val stepsLabel = if (remainingSteps != null && remainingSteps != diceValue)

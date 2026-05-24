@@ -131,6 +131,9 @@ open class AppViewModel(
     private val _minigameNewCityName = MutableStateFlow<String?>(null)
     val minigameNewCityName: StateFlow<String?> = _minigameNewCityName.asStateFlow()
 
+    private val _playerFreePassCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val playerFreePassCounts: StateFlow<Map<String, Int>> = _playerFreePassCounts.asStateFlow()
+
     fun loadAllCities(context: Context) {
         try {
             val json = context.assets.open("cities.json").bufferedReader().readText()
@@ -417,6 +420,7 @@ open class AppViewModel(
                         val newList = mutableListOf<String>()
                         val cityCountsMap = mutableMapOf<String, Int>()
                         val currentCitiesMap = mutableMapOf<String, City?>()
+                        val freePassCountsMap = mutableMapOf<String, Int>()
                         val startCityNamesMap = _playerStartCityNames.value.toMutableMap()
                         val disconnectedNow = mutableSetOf<String>()
 
@@ -424,6 +428,7 @@ open class AppViewModel(
                             val playerObj = playersArray.getJSONObject(i)
                             val pId = playerObj.getString("playerId")
                             newList.add(pId)
+                            freePassCountsMap[pId] = playerObj.optInt("freePassCount", 0)
                             if(pId == _playerName.value){
                                 _freePassCount.value = playerObj.optInt("freePassCount", 0)
                             }
@@ -515,6 +520,7 @@ open class AppViewModel(
                         _playersList.value = newList
                         _playerCityCounts.value = cityCountsMap
                         _playerCurrentCities.value = currentCitiesMap
+                        _playerFreePassCounts.value = freePassCountsMap
                         applyConnectionStatus(disconnectedNow)
                     }
 
