@@ -1,6 +1,7 @@
 package at.aau.serg.websocketbrokerdemo.ui.theme
 
 import android.content.Context
+import at.aau.serg.websocketbrokerdemo.models.Continent
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.foundation.Canvas
@@ -51,6 +52,8 @@ import androidx.compose.ui.zIndex
 import androidx.core.graphics.get
 import androidx.core.graphics.scale
 import androidx.core.graphics.withSave
+import android.annotation.SuppressLint
+import android.media.MediaPlayer
 import at.aau.serg.websocketbrokerdemo.AppViewModel
 import at.aau.serg.websocketbrokerdemo.models.City
 import androidx.compose.ui.graphics.Path
@@ -69,6 +72,7 @@ class PlayerAnimState {
     var isAnimating by mutableStateOf(false)
 }
 
+@SuppressLint("DiscouragedApi")
 @Composable
 fun GameScreen(viewModel: AppViewModel) {
     val context = LocalContext.current
@@ -83,7 +87,20 @@ fun GameScreen(viewModel: AppViewModel) {
     val allCities by viewModel.allCities.collectAsState()
     val startCity by viewModel.startCity.collectAsState()
     val playerCityCounts by viewModel.playerCityCounts.collectAsState()
+    val allPlayerOwnedCities by viewModel.allPlayerOwnedCities.collectAsState()
     val playerCurrentCities by viewModel.playerCurrentCities.collectAsState()
+    var highlightedPlayerId by remember { mutableStateOf<String?>(null) }
+    val playerVisitedBucketIds = remember { mutableStateMapOf<String, MutableSet<String>>() }
+    LaunchedEffect(playerCurrentCities, allPlayerOwnedCities) {
+        playerCurrentCities.forEach { (playerId, city) ->
+            if (city != null) {
+                val bucketIds = allPlayerOwnedCities[playerId]?.map { it.id }?.toHashSet() ?: return@forEach
+                if (city.id in bucketIds) {
+                    playerVisitedBucketIds.getOrPut(playerId) { mutableSetOf() }.add(city.id)
+                }
+            }
+        }
+    }
     val validMoveIds by viewModel.validMoveIds.collectAsState()
     val remainingSteps by viewModel.remainingSteps.collectAsState()
     val isGameOver by viewModel.isGameOver.collectAsState()
@@ -115,7 +132,38 @@ fun GameScreen(viewModel: AppViewModel) {
     val minigameNewCityName by viewModel.minigameNewCityName.collectAsState()
     val playerFreePassCounts by viewModel.playerFreePassCounts.collectAsState()
 
+    fun rawId(name: String) = context.resources.getIdentifier(name, "raw", context.packageName)
+    fun playSound(name: String, volume: Float = 1.0f) {
+        val id = rawId(name)
+        if (id == 0) return
+        MediaPlayer.create(context, id)?.apply {
+            setVolume(volume, volume)
+            setOnCompletionListener { release() }
+            start()
+        }
+    }
 
+    // Hintergrundmusik – läuft solange GameScreen aktiv ist
+    DisposableEffect(Unit) {
+        val id = rawId("backgroundmusic")
+        val player = if (id != 0) MediaPlayer.create(context, id)?.apply {
+            isLooping = true
+            setVolume(0.1875f, 0.1875f)
+            start()
+        } else null
+        onDispose { player?.stop(); player?.release() }
+    }
+
+    // City-reached Sound – nur für eigenen Spieler, nur bei Bucket-List-Städten
+    val ownedCityIdSet = remember(ownedCities) { ownedCities.map { it.id }.toHashSet() }
+    val soundCityInitialized = remember { mutableStateOf(false) }
+    LaunchedEffect(playerCurrentCities[currentPlayerName]) {
+        if (!soundCityInitialized.value) { soundCityInitialized.value = true; return@LaunchedEffect }
+        val arrived = playerCurrentCities[currentPlayerName]
+        if (arrived != null && arrived.id in ownedCityIdSet) {
+            playSound("city_reached")
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loadAllCities(context)
@@ -233,6 +281,9 @@ fun GameScreen(viewModel: AppViewModel) {
     ) {
 
         // Weltkarte
+        val highlightedCityIds = remember(highlightedPlayerId, allPlayerOwnedCities) {
+            highlightedPlayerId?.let { allPlayerOwnedCities[it]?.map { c -> c.id }?.toHashSet() } ?: emptySet()
+        }
         if (mapBitmap != null) {
             ZoomableMap(
                 mapBitmap = mapBitmap,
@@ -245,6 +296,11 @@ fun GameScreen(viewModel: AppViewModel) {
                 validMoveIds = validMoveIds,
                 isMyTurn = effectiveIsMyTurn,
                 myPlayerId = currentPlayerName,
+                startCityId = startCity?.id,
+                highlightedCityIds = highlightedCityIds,
+                highlightedVisitedCityIds = playerVisitedBucketIds[highlightedPlayerId] ?: emptySet(),
+                optimisticLocalCity = viewModel.optimisticPlayerCity.collectAsState().value,
+                onOptimisticMove = { city -> viewModel.setOptimisticPlayerCity(city) },
                 onCityClick = { cityId -> viewModel.onMoveToCity(cityId) }
             )
         }
@@ -394,6 +450,8 @@ fun GameScreen(viewModel: AppViewModel) {
                 val avatar = avatars.getOrNull(index % avatars.size)
                 val isFirstPlayer = index == 0
                 val displayName = if (isFirstPlayer) "$playerName (Host)" else playerName
+                val isOtherPlayer = playerName != currentPlayerName
+                val isHighlighted = highlightedPlayerId == playerName
                 PlayerCard(
                     name = displayName,
                     bucketListCount = playerCityCounts[playerName] ?: 0,
@@ -403,7 +461,11 @@ fun GameScreen(viewModel: AppViewModel) {
                     remainingSteps = if (playerName == currentTurnPlayerId) remainingSteps else null,
                     disconnected = playerName in disconnectedPlayers,
                     freePassCount = playerFreePassCounts[playerName] ?: 0,
-                    freePassIcon = freePassBitmap
+                    freePassIcon = freePassBitmap,
+                    isHighlighted = isHighlighted,
+                    onTap = if (isOtherPlayer) {
+                        { highlightedPlayerId = if (isHighlighted) null else playerName }
+                    } else null
                 )
             }
         }
@@ -669,7 +731,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 imageBitmap = diceBitmap,
                 enabled = canRoll,
                 blinkBorder = canRoll,
-                onClick = { viewModel.onRollDice() }
+                onClick = { playSound("rolling_dice"); viewModel.onRollDice() }
             )
 
             Spacer(modifier = Modifier.height(1.dp))
@@ -778,6 +840,11 @@ fun ZoomableMap(
     validMoveIds: List<String> = emptyList(),
     isMyTurn: Boolean = false,
     myPlayerId: String = "",
+    startCityId: String? = null,
+    highlightedCityIds: Set<String> = emptySet(),
+    highlightedVisitedCityIds: Set<String> = emptySet(),
+    optimisticLocalCity: City? = null,
+    onOptimisticMove: (City) -> Unit = {},
     onCityClick: (cityId: String) -> Unit = {}
 ) {
     val showValidMoves = validMoveIds.isNotEmpty() && isMyTurn
@@ -822,6 +889,23 @@ fun ZoomableMap(
     // Animationszustand für remote Spieler
     val remotePlayerAnims = remember { mutableStateMapOf<String, PlayerAnimState>() }
     val prevPlayerCities = remember { mutableStateOf<Map<String, City?>>(emptyMap()) }
+
+    // Grüner Haken: animiert wenn lokaler Spieler auf einer Bucket-List-Stadt ankommt
+    val checkmarkProgress = remember { mutableStateMapOf<String, Animatable<Float, *>>() }
+    val localCityInitialized = remember { mutableStateOf(false) }
+
+    LaunchedEffect(playerCurrentCities[myPlayerId]) {
+        val arrivedCity = playerCurrentCities[myPlayerId]
+        if (!localCityInitialized.value) {
+            localCityInitialized.value = true
+            return@LaunchedEffect
+        }
+        if (arrivedCity != null && arrivedCity.id in ownedCityIdSet) {
+            val anim = Animatable(0f)
+            checkmarkProgress[arrivedCity.id] = anim
+            launch { anim.animateTo(1f, animationSpec = tween(500, easing = FastOutSlowInEasing)) }
+        }
+    }
 
     LaunchedEffect(playersList) {
         val current = playersList.toSet()
@@ -935,6 +1019,7 @@ fun ZoomableMap(
 
                                 if (path.size > 1) {
                                     try {
+                                        onOptimisticMove(targetCity)
                                         isLocalPlayerAnimating = true
                                         val startCity = cityMap[path.first()]
                                         if (startCity != null) {
@@ -1077,9 +1162,21 @@ fun ZoomableMap(
                         val midY = (ay + by) / 2f
                         val dist = sqrt((bx - ax).pow(2) + (by - ay).pow(2))
                         val curvature = (dist * 0.25f).coerceAtMost(renderedHeight * 0.35f)
+                        val (cpX, cpY) = when {
+                            idA == "miami" && idB == "newyork" -> midX - curvature to midY
+                            idA == "newyork" && idB == "sanfrancisco" -> midX to midY - curvature * 2.2f
+                            idA == "lima" && idB == "losangeles" -> midX - curvature * 1.5f to midY
+                            idA == "bangkok" && idB == "nairobi" -> midX to midY + curvature * 1.5f
+                            idA == "bombay" && idB == "dubayy" -> midX to midY + curvature
+                            idA == "capetown" && idB == "nairobi" -> midX to midY
+                            idA == "nairobi" && idB == "paris" -> midX - curvature to midY
+                            idA == "dakar" && idB == "lisboa" -> midX to midY
+                            idA == "laspalmas" && idB == "madrid" -> midX to midY + curvature
+                            else -> midX to midY - curvature
+                        }
                         val path = Path().apply {
                             moveTo(ax, ay)
-                            quadraticTo(midX, midY - curvature, bx, by)
+                            quadraticTo(cpX, cpY, bx, by)
                         }
                         drawPath(path, color = Color(0xFFE53935), style = Stroke(width = 1.5f))
                     }
@@ -1110,9 +1207,39 @@ fun ZoomableMap(
                         )
                     }
 
+                    if (city.id == startCityId) {
+                        drawCircle(
+                            color = Color(0xFF1565C0),
+                            radius = dotRadius + 7f,
+                            center = Offset(cx, cy),
+                            style = Stroke(width = 1.5f)
+                        )
+                        drawCircle(
+                            color = Color(0xFF1565C0),
+                            radius = dotRadius + 4f,
+                            center = Offset(cx, cy),
+                            style = Stroke(width = 1.5f)
+                        )
+                    }
+
+                    if (city.id in highlightedCityIds) {
+                        drawCircle(
+                            color = Color.Black,
+                            radius = dotRadius + 7f,
+                            center = Offset(cx, cy),
+                            style = Stroke(width = 6f)
+                        )
+                        drawCircle(
+                            color = Color.White,
+                            radius = dotRadius + 7f,
+                            center = Offset(cx, cy),
+                            style = Stroke(width = 3.5f)
+                        )
+                    }
+
                     drawCircle(
                         color = when {
-                            isOwned -> Color(0xFF4CAF50)
+                            isOwned -> Color(0xFFFFD600)
                             showValidMoves && !isValidMove -> Color(0xFFE53935).copy(alpha = 0.25f)
                             else -> Color(0xFFE53935)
                         },
@@ -1120,24 +1247,49 @@ fun ZoomableMap(
                         center = Offset(cx, cy)
                     )
 
-                    if (scale >= 2.5f) {
-                        val labelLeft = city.x_relativ < 0.28f
-                        val labelX = if (labelLeft) cx - dotRadius - 3f else cx + dotRadius + 3f
+                    val importantEuropeCities = setOf("lisboa", "madrid", "palermo", "paris", "frankfurt", "wien", "london", "dublin", "roma")
+                    val isMinorEuropean = city.continent == Continent.EUROPE_AFRICA
+                        && city.y_relativ < 0.422f
+                        && city.id !in importantEuropeCities
+                    val labelThreshold = if (isMinorEuropean) 4.0f else 2.5f
+                    if (scale >= labelThreshold) {
+                        val labelAbove = city.id in setOf("saltlakecity", "calgary", "winnipeg", "manaus", "dakar", "lobito", "london", "kobenhaven", "berlin", "paris", "bern", "frankfurt", "hamburg", "bergen", "stockholm", "perm", "sverdlovsk", "novosibirsk", "irkutsk")
+                        val labelBelow = city.id in setOf("denver", "stlouis", "bamako", "kuwait")
+                        val labelBelowCenter = city.id == "wien" || city.id == "sofiya"
+                        val labelLeft = !labelAbove && !labelBelow && !labelBelowCenter && (city.x_relativ < 0.28f || city.id in setOf("bordeaux", "brest", "dublin", "edinburgh", "oslo"))
+                        val labelX = when {
+                            labelAbove || labelBelowCenter -> cx
+                            labelLeft -> cx - dotRadius - 3f
+                            else -> cx + dotRadius + 3f
+                        }
+                        val labelY = when {
+                            labelAbove -> cy - dotRadius - 3f
+                            labelBelow || labelBelowCenter -> cy + 14f
+                            else -> cy + 4f
+                        }
+                        val labelSize = when (city.id) {
+                            "hamburg", "bern" -> 6f
+                            "frankfurt" -> 7f
+                            else -> if (isMinorEuropean) 7f else 9f
+                        }
 
                         val paint = android.graphics.Paint().apply {
                             color = if (isOcean) android.graphics.Color.WHITE
                                     else android.graphics.Color.rgb(20, 20, 20)
-                            textSize = 9f
+                            textSize = labelSize
                             isAntiAlias = true
-                            textAlign = if (labelLeft) android.graphics.Paint.Align.RIGHT
-                                        else android.graphics.Paint.Align.LEFT
+                            textAlign = when {
+                                labelAbove || labelBelowCenter -> android.graphics.Paint.Align.CENTER
+                                labelLeft -> android.graphics.Paint.Align.RIGHT
+                                else -> android.graphics.Paint.Align.LEFT
+                            }
                             setShadowLayer(1.5f, 0.5f, 0.5f,
                                 if (isOcean) android.graphics.Color.BLACK
                                 else android.graphics.Color.WHITE)
                         }
 
                         drawIntoCanvas { canvas ->
-                            canvas.nativeCanvas.drawText(city.name, labelX, cy + 4f, paint)
+                            canvas.nativeCanvas.drawText(city.name, labelX, labelY, paint)
                         }
                     }
                 }
@@ -1152,7 +1304,10 @@ fun ZoomableMap(
                 playersList.forEachIndexed { index, name ->
                     if (isLocalPlayerAnimating && index == myPlayerIndex) return@forEachIndexed
                     if (remotePlayerAnims[name]?.isAnimating == true) return@forEachIndexed
-                    val current = playerCurrentCities[name] ?: return@forEachIndexed
+                    val current = if (name == myPlayerId && !isLocalPlayerAnimating)
+                        optimisticLocalCity ?: playerCurrentCities[name] ?: return@forEachIndexed
+                    else
+                        playerCurrentCities[name] ?: return@forEachIndexed
                     val key = current.id.ifEmpty { current.name }
                     cityGroups.getOrPut(key) { mutableListOf() }.add(index)
                 }
@@ -1206,6 +1361,28 @@ fun ZoomableMap(
                     val animY = animState.animY.value - effectiveIconRadius - dotRadius - 4f
                     drawIntoCanvas { canvas -> drawPlayerIcon(canvas.nativeCanvas, animX, animY, playerIndex) }
                 }
+
+                // Grüner Haken (oberste Ebene, über Spieler-Icons)
+                allCities.forEach { city ->
+                    val cx = xOffset + city.x_relativ * renderedWidth
+                    val cy = yOffset + city.y_relativ * renderedHeight
+                    val s = dotRadius * 1.6f
+                    val checkAlpha = checkmarkProgress[city.id]?.value ?: 0f
+                    val isOtherVisited = city.id in highlightedVisitedCityIds
+                    if (checkAlpha > 0f || isOtherVisited) {
+                        val alpha = if (checkAlpha > 0f) checkAlpha else 1f
+                        val checkPath = Path().apply {
+                            moveTo(cx - s, cy)
+                            lineTo(cx - s * 0.15f, cy + s * 0.75f)
+                            lineTo(cx + s, cy - s * 0.75f)
+                        }
+                        drawPath(
+                            path = checkPath,
+                            color = Color(0xFF2E7D32).copy(alpha = alpha),
+                            style = Stroke(width = 2.5f)
+                        )
+                    }
+                }
             }
             } // inner graphicsLayer Box
         }
@@ -1214,10 +1391,24 @@ fun ZoomableMap(
 
 //Hilfe damit App nicht abstürzt (bsp. derzeit noch fehlende Bilder)
 @Composable
-fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActive: Boolean, diceValue: Int? = null, remainingSteps: Int? = null, disconnected: Boolean = false, freePassCount: Int = 0, freePassIcon: ImageBitmap? = null) {
+fun PlayerCard(
+    name: String,
+    bucketListCount: Int,
+    avatar: ImageBitmap?,
+    isActive: Boolean,
+    diceValue: Int? = null,
+    remainingSteps: Int? = null,
+    disconnected: Boolean = false,
+    freePassCount: Int = 0,
+    freePassIcon: ImageBitmap? = null,
+    isHighlighted: Boolean = false,
+    onTap: (() -> Unit)? = null
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.height(50.dp)
+        modifier = Modifier
+            .height(50.dp)
+            .then(if (onTap != null) Modifier.clickable { onTap() } else Modifier)
     ) {
         Box(
             modifier = Modifier
@@ -1245,8 +1436,12 @@ fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActiv
                     shape = RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)
                 )
                 .border(
-                    width = if (isActive) 3.dp else 0.dp,
-                    color = if (isActive) Color(0xFFD4AF37) else Color.Transparent,
+                    width = if (isHighlighted) 2.dp else if (isActive) 3.dp else 0.dp,
+                    color = when {
+                        isHighlighted -> Color.White
+                        isActive -> Color(0xFFD4AF37)
+                        else -> Color.Transparent
+                    },
                     shape = RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)
                 )
                 .padding(start = 24.dp, end = 16.dp, top = 4.dp, bottom = 4.dp)
@@ -1309,7 +1504,7 @@ fun GameButton(text: String, imageBitmap: ImageBitmap?, onClick: () -> Unit, ena
         label = "borderAlpha"
     )
     val borderModifier = if (blinkBorder)
-        Modifier.border(4.dp, Color(0xFFFFD700).copy(alpha = borderAlpha), RoundedCornerShape(16.dp))
+        Modifier.border(4.dp, Color(0xFF43A047).copy(alpha = borderAlpha), RoundedCornerShape(16.dp))
     else Modifier
     Box(
         modifier = Modifier
