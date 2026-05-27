@@ -61,6 +61,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
+import androidx.compose.ui.res.stringResource
+import com.example.myapplication.R
+import at.aau.serg.websocketbrokerdemo.GameConstants
+import at.aau.serg.websocketbrokerdemo.NewDestinationMessage
 
 class PlayerAnimState {
     val animX = Animatable(0f)
@@ -77,6 +81,8 @@ fun GameScreen(viewModel: AppViewModel) {
     val gameMode by viewModel.gameMode.collectAsState()
     val diceValue by viewModel.diceValue.collectAsState()
     val currentTurnPlayerId by viewModel.currentTurnPlayerId.collectAsState()
+    val gamePhase by viewModel.gamePhase.collectAsState()
+    val minigameWinnerPlayerId by viewModel.minigameWinnerPlayerId.collectAsState()
     val ownedCities by viewModel.ownedCities.collectAsState()
     val allCities by viewModel.allCities.collectAsState()
     val startCity by viewModel.startCity.collectAsState()
@@ -98,12 +104,33 @@ fun GameScreen(viewModel: AppViewModel) {
     val validMoveIds by viewModel.validMoveIds.collectAsState()
     val remainingSteps by viewModel.remainingSteps.collectAsState()
     val isGameOver by viewModel.isGameOver.collectAsState()
+    val freePassCount by viewModel.freePassCount.collectAsState()
     val goalReachedMessage by viewModel.goalReachedMessage.collectAsState()
+    val newDestinationMessage by viewModel.newDestinationMessage.collectAsState()
     val gameOverMessage by viewModel.gameOverMessage.collectAsState()
+    val isMinigamePhase = gamePhase == GameConstants.PHASE_MINIGAME
     val isMyTurn = currentTurnPlayerId == currentPlayerName
-    val effectiveIsMyTurn = isMyTurn && !isGameOver
+    val myCurrentCity = playerCurrentCities[currentPlayerName]
+    val isStandingOnOwnTargetCity = myCurrentCity != null && ownedCities.any {it.id == myCurrentCity.id}
+
+    val freePassDecisionMade = remember { mutableStateOf(false) }
+
+    val shouldShowFreePassDecision =
+        freePassCount > 0 &&
+                isMyTurn &&
+                !isGameOver &&
+                isStandingOnOwnTargetCity &&
+                !freePassDecisionMade.value
+
+    val effectiveIsMyTurn = isMyTurn && !isGameOver && !isMinigamePhase
     val canRoll = effectiveIsMyTurn && diceValue == null
     val canEndTurn = effectiveIsMyTurn && diceValue != null
+    val canFinishMinigame = true
+    val minigameTargetPlayer = currentTurnPlayerId ?: currentPlayerName
+    val minigameOtherPlayer = playersList.firstOrNull{ it != minigameTargetPlayer} ?: minigameTargetPlayer
+    val minigameLostCityName by viewModel.minigameLostCityName.collectAsState()
+    val minigameNewCityName by viewModel.minigameNewCityName.collectAsState()
+    val playerFreePassCounts by viewModel.playerFreePassCounts.collectAsState()
 
     fun rawId(name: String) = context.resources.getIdentifier(name, "raw", context.packageName)
     fun playSound(name: String, volume: Float = 1.0f) {
@@ -147,6 +174,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val rawMapBitmap = remember { loadRawBitmap(context, "world_map.png") }
     val diceBitmap = loadAssetBitmap(context, "dice_icon.png")
     val bucketBitmap = loadAssetBitmap(context, "bucket_list_icon.png")
+    val freePassBitmap = loadAssetBitmap(context, "freepassneu.png")
 
     // Avatar-Liste für verschiedene Spieler
     val avatars = listOf(
@@ -164,8 +192,27 @@ fun GameScreen(viewModel: AppViewModel) {
         )
     }
 
+    val minigameTargetAvatar = avatars.getOrNull(
+        playersList.indexOf(minigameTargetPlayer).takeIf {it >= 0} ?: 0
+    )
+
+    val minigameOtherAvatar = avatars.getOrNull(
+        playersList.indexOf(minigameOtherPlayer).takeIf {it >= 0} ?: 0
+    )
+
     //Bucketlist offen? Default false
     val showBucketListDialog = remember { mutableStateOf(false) }
+    val showFreePassDialog = remember {mutableStateOf(false)}
+
+    LaunchedEffect(myCurrentCity?.id) {
+        freePassDecisionMade.value = false
+    }
+
+    LaunchedEffect(shouldShowFreePassDecision, myCurrentCity?.id) {
+        if(shouldShowFreePassDecision) {
+            showFreePassDialog.value = true
+        }
+    }
 
     // Würfelergebnis fade-out nach 5 Sekunden
     var showDiceOverlay by remember { mutableStateOf(false) }
@@ -193,6 +240,36 @@ fun GameScreen(viewModel: AppViewModel) {
             delay(3000)
             goalReachedAlpha.animateTo(0f, animationSpec = tween(1000))
             showGoalReachedOverlay = false
+        }
+    }
+
+    //New-Destination fade-out nach 4 Sekunden
+    var showNewDestinationOverlay by remember {mutableStateOf(false)}
+    val newDestinationAlpha = remember {Animatable(0f)}
+
+    LaunchedEffect(newDestinationMessage) {
+        if(newDestinationMessage != null) {
+            showNewDestinationOverlay = true
+            newDestinationAlpha.snapTo(1f)
+        }
+    }
+
+    LaunchedEffect(minigameLostCityName, minigameNewCityName) {
+        if(minigameLostCityName != null && minigameNewCityName != null) {
+            showNewDestinationOverlay = true
+            newDestinationAlpha.snapTo(1f)
+        }
+    }
+
+    var showMinigameOverlay by remember {mutableStateOf(false)}
+
+    LaunchedEffect(gamePhase) {
+        if(gamePhase == GameConstants.PHASE_MINIGAME) {
+            showMinigameOverlay = false
+            delay(4000)
+            showMinigameOverlay = true
+        } else {
+            showMinigameOverlay = false
         }
     }
 
@@ -226,6 +303,126 @@ fun GameScreen(viewModel: AppViewModel) {
                 onOptimisticMove = { city -> viewModel.setOptimisticPlayerCity(city) },
                 onCityClick = { cityId -> viewModel.onMoveToCity(cityId) }
             )
+        }
+
+        if(gamePhase == GameConstants.PHASE_MINIGAME && showMinigameOverlay) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(20f)
+                    .background(Color(0x99000000)),
+                contentAlignment = Alignment.Center
+            ){
+                MinigameOverlay(
+                    targetPlayerName = minigameTargetPlayer,
+                    opponentPlayerNames = playersList.filter { it != minigameTargetPlayer },
+                    targetCityName = playerCurrentCities[minigameTargetPlayer]?.name ?: "",
+                    targetPlayerAvatar = minigameTargetAvatar,
+                    opponentPlayerAvatars = playersList.filter {it != minigameTargetPlayer}.map {opponentName -> avatars.getOrNull(playersList.indexOf(opponentName))},
+                    announcedWinnerPlayerId = minigameWinnerPlayerId,
+                    canFinishMinigame = canFinishMinigame,
+                    onAnnounceMinigameResult = { winnerPlayerId ->
+                        viewModel.announceMinigameResult(winnerPlayerId)
+                    },
+                    onFinishMinigame = { winnerPlayerId ->
+                        viewModel.finishMinigame(winnerPlayerId)
+                    }
+                )
+            }
+        }
+
+        //Free-Pass-Overlay
+        if (showFreePassDialog.value) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(25f)
+                    .background(Color(0x99000000)),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xDD000000), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 32.dp, vertical = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stringResource(R.string.free_pass_dialog_title),
+                            color = Color.White,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = stringResource(
+                                R.string.free_pass_dialog_city_text,
+                                myCurrentCity?.name ?: "your target city"
+                            ),
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = stringResource(R.string.free_pass_dialog_question),
+                            color = Color.White,
+                            fontSize = 15.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Button(
+                            onClick = {
+                                freePassDecisionMade.value = true
+                                showFreePassDialog.value = false
+                                viewModel.useFreePass()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD4AF37)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.width(180.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.free_pass_use_button),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Button(
+                            onClick = {
+                                freePassDecisionMade.value = true
+                                showFreePassDialog.value = false
+
+                                if (!isMinigamePhase) {
+                                    viewModel.startMinigame()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF8DB6CD)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.width(180.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.free_pass_play_minigame_button),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         // Game Mode Badge oben rechts
@@ -263,6 +460,8 @@ fun GameScreen(viewModel: AppViewModel) {
                     diceValue = if (playerName == currentTurnPlayerId) diceValue else null,
                     remainingSteps = if (playerName == currentTurnPlayerId) remainingSteps else null,
                     disconnected = playerName in disconnectedPlayers,
+                    freePassCount = playerFreePassCounts[playerName] ?: 0,
+                    freePassIcon = freePassBitmap,
                     isHighlighted = isHighlighted,
                     onTap = if (isOtherPlayer) {
                         { highlightedPlayerId = if (isHighlighted) null else playerName }
@@ -335,6 +534,155 @@ fun GameScreen(viewModel: AppViewModel) {
                         fontSize = 16.sp,
                         color = Color.White
                     )
+                }
+            }
+        }
+
+        //New Destination Popup -sichtbar nach verlorenem Minigame
+        if(showNewDestinationOverlay && (newDestinationMessage != null || (minigameLostCityName != null && minigameNewCityName != null))) {
+            val msg = newDestinationMessage ?: NewDestinationMessage(
+                playerName = minigameTargetPlayer,
+                lostCityName = minigameLostCityName ?: "",
+                newCityName = minigameNewCityName ?: ""
+            )
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .alpha(newDestinationAlpha.value)
+                    .background(Color(0xCC000000), RoundedCornerShape(20.dp))
+                    .padding(start = 24.dp, end = 32.dp, top = 20.dp, bottom = 20.dp),
+                contentAlignment = Alignment.Center
+            ){
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(350.dp)
+                            .background(Color(0xDDEAF2F8), RoundedCornerShape(14.dp))
+                            .padding(horizontal = 28.dp, vertical = 24.dp)
+                    ) {
+                        Column{
+                            Text(
+                                text = "VISA DENIED!",
+                                color = Color(0xFF0050A8),
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = "Attention ${msg.playerName},",
+                                color = Color(0xFF0050A8),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = "Entry completely denied! Your mini-game skills were inspected and found to be highly insufficient.",
+                                color = Color(0xFF0050A8),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = "You lost ${msg.lostCityName}. Since you are officially locked out of this city, your Bucket List has been changed.",
+                                color = Color(0xFF0050A8),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = "Time to pull out the map, grab a pen, and figure out a new route.",
+                                color = Color(0xFF0050A8),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = "Cordially,\nThe Department of Detours",
+                                color = Color(0xFF0050A8),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(28.dp))
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "NEW DESTINATION:",
+                            color = Color.White,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .width(130.dp)
+                                .height(190.dp)
+                                .background(Color(0xFF0050A8), RoundedCornerShape(12.dp))
+                                .border(
+                                    width = 1.dp,
+                                    color = Color(0xFFD4AF37),
+                                    shape = RoundedCornerShape(12.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = msg.newCityName.uppercase(),
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(18.dp))
+
+                        if(currentPlayerName == minigameTargetPlayer) {
+                            Button(
+                                onClick = {
+                                    showNewDestinationOverlay = false
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF8DB6CD)
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier
+                                    .width(170.dp)
+                                    .height(50.dp)
+                            ) {
+                                Text(
+                                    text = "Accept",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        } else {
+                            LaunchedEffect(showNewDestinationOverlay) {
+                                if(showNewDestinationOverlay) {
+                                    delay(3000)
+                                    showNewDestinationOverlay = false
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1043,7 +1391,19 @@ fun ZoomableMap(
 
 //Hilfe damit App nicht abstürzt (bsp. derzeit noch fehlende Bilder)
 @Composable
-fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActive: Boolean, diceValue: Int? = null, remainingSteps: Int? = null, disconnected: Boolean = false, isHighlighted: Boolean = false, onTap: (() -> Unit)? = null) {
+fun PlayerCard(
+    name: String,
+    bucketListCount: Int,
+    avatar: ImageBitmap?,
+    isActive: Boolean,
+    diceValue: Int? = null,
+    remainingSteps: Int? = null,
+    disconnected: Boolean = false,
+    freePassCount: Int = 0,
+    freePassIcon: ImageBitmap? = null,
+    isHighlighted: Boolean = false,
+    onTap: (() -> Unit)? = null
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -1088,6 +1448,27 @@ fun PlayerCard(name: String, bucketListCount: Int, avatar: ImageBitmap?, isActiv
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(text = name, fontSize = 12.sp, color = Color(0xFF1E56A0), fontWeight = FontWeight.Bold)
+                if(freePassCount > 0 && freePassIcon != null) {
+                    Spacer(modifier = Modifier.width(5.dp))
+
+                    repeat(minOf(freePassCount, 3)) {
+                        Image(
+                            bitmap = freePassIcon,
+                            contentDescription = "Free Pass",
+                            modifier = Modifier.size(18.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+
+                    if(freePassCount > 3) {
+                        Text(
+                            text = "+${freePassCount - 3}",
+                            fontSize = 10.sp,
+                            color = Color(0xFFD4AF37),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
                 if (diceValue != null) {
                     Spacer(modifier = Modifier.width(6.dp))
                     val stepsLabel = if (remainingSteps != null && remainingSteps != diceValue)

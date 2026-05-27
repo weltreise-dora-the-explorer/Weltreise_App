@@ -19,6 +19,12 @@ import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
+data class NewDestinationMessage(
+    val playerName: String,
+    val lostCityName: String,
+    val newCityName: String
+)
+
 open class AppViewModel(
     stompInstance: MyStomp? = null,
     private val prefs: PreferencesHelper? = null
@@ -61,6 +67,12 @@ open class AppViewModel(
     private val _currentTurnPlayerId = MutableStateFlow<String?>(null)
     val currentTurnPlayerId: StateFlow<String?> = _currentTurnPlayerId.asStateFlow()
 
+    private val _gamePhase = MutableStateFlow("LOBBY")
+    val gamePhase: StateFlow<String> = _gamePhase.asStateFlow()
+
+    private val _minigameWinnerPlayerId = MutableStateFlow<String?>(null)
+    val minigameWinnerPlayerId: StateFlow<String?> = _minigameWinnerPlayerId.asStateFlow()
+
     private val _ownedCities = MutableStateFlow<List<City>>(emptyList())
     val ownedCities: StateFlow<List<City>> = _ownedCities.asStateFlow()
 
@@ -92,11 +104,17 @@ open class AppViewModel(
     private val _remainingSteps = MutableStateFlow<Int?>(null)
     val remainingSteps: StateFlow<Int?> = _remainingSteps.asStateFlow()
 
+    private val _freePassCount = MutableStateFlow(0)
+    val freePassCount: StateFlow<Int> = _freePassCount.asStateFlow()
+
     private val _playerStartCityNames = MutableStateFlow<Map<String, String>>(emptyMap())
     val playerStartCityNames: StateFlow<Map<String, String>> = _playerStartCityNames.asStateFlow()
 
     private val _goalReachedMessage = MutableStateFlow<GoalReachedMessage?>(null)
     val goalReachedMessage: StateFlow<GoalReachedMessage?> = _goalReachedMessage.asStateFlow()
+
+    private val _newDestinationMessage = MutableStateFlow<NewDestinationMessage?>(null)
+    val newDestinationMessage: StateFlow<NewDestinationMessage?> = _newDestinationMessage.asStateFlow()
 
     private val _gameOverMessage = MutableStateFlow<GameOverMessage?>(null)
     val gameOverMessage: StateFlow<GameOverMessage?> = _gameOverMessage.asStateFlow()
@@ -116,6 +134,15 @@ open class AppViewModel(
 
     private val countdownJobs = mutableMapOf<String, Job>()
     private val gracePeriodSeconds: Int = 60
+
+    private val _minigameLostCityName = MutableStateFlow<String?>(null)
+    val minigameLostCityName: StateFlow<String?> = _minigameLostCityName.asStateFlow()
+
+    private val _minigameNewCityName = MutableStateFlow<String?>(null)
+    val minigameNewCityName: StateFlow<String?> = _minigameNewCityName.asStateFlow()
+
+    private val _playerFreePassCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val playerFreePassCounts: StateFlow<Map<String, Int>> = _playerFreePassCounts.asStateFlow()
 
     fun loadAllCities(context: Context) {
         try {
@@ -244,20 +271,56 @@ open class AppViewModel(
         stomp.moveToCity(_lobbyId.value, _playerName.value, targetCityId)
     }
 
+    fun finishMinigame(winnerPlayerId: String) {
+        stomp.finishMinigame(
+            lobbyId = _lobbyId.value,
+            playerId = _playerName.value,
+            winnerPlayerId = winnerPlayerId
+        )
+    }
+
+    fun useFreePass() {
+        if(_freePassCount.value <= 0) {
+            return
+        }
+
+        stomp.useFreePass(
+            lobbyId = _lobbyId.value,
+            playerId = _playerName.value
+        )
+    }
+
+    fun startMinigame() {
+        stomp.startMinigame(
+            lobbyId = _lobbyId.value,
+            playerId = _playerName.value
+        )
+    }
+
+    fun announceMinigameResult(winnerPlayerId: String) {
+        stomp.announceMinigameResult(
+            lobbyId = _lobbyId.value,
+            playerId = _playerName.value,
+            winnerPlayerId = winnerPlayerId
+        )
+    }
+
     fun playAgain() {
         if (_isHost.value) {
             _isGameOver.value = false
             _gameOverMessage.value = null
             _goalReachedMessage.value = null
+            _newDestinationMessage.value = null
+            _gamePhase.value = "LOBBY"
             _ownedCities.value = emptyList()
             _startCity.value = null
             _playerCityCounts.value = emptyMap()
-            _allPlayerOwnedCities.value = emptyMap()
             _playerCurrentCities.value = emptyMap()
             _diceValue.value = null
             _currentTurnPlayerId.value = null
             _validMoveIds.value = emptyList()
             _remainingSteps.value = null
+            _freePassCount.value = 0
             stomp.resetLobby(_lobbyId.value, _playerName.value)
         } else {
             // Nicht-Host: nur GameOver-Anzeige schliessen und in den Waiting-Screen wechseln.
@@ -280,8 +343,10 @@ open class AppViewModel(
         _lobbyId.value = ""
         _playersList.value = emptyList()
         _isHost.value = false
+        _gamePhase.value = "LOBBY"
         _isGameOver.value = false
         _goalReachedMessage.value = null
+        _newDestinationMessage.value = null
         _gameOverMessage.value = null
         _playerStartCityNames.value = emptyMap()
         _ownedCities.value = emptyList()
@@ -293,6 +358,7 @@ open class AppViewModel(
         _currentTurnPlayerId.value = null
         _validMoveIds.value = emptyList()
         _remainingSteps.value = null
+        _freePassCount.value = 0
         clearDisconnectStates()
         navigateTo("login")
     }
@@ -369,6 +435,7 @@ open class AppViewModel(
                         val cityCountsMap = mutableMapOf<String, Int>()
                         val allOwnedMap = _allPlayerOwnedCities.value.toMutableMap()
                         val currentCitiesMap = mutableMapOf<String, City?>()
+                        val freePassCountsMap = mutableMapOf<String, Int>()
                         val startCityNamesMap = _playerStartCityNames.value.toMutableMap()
                         val disconnectedNow = mutableSetOf<String>()
 
@@ -376,6 +443,11 @@ open class AppViewModel(
                             val playerObj = playersArray.getJSONObject(i)
                             val pId = playerObj.getString("playerId")
                             newList.add(pId)
+                            freePassCountsMap[pId] = playerObj.optInt("freePassCount", 0)
+                            if(pId == _playerName.value){
+                                _freePassCount.value = playerObj.optInt("freePassCount", 0)
+                            }
+
                             if (playerObj.has("connected") && !playerObj.getBoolean("connected")) {
                                 disconnectedNow.add(pId)
                             }
@@ -413,6 +485,7 @@ open class AppViewModel(
                                     } catch (_: IllegalArgumentException) {
                                         Continent.EUROPE_AFRICA
                                     }
+
                                     cities.add(City(
                                         id = cityObj.optString("id", ""),
                                         name = cityObj.optString("name", ""),
@@ -420,10 +493,29 @@ open class AppViewModel(
                                         color = cityObj.optString("color", "")
                                     ))
                                 }
+
                                 allOwnedMap[pId] = cities
 
                                 if (pId == _playerName.value) {
+                                    val oldOwnedCities = _ownedCities.value
                                     _ownedCities.value = cities
+
+                                    val addedCity = cities.firstOrNull { newCity ->
+                                        oldOwnedCities.none { oldCity -> oldCity.id == newCity.id }
+                                    }
+
+                                    val removedCity = oldOwnedCities.firstOrNull { oldCity ->
+                                        cities.none { newCity -> newCity.id == oldCity.id }
+                                    }
+
+                                    if (addedCity != null && removedCity != null) {
+                                        _newDestinationMessage.value = NewDestinationMessage(
+                                            playerName = pId,
+                                            lostCityName = removedCity.name,
+                                            newCityName = addedCity.name
+                                        )
+                                    }
+
                                     Log.d("AppViewModel", "Eigene Städte empfangen: ${cities.map { it.name }}")
 
                                     if (playerObj.has("startCity") && !playerObj.isNull("startCity")) {
@@ -448,6 +540,7 @@ open class AppViewModel(
                         _playerCityCounts.value = cityCountsMap
                         _allPlayerOwnedCities.value = allOwnedMap
                         _playerCurrentCities.value = currentCitiesMap
+                        _playerFreePassCounts.value = freePassCountsMap
                         _optimisticPlayerCity.value = null
                         applyConnectionStatus(disconnectedNow)
                     }
@@ -480,6 +573,19 @@ open class AppViewModel(
                     // Navigation (dein bestehender Code)
                     val commandType = rootJson.optString("commandType", "")
                     val phase = stateJson.optString("phase", "LOBBY")
+                    _gamePhase.value = phase
+
+                    _minigameWinnerPlayerId.value =
+                        if (stateJson.isNull("minigameWinnerPlayerId")) null
+                        else stateJson.optString("minigameWinnerPlayerId").ifBlank { null }
+
+                    _minigameLostCityName.value =
+                        if (stateJson.isNull("minigameLostCityName")) null
+                        else stateJson.optString("minigameLostCityName").ifBlank { null }
+
+                    _minigameNewCityName.value =
+                        if (stateJson.isNull("minigameNewCityName")) null
+                        else stateJson.optString("minigameNewCityName").ifBlank { null }
 
                     when {
                         commandType == "LOBBY_CLOSED" -> {
@@ -589,7 +695,7 @@ open class AppViewModel(
         _isGameOver.value = true
         try {
             val json = JSONObject(res)
-            val winnerId = json.optString("winnerId")
+            val winnerId = json.optString("winnerId", "")
             val array = json.getJSONArray("scores")
             val results = mutableListOf<GameOverMessage.PlayerResult>()
             for (i in 0 until array.length()) {
