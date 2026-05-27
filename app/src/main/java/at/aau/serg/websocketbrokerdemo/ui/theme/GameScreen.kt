@@ -731,16 +731,18 @@ fun GameScreen(viewModel: AppViewModel) {
                 .padding(start = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            //Roll Dice
-            GameButton(
-                text = "ROLL DICE",
-                imageBitmap = diceBitmap,
-                enabled = canRoll,
-                blinkBorder = canRoll,
-                onClick = { playSound(context, "rolling_dice"); viewModel.onRollDice() }
-            )
+            //Roll Dice – nur sichtbar wenn dran und noch nicht gewürfelt
+            if (canRoll) {
+                GameButton(
+                    text = "ROLL DICE",
+                    imageBitmap = diceBitmap,
+                    enabled = true,
+                    blinkBorder = true,
+                    onClick = { playSound(context, "rolling_dice"); viewModel.onRollDice() }
+                )
 
-            Spacer(modifier = Modifier.height(1.dp))
+                Spacer(modifier = Modifier.height(1.dp))
+            }
 
             //Bucket List
             GameButton(
@@ -1481,7 +1483,7 @@ fun PlayerCard(
                 Text(
                     text = "(reconnecting)",
                     fontSize = 9.sp,
-                    color = Color.Gray,
+                    color = Color.Black,
                     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                 )
             } else {
