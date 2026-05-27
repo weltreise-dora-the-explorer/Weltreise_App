@@ -73,6 +73,19 @@ class PlayerAnimState {
 }
 
 @SuppressLint("DiscouragedApi")
+private fun rawId(context: Context, name: String) =
+    context.resources.getIdentifier(name, "raw", context.packageName)
+
+private fun playSound(context: Context, name: String, volume: Float = 1.0f) {
+    val id = rawId(context, name)
+    if (id == 0) return
+    MediaPlayer.create(context, id)?.apply {
+        setVolume(volume, volume)
+        setOnCompletionListener { release() }
+        start()
+    }
+}
+
 @Composable
 fun GameScreen(viewModel: AppViewModel) {
     val context = LocalContext.current
@@ -106,6 +119,13 @@ fun GameScreen(viewModel: AppViewModel) {
     val isGameOver by viewModel.isGameOver.collectAsState()
     val freePassCount by viewModel.freePassCount.collectAsState()
     val goalReachedMessage by viewModel.goalReachedMessage.collectAsState()
+    val lastConqueredCityId = remember(goalReachedMessage) {
+        goalReachedMessage?.let { msg ->
+            if (msg.playerName == currentPlayerName) {
+                allCities.find { it.name == msg.cityName }?.id
+            } else null
+        }
+    }
     val newDestinationMessage by viewModel.newDestinationMessage.collectAsState()
     val gameOverMessage by viewModel.gameOverMessage.collectAsState()
     val isMinigamePhase = gamePhase == GameConstants.PHASE_MINIGAME
@@ -127,25 +147,14 @@ fun GameScreen(viewModel: AppViewModel) {
     val canEndTurn = effectiveIsMyTurn && diceValue != null
     val canFinishMinigame = true
     val minigameTargetPlayer = currentTurnPlayerId ?: currentPlayerName
-    val minigameOtherPlayer = playersList.firstOrNull{ it != minigameTargetPlayer} ?: minigameTargetPlayer
     val minigameLostCityName by viewModel.minigameLostCityName.collectAsState()
     val minigameNewCityName by viewModel.minigameNewCityName.collectAsState()
     val playerFreePassCounts by viewModel.playerFreePassCounts.collectAsState()
 
-    fun rawId(name: String) = context.resources.getIdentifier(name, "raw", context.packageName)
-    fun playSound(name: String, volume: Float = 1.0f) {
-        val id = rawId(name)
-        if (id == 0) return
-        MediaPlayer.create(context, id)?.apply {
-            setVolume(volume, volume)
-            setOnCompletionListener { release() }
-            start()
-        }
-    }
 
     // Hintergrundmusik – läuft solange GameScreen aktiv ist
     DisposableEffect(Unit) {
-        val id = rawId("backgroundmusic")
+        val id = rawId(context, "backgroundmusic")
         val player = if (id != 0) MediaPlayer.create(context, id)?.apply {
             isLooping = true
             setVolume(0.1875f, 0.1875f)
@@ -161,7 +170,7 @@ fun GameScreen(viewModel: AppViewModel) {
         if (!soundCityInitialized.value) { soundCityInitialized.value = true; return@LaunchedEffect }
         val arrived = playerCurrentCities[currentPlayerName]
         if (arrived != null && arrived.id in ownedCityIdSet) {
-            playSound("city_reached")
+            playSound(context, "city_reached")
         }
     }
 
@@ -194,10 +203,6 @@ fun GameScreen(viewModel: AppViewModel) {
 
     val minigameTargetAvatar = avatars.getOrNull(
         playersList.indexOf(minigameTargetPlayer).takeIf {it >= 0} ?: 0
-    )
-
-    val minigameOtherAvatar = avatars.getOrNull(
-        playersList.indexOf(minigameOtherPlayer).takeIf {it >= 0} ?: 0
     )
 
     //Bucketlist offen? Default false
@@ -301,6 +306,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 highlightedVisitedCityIds = playerVisitedBucketIds[highlightedPlayerId] ?: emptySet(),
                 optimisticLocalCity = viewModel.optimisticPlayerCity.collectAsState().value,
                 onOptimisticMove = { city -> viewModel.setOptimisticPlayerCity(city) },
+                lastConqueredCityId = lastConqueredCityId,
                 onCityClick = { cityId -> viewModel.onMoveToCity(cityId) }
             )
         }
@@ -731,7 +737,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 imageBitmap = diceBitmap,
                 enabled = canRoll,
                 blinkBorder = canRoll,
-                onClick = { playSound("rolling_dice"); viewModel.onRollDice() }
+                onClick = { playSound(context, "rolling_dice"); viewModel.onRollDice() }
             )
 
             Spacer(modifier = Modifier.height(1.dp))
@@ -845,6 +851,7 @@ fun ZoomableMap(
     highlightedVisitedCityIds: Set<String> = emptySet(),
     optimisticLocalCity: City? = null,
     onOptimisticMove: (City) -> Unit = {},
+    lastConqueredCityId: String? = null,
     onCityClick: (cityId: String) -> Unit = {}
 ) {
     val showValidMoves = validMoveIds.isNotEmpty() && isMyTurn
@@ -890,19 +897,13 @@ fun ZoomableMap(
     val remotePlayerAnims = remember { mutableStateMapOf<String, PlayerAnimState>() }
     val prevPlayerCities = remember { mutableStateOf<Map<String, City?>>(emptyMap()) }
 
-    // Grüner Haken: animiert wenn lokaler Spieler auf einer Bucket-List-Stadt ankommt
+    // Grüner Haken: animiert wenn lokaler Spieler eine Zielstadt durch Minispiel oder Free Pass erobert hat
     val checkmarkProgress = remember { mutableStateMapOf<String, Animatable<Float, *>>() }
-    val localCityInitialized = remember { mutableStateOf(false) }
 
-    LaunchedEffect(playerCurrentCities[myPlayerId]) {
-        val arrivedCity = playerCurrentCities[myPlayerId]
-        if (!localCityInitialized.value) {
-            localCityInitialized.value = true
-            return@LaunchedEffect
-        }
-        if (arrivedCity != null && arrivedCity.id in ownedCityIdSet) {
+    LaunchedEffect(lastConqueredCityId) {
+        if (lastConqueredCityId != null) {
             val anim = Animatable(0f)
-            checkmarkProgress[arrivedCity.id] = anim
+            checkmarkProgress[lastConqueredCityId] = anim
             launch { anim.animateTo(1f, animationSpec = tween(500, easing = FastOutSlowInEasing)) }
         }
     }
