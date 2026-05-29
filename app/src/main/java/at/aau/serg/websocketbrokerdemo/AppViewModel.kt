@@ -412,13 +412,22 @@ open class AppViewModel(
                 // Prüfe success-Flag für Error-Handling
                 if (rootJson.has("success") && !rootJson.getBoolean("success")) {
                     val errorMsg = rootJson.optString("message", "Unbekannter Fehler")
+                    val failedCommandType = rootJson.optString("commandType")
+
+                    // Versteckter Shake-Cheat: Fehler nicht im UI anzeigen,
+                    // damit Mitspieler / der Spieler selbst nichts vom Versuch sieht.
+                    if (failedCommandType == GameConstants.COMMAND_USE_SHAKE_CHEAT) {
+                        Log.d("AppViewModel", "Shake-Cheat abgelehnt: $errorMsg")
+                        return
+                    }
+
                     _errorMessage.value = errorMsg
                     Log.e("CityTap", "Server-Fehler nach MOVE_TO_CITY: $errorMsg")
                     Log.e("AppViewModel", "Server-Fehler: $errorMsg")
 
                     // REJOIN fehlgeschlagen (z.B. nach Grace Period Timeout)
                     // → lobbyId aus Prefs loeschen und zurueck zum Login
-                    if (rootJson.optString("commandType") == "REJOIN_LOBBY") {
+                    if (failedCommandType == "REJOIN_LOBBY") {
                         prefs?.clearLobbyId()
                         _lobbyId.value = ""
                         clearDisconnectStates()
