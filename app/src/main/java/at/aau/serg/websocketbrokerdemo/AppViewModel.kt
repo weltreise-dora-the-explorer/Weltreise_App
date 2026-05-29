@@ -290,6 +290,13 @@ open class AppViewModel(
         )
     }
 
+    fun onShakeCheat() {
+        if (_gamePhase.value != "IN_TURN") return
+        if (_currentTurnPlayerId.value != _playerName.value) return
+        if (_remainingSteps.value != 1) return
+        stomp.useShakeCheat(_lobbyId.value, _playerName.value)
+    }
+
     fun startMinigame() {
         stomp.startMinigame(
             lobbyId = _lobbyId.value,
