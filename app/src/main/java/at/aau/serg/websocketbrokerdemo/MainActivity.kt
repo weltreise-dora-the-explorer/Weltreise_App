@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import at.aau.serg.websocketbrokerdemo.preferences.PreferencesHelper
+import at.aau.serg.websocketbrokerdemo.sensor.ShakeDetector
 import at.aau.serg.websocketbrokerdemo.ui.theme.GameOverScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.GameScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.HostScreen
@@ -33,6 +34,18 @@ class MainActivity : ComponentActivity() {
                 return AppViewModel(prefs = PreferencesHelper(applicationContext)) as T
             }
         }
+    }
+
+    private val shakeDetector = ShakeDetector(onShake = { viewModel.onShakeCheat() })
+
+    override fun onResume() {
+        super.onResume()
+        shakeDetector.start(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        shakeDetector.stop()
     }
 
     override fun onStop() {
