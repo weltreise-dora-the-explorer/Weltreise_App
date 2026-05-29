@@ -477,6 +477,28 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
+    fun useShakeCheat(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_USE_SHAKE_CHEAT)
+                command.put("playerId", playerId)
+
+                if (session == null) {
+                    Log.e("MyStomp", "useShakeCheat ABGEBROCHEN: session ist null!")
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                Log.d("MyStomp", "useShakeCheat gesendet -> $command")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Shake-Cheat", e)
+            }
+        }
+    }
+
     fun startMinigame(lobbyId: String, playerId: String) {
         scope.launch {
             try {
