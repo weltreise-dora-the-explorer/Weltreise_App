@@ -25,6 +25,8 @@ data class NewDestinationMessage(
     val newCityName: String
 )
 
+enum class ReportFeedback { HIT, MISS }
+
 open class AppViewModel(
     stompInstance: MyStomp? = null,
     private val prefs: PreferencesHelper? = null
@@ -131,6 +133,11 @@ open class AppViewModel(
 
     private val _mustSkipPlayers = MutableStateFlow<Set<String>>(emptySet())
     val mustSkipPlayers: StateFlow<Set<String>> = _mustSkipPlayers.asStateFlow()
+
+    private val _lastReportFeedback = MutableStateFlow<ReportFeedback?>(null)
+    val lastReportFeedback: StateFlow<ReportFeedback?> = _lastReportFeedback.asStateFlow()
+
+    private var pendingReportTarget: String? = null
 
     private val _secondsUntilRemoval = MutableStateFlow<Map<String, Int>>(emptyMap())
     val secondsUntilRemoval: StateFlow<Map<String, Int>> = _secondsUntilRemoval.asStateFlow()
@@ -305,7 +312,12 @@ open class AppViewModel(
         if (reportedPlayerId.isBlank()) return
         if (reportedPlayerId == _playerName.value) return
         if (reportedPlayerId !in _playersList.value) return
+        pendingReportTarget = reportedPlayerId
         stomp.reportCheat(_lobbyId.value, _playerName.value, reportedPlayerId)
+    }
+
+    fun consumeReportFeedback() {
+        _lastReportFeedback.value = null
     }
 
     fun startMinigame() {
@@ -431,6 +443,12 @@ open class AppViewModel(
                     if (failedCommandType == GameConstants.COMMAND_USE_SHAKE_CHEAT) {
                         Log.d("AppViewModel", "Shake-Cheat abgelehnt: $errorMsg")
                         return
+                    }
+
+                    // Report-Cheat-Fehler: pendingReportTarget aufraeumen, sonst
+                    // koennte ein spaeterer fremder Report fälschlich als unser Feedback gewertet werden.
+                    if (failedCommandType == GameConstants.COMMAND_REPORT_CHEAT) {
+                        pendingReportTarget = null
                     }
 
                     _errorMessage.value = errorMsg
@@ -620,6 +638,22 @@ open class AppViewModel(
                     _minigameNewCityName.value =
                         if (stateJson.isNull("minigameNewCityName")) null
                         else stateJson.optString("minigameNewCityName").ifBlank { null }
+
+                    if (commandType == GameConstants.COMMAND_REPORT_CHEAT) {
+                        val target = pendingReportTarget
+                        if (target != null) {
+                            val skipSet = _mustSkipPlayers.value
+                            val feedback = when {
+                                target in skipSet -> ReportFeedback.HIT
+                                _playerName.value in skipSet -> ReportFeedback.MISS
+                                else -> null
+                            }
+                            if (feedback != null) {
+                                _lastReportFeedback.value = feedback
+                            }
+                            pendingReportTarget = null
+                        }
+                    }
 
                     when {
                         commandType == "LOBBY_CLOSED" -> {

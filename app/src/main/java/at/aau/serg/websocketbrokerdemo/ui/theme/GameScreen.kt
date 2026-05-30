@@ -44,7 +44,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
+import at.aau.serg.websocketbrokerdemo.ReportFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -102,6 +104,16 @@ fun GameScreen(viewModel: AppViewModel) {
     val playerCityCounts by viewModel.playerCityCounts.collectAsState()
     val allPlayerOwnedCities by viewModel.allPlayerOwnedCities.collectAsState()
     val playerCurrentCities by viewModel.playerCurrentCities.collectAsState()
+    val reportFeedback by viewModel.lastReportFeedback.collectAsState()
+    LaunchedEffect(reportFeedback) {
+        val feedback = reportFeedback ?: return@LaunchedEffect
+        val message = when (feedback) {
+            ReportFeedback.HIT -> "Caught the cheater!"
+            ReportFeedback.MISS -> "False accusation — you skip your next turn."
+        }
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        viewModel.consumeReportFeedback()
+    }
     var highlightedPlayerId by remember { mutableStateOf<String?>(null) }
     val playerVisitedBucketIds = remember { mutableStateMapOf<String, MutableSet<String>>() }
     LaunchedEffect(playerCurrentCities, allPlayerOwnedCities) {
