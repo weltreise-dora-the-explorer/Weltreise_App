@@ -129,6 +129,9 @@ open class AppViewModel(
     private val _disconnectedPlayers = MutableStateFlow<Set<String>>(emptySet())
     val disconnectedPlayers: StateFlow<Set<String>> = _disconnectedPlayers.asStateFlow()
 
+    private val _mustSkipPlayers = MutableStateFlow<Set<String>>(emptySet())
+    val mustSkipPlayers: StateFlow<Set<String>> = _mustSkipPlayers.asStateFlow()
+
     private val _secondsUntilRemoval = MutableStateFlow<Map<String, Int>>(emptyMap())
     val secondsUntilRemoval: StateFlow<Map<String, Int>> = _secondsUntilRemoval.asStateFlow()
 
@@ -297,6 +300,14 @@ open class AppViewModel(
         stomp.useShakeCheat(_lobbyId.value, _playerName.value)
     }
 
+    fun reportCheat(reportedPlayerId: String) {
+        if (_gamePhase.value == "LOBBY") return
+        if (reportedPlayerId.isBlank()) return
+        if (reportedPlayerId == _playerName.value) return
+        if (reportedPlayerId !in _playersList.value) return
+        stomp.reportCheat(_lobbyId.value, _playerName.value, reportedPlayerId)
+    }
+
     fun startMinigame() {
         stomp.startMinigame(
             lobbyId = _lobbyId.value,
@@ -366,6 +377,7 @@ open class AppViewModel(
         _validMoveIds.value = emptyList()
         _remainingSteps.value = null
         _freePassCount.value = 0
+        _mustSkipPlayers.value = emptySet()
         clearDisconnectStates()
         navigateTo("login")
     }
@@ -454,6 +466,7 @@ open class AppViewModel(
                         val freePassCountsMap = mutableMapOf<String, Int>()
                         val startCityNamesMap = _playerStartCityNames.value.toMutableMap()
                         val disconnectedNow = mutableSetOf<String>()
+                        val mustSkipNow = mutableSetOf<String>()
 
                         for (i in 0 until playersArray.length()) {
                             val playerObj = playersArray.getJSONObject(i)
@@ -466,6 +479,10 @@ open class AppViewModel(
 
                             if (playerObj.has("connected") && !playerObj.getBoolean("connected")) {
                                 disconnectedNow.add(pId)
+                            }
+
+                            if (playerObj.optBoolean("mustSkipNextTurn", false)) {
+                                mustSkipNow.add(pId)
                             }
 
                             if (playerObj.has("currentCity") && !playerObj.isNull("currentCity")) {
@@ -558,6 +575,7 @@ open class AppViewModel(
                         _playerCurrentCities.value = currentCitiesMap
                         _playerFreePassCounts.value = freePassCountsMap
                         _optimisticPlayerCity.value = null
+                        _mustSkipPlayers.value = mustSkipNow
                         applyConnectionStatus(disconnectedNow)
                     }
 
