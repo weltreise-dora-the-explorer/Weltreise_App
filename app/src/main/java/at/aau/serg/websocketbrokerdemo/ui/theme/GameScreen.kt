@@ -452,12 +452,21 @@ fun GameScreen(viewModel: AppViewModel) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             val disconnectedPlayers by viewModel.disconnectedPlayers.collectAsState()
+            val mustSkipPlayers by viewModel.mustSkipPlayers.collectAsState()
+            var reportingPlayer by remember { mutableStateOf<String?>(null) }
             playersList.forEachIndexed { index, playerName ->
                 val avatar = avatars.getOrNull(index % avatars.size)
                 val isFirstPlayer = index == 0
                 val displayName = if (isFirstPlayer) "$playerName (Host)" else playerName
                 val isOtherPlayer = playerName != currentPlayerName
                 val isHighlighted = highlightedPlayerId == playerName
+                val mustSkip = playerName in mustSkipPlayers
+                val canBeReported = isOtherPlayer
+                        && gamePhase != GameConstants.PHASE_LOBBY
+                        && playerName == currentTurnPlayerId
+                        && diceValue != null
+                        && playerName !in disconnectedPlayers
+                        && !mustSkip
                 PlayerCard(
                     name = displayName,
                     bucketListCount = playerCityCounts[playerName] ?: 0,
@@ -469,9 +478,31 @@ fun GameScreen(viewModel: AppViewModel) {
                     freePassCount = playerFreePassCounts[playerName] ?: 0,
                     freePassIcon = freePassBitmap,
                     isHighlighted = isHighlighted,
+                    mustSkip = mustSkip,
+                    canBeReported = canBeReported,
+                    onReport = if (canBeReported) { { reportingPlayer = playerName } } else null,
                     onTap = if (isOtherPlayer) {
                         { highlightedPlayerId = if (isHighlighted) null else playerName }
                     } else null
+                )
+            }
+
+            reportingPlayer?.let { target ->
+                AlertDialog(
+                    onDismissRequest = { reportingPlayer = null },
+                    title = { Text("Report cheating") },
+                    text = {
+                        Text("Report $target for cheating? If you are wrong, you skip your next turn.")
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            viewModel.reportCheat(target)
+                            reportingPlayer = null
+                        }) { Text("Report") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { reportingPlayer = null }) { Text("Cancel") }
+                    }
                 )
             }
         }
@@ -1405,6 +1436,9 @@ fun PlayerCard(
     freePassCount: Int = 0,
     freePassIcon: ImageBitmap? = null,
     isHighlighted: Boolean = false,
+    mustSkip: Boolean = false,
+    canBeReported: Boolean = false,
+    onReport: (() -> Unit)? = null,
     onTap: (() -> Unit)? = null
 ) {
     Row(
@@ -1479,15 +1513,34 @@ fun PlayerCard(
                     Text(text = stepsLabel, fontSize = 11.sp, color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold)
                 }
             }
-            if (disconnected) {
-                Text(
+            when {
+                disconnected -> Text(
                     text = "(reconnecting)",
                     fontSize = 9.sp,
                     color = Color.Black,
                     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                 )
-            } else {
-                Text(text = "Bucket List: $bucketListCount", fontSize = 10.sp, color = Color.Gray)
+                mustSkip -> Text(
+                    text = "skip turn",
+                    fontSize = 10.sp,
+                    color = Color(0xFFC0392B),
+                    fontWeight = FontWeight.Bold
+                )
+                else -> Text(text = "Bucket List: $bucketListCount", fontSize = 10.sp, color = Color.Gray)
+            }
+        }
+
+        if (canBeReported && onReport != null) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.85f))
+                    .clickable { onReport() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "🚨", fontSize = 14.sp)
             }
         }
     }
