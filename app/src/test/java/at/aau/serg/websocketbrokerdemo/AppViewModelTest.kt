@@ -1079,6 +1079,83 @@ class AppViewModelTest {
         verify { mockPrefs.clearLobbyId() }
     }
 
+    // ========== SHAKE CHEAT TESTS ==========
+
+    @Test
+    fun `onShakeCheat sends command when in turn with one remaining step`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.joinLobby("1234")
+        viewModel.setPlayerName("Alice")
+        val response = """{"success":true,"commandType":"MOVE_TO_CITY","state":{"players":[{"playerId":"Alice"}],"phase":"IN_TURN","currentPlayerId":"Alice","lastDiceValue":3,"remainingSteps":1}}"""
+        viewModel.onResponse(response)
+
+        viewModel.onShakeCheat()
+
+        verify { mockStomp.useShakeCheat("1234", "Alice") }
+    }
+
+    @Test
+    fun `onShakeCheat does nothing when phase is not IN_TURN`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.setPlayerName("Alice")
+        val response = """{"success":true,"commandType":"JOIN_LOBBY","state":{"players":[{"playerId":"Alice"}],"phase":"LOBBY","currentPlayerId":"Alice","remainingSteps":1}}"""
+        viewModel.onResponse(response)
+
+        viewModel.onShakeCheat()
+
+        verify(exactly = 0) { mockStomp.useShakeCheat(any(), any()) }
+    }
+
+    @Test
+    fun `onShakeCheat does nothing when player is not current turn player`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.setPlayerName("Alice")
+        val response = """{"success":true,"commandType":"MOVE_TO_CITY","state":{"players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN","currentPlayerId":"Bob","lastDiceValue":3,"remainingSteps":1}}"""
+        viewModel.onResponse(response)
+
+        viewModel.onShakeCheat()
+
+        verify(exactly = 0) { mockStomp.useShakeCheat(any(), any()) }
+    }
+
+    @Test
+    fun `onShakeCheat does nothing when remainingSteps is not 1`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.setPlayerName("Alice")
+
+        for (steps in intArrayOf(0, 2, 3, 6)) {
+            val response = """{"success":true,"commandType":"ROLL_DICE","state":{"players":[{"playerId":"Alice"}],"phase":"IN_TURN","currentPlayerId":"Alice","lastDiceValue":$steps,"remainingSteps":$steps}}"""
+            viewModel.onResponse(response)
+            viewModel.onShakeCheat()
+        }
+
+        verify(exactly = 0) { mockStomp.useShakeCheat(any(), any()) }
+    }
+
+    @Test
+    fun `onShakeCheat does nothing in initial state`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onShakeCheat()
+
+        verify(exactly = 0) { mockStomp.useShakeCheat(any(), any()) }
+    }
+
+    @Test
+    fun `onResponse with USE_SHAKE_CHEAT failure does not set errorMessage`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onResponse("""{"success":false,"commandType":"USE_SHAKE_CHEAT","message":"Shake cheat only allowed with exactly 1 remaining step"}""")
+
+        assertNull(viewModel.errorMessage.value)
+    }
+
     // ========== HELPER ==========
 
     private fun createViewModelWithMockStomp(mockStomp: MyStomp): AppViewModel {
