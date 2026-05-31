@@ -1156,6 +1156,189 @@ class AppViewModelTest {
         assertNull(viewModel.errorMessage.value)
     }
 
+    // ========== REPORT CHEAT TESTS ==========
+
+    @Test
+    fun `reportCheat sends command when target is valid opponent`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.joinLobby("1234")
+        viewModel.setPlayerName("Alice")
+        viewModel.onResponse("""{"success":true,"commandType":"JOIN_LOBBY","state":{"players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN"}}""")
+
+        viewModel.reportCheat("Bob")
+
+        verify { mockStomp.reportCheat("1234", "Alice", "Bob") }
+    }
+
+    @Test
+    fun `reportCheat does nothing in LOBBY phase`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.setPlayerName("Alice")
+        viewModel.onResponse("""{"success":true,"commandType":"JOIN_LOBBY","state":{"players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"LOBBY"}}""")
+
+        viewModel.reportCheat("Bob")
+
+        verify(exactly = 0) { mockStomp.reportCheat(any(), any(), any()) }
+    }
+
+    @Test
+    fun `reportCheat does nothing when target equals self`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.setPlayerName("Alice")
+        viewModel.onResponse("""{"success":true,"commandType":"JOIN_LOBBY","state":{"players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN"}}""")
+
+        viewModel.reportCheat("Alice")
+
+        verify(exactly = 0) { mockStomp.reportCheat(any(), any(), any()) }
+    }
+
+    @Test
+    fun `reportCheat does nothing when target is blank`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.setPlayerName("Alice")
+        viewModel.onResponse("""{"success":true,"commandType":"JOIN_LOBBY","state":{"players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN"}}""")
+
+        viewModel.reportCheat("")
+        viewModel.reportCheat("   ")
+
+        verify(exactly = 0) { mockStomp.reportCheat(any(), any(), any()) }
+    }
+
+    @Test
+    fun `reportCheat does nothing when target not in playersList`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.setPlayerName("Alice")
+        viewModel.onResponse("""{"success":true,"commandType":"JOIN_LOBBY","state":{"players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN"}}""")
+
+        viewModel.reportCheat("Ghost")
+
+        verify(exactly = 0) { mockStomp.reportCheat(any(), any(), any()) }
+    }
+
+    @Test
+    fun `onResponse parses mustSkipNextTurn into mustSkipPlayers`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        val response = """{"success":true,"commandType":"REPORT_CHEAT","state":{"players":[
+            {"playerId":"Alice","mustSkipNextTurn":false},
+            {"playerId":"Bob","mustSkipNextTurn":true}
+        ],"phase":"IN_TURN"}}"""
+
+        viewModel.onResponse(response)
+
+        assertTrue(viewModel.mustSkipPlayers.value.contains("Bob"))
+        assertFalse(viewModel.mustSkipPlayers.value.contains("Alice"))
+    }
+
+    @Test
+    fun `report hit emits HIT feedback when target gets skip flag`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.setPlayerName("Alice")
+        viewModel.onResponse("""{"success":true,"commandType":"JOIN_LOBBY","state":{"players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN"}}""")
+
+        viewModel.reportCheat("Bob")
+        viewModel.onResponse("""{"success":true,"commandType":"REPORT_CHEAT","state":{"players":[
+            {"playerId":"Alice","mustSkipNextTurn":false},
+            {"playerId":"Bob","mustSkipNextTurn":true}
+        ],"phase":"IN_TURN"}}""")
+
+        assertEquals(ReportFeedback.HIT, viewModel.lastReportFeedback.value)
+    }
+
+    @Test
+    fun `report miss emits MISS feedback when reporter gets skip flag`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.setPlayerName("Alice")
+        viewModel.onResponse("""{"success":true,"commandType":"JOIN_LOBBY","state":{"players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN"}}""")
+
+        viewModel.reportCheat("Bob")
+        viewModel.onResponse("""{"success":true,"commandType":"REPORT_CHEAT","state":{"players":[
+            {"playerId":"Alice","mustSkipNextTurn":true},
+            {"playerId":"Bob","mustSkipNextTurn":false}
+        ],"phase":"IN_TURN"}}""")
+
+        assertEquals(ReportFeedback.MISS, viewModel.lastReportFeedback.value)
+    }
+
+    @Test
+    fun `report feedback stays null when no pending report`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.setPlayerName("Alice")
+        viewModel.onResponse("""{"success":true,"commandType":"JOIN_LOBBY","state":{"players":[{"playerId":"Alice"},{"playerId":"Bob"},{"playerId":"Charlie"}],"phase":"IN_TURN"}}""")
+
+        // Bob reported Charlie; Alice (this client) did not initiate the report.
+        viewModel.onResponse("""{"success":true,"commandType":"REPORT_CHEAT","state":{"players":[
+            {"playerId":"Alice"},
+            {"playerId":"Bob"},
+            {"playerId":"Charlie","mustSkipNextTurn":true}
+        ],"phase":"IN_TURN"}}""")
+
+        assertNull(viewModel.lastReportFeedback.value)
+    }
+
+    @Test
+    fun `failed REPORT_CHEAT clears pending target without setting errorMessage drift`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.setPlayerName("Alice")
+        viewModel.onResponse("""{"success":true,"commandType":"JOIN_LOBBY","state":{"players":[{"playerId":"Alice"},{"playerId":"Bob"},{"playerId":"Charlie"}],"phase":"IN_TURN"}}""")
+
+        viewModel.reportCheat("Bob")
+        viewModel.onResponse("""{"success":false,"commandType":"REPORT_CHEAT","message":"Cannot report yourself"}""")
+
+        // A follow-up REPORT_CHEAT broadcast from someone else must NOT be attributed to us.
+        viewModel.onResponse("""{"success":true,"commandType":"REPORT_CHEAT","state":{"players":[
+            {"playerId":"Alice"},
+            {"playerId":"Bob"},
+            {"playerId":"Charlie","mustSkipNextTurn":true}
+        ],"phase":"IN_TURN"}}""")
+
+        assertNull(viewModel.lastReportFeedback.value)
+    }
+
+    @Test
+    fun `consumeReportFeedback resets feedback to null`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.setPlayerName("Alice")
+        viewModel.onResponse("""{"success":true,"commandType":"JOIN_LOBBY","state":{"players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN"}}""")
+        viewModel.reportCheat("Bob")
+        viewModel.onResponse("""{"success":true,"commandType":"REPORT_CHEAT","state":{"players":[
+            {"playerId":"Alice"},
+            {"playerId":"Bob","mustSkipNextTurn":true}
+        ],"phase":"IN_TURN"}}""")
+        assertEquals(ReportFeedback.HIT, viewModel.lastReportFeedback.value)
+
+        viewModel.consumeReportFeedback()
+
+        assertNull(viewModel.lastReportFeedback.value)
+    }
+
+    @Test
+    fun `leaveLobby clears mustSkipPlayers`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.joinLobby("1234")
+        viewModel.setPlayerName("Alice")
+        viewModel.onResponse("""{"success":true,"commandType":"REPORT_CHEAT","state":{"players":[
+            {"playerId":"Alice"},
+            {"playerId":"Bob","mustSkipNextTurn":true}
+        ],"phase":"IN_TURN"}}""")
+        assertTrue(viewModel.mustSkipPlayers.value.contains("Bob"))
+
+        viewModel.leaveLobby()
+
+        assertTrue(viewModel.mustSkipPlayers.value.isEmpty())
+    }
+
     // ========== HELPER ==========
 
     private fun createViewModelWithMockStomp(mockStomp: MyStomp): AppViewModel {
