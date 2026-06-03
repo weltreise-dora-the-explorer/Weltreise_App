@@ -658,15 +658,13 @@ open class AppViewModel(
                     if (commandType == GameConstants.COMMAND_REPORT_CHEAT) {
                         val target = pendingReportTarget
                         if (target != null) {
+                            // Ein angenommener Report ist ein Treffer, wenn der Gemeldete jetzt
+                            // aussetzen muss – sonst war es eine Falschmeldung. Nicht am eigenen
+                            // mustSkip-Flag festmachen: bei einer Falschmeldung waehrend des eigenen
+                            // Zugs verlieren wir stattdessen sofort den laufenden Zug (kein Flag).
                             val skipSet = _mustSkipPlayers.value
-                            val feedback = when {
-                                target in skipSet -> ReportFeedback.HIT
-                                _playerName.value in skipSet -> ReportFeedback.MISS
-                                else -> null
-                            }
-                            if (feedback != null) {
-                                _lastReportFeedback.value = feedback
-                            }
+                            val feedback = if (target in skipSet) ReportFeedback.HIT else ReportFeedback.MISS
+                            _lastReportFeedback.value = feedback
                             pendingReportTarget = null
                         }
                     }

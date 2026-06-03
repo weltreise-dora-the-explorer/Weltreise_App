@@ -1268,6 +1268,24 @@ class AppViewModelTest {
     }
 
     @Test
+    fun `report miss emits MISS feedback when reporter forfeits current turn without skip flag`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.setPlayerName("Alice")
+        viewModel.onResponse("""{"success":true,"commandType":"JOIN_LOBBY","state":{"players":[{"playerId":"Alice"},{"playerId":"Bob"}],"phase":"IN_TURN"}}""")
+
+        // Alice reports during her own turn -> server forfeits her current turn instead of
+        // setting mustSkipNextTurn, so neither player carries the skip flag.
+        viewModel.reportCheat("Bob")
+        viewModel.onResponse("""{"success":true,"commandType":"REPORT_CHEAT","state":{"players":[
+            {"playerId":"Alice","mustSkipNextTurn":false},
+            {"playerId":"Bob","mustSkipNextTurn":false}
+        ],"phase":"IN_TURN","currentPlayerId":"Bob"}}""")
+
+        assertEquals(ReportFeedback.MISS, viewModel.lastReportFeedback.value)
+    }
+
+    @Test
     fun `report feedback stays null when no pending report`() {
         val mockStomp = mockk<MyStomp>(relaxed = true)
         val viewModel = createViewModelWithMockStomp(mockStomp)

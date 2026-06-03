@@ -110,7 +110,7 @@ fun GameScreen(viewModel: AppViewModel) {
         val feedback = reportFeedback ?: return@LaunchedEffect
         val message = when (feedback) {
             ReportFeedback.HIT -> "Caught the cheater!"
-            ReportFeedback.MISS -> "False accusation — you skip your next turn."
+            ReportFeedback.MISS -> "False accusation — you lose a turn."
         }
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         viewModel.consumeReportFeedback()
