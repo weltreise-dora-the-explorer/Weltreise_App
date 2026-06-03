@@ -143,6 +143,13 @@ open class AppViewModel(
     private val _lastReportFeedback = MutableStateFlow<ReportFeedback?>(null)
     val lastReportFeedback: StateFlow<ReportFeedback?> = _lastReportFeedback.asStateFlow()
 
+    // Kurzlebiger "skip turn"-Hinweis fuer eine Falschmeldung im eigenen Zug: dort verlieren
+    // wir sofort den laufenden Zug, ohne dass der Server ein mustSkipNextTurn-Flag setzt – das
+    // persistente Label haette also keine Datenquelle. Dieser Wert blendet das Label kurz ein.
+    private val _transientSkipPlayerId = MutableStateFlow<String?>(null)
+    val transientSkipPlayerId: StateFlow<String?> = _transientSkipPlayerId.asStateFlow()
+    private var transientSkipJob: Job? = null
+
     private var pendingReportTarget: String? = null
 
     private val _secondsUntilRemoval = MutableStateFlow<Map<String, Int>>(emptyMap())
@@ -326,6 +333,16 @@ open class AppViewModel(
         _lastReportFeedback.value = null
     }
 
+    private fun showTransientSelfSkip(playerId: String) {
+        if (playerId.isBlank()) return
+        transientSkipJob?.cancel()
+        _transientSkipPlayerId.value = playerId
+        transientSkipJob = viewModelScope.launch {
+            delay(2500L)
+            _transientSkipPlayerId.value = null
+        }
+    }
+
     fun startMinigame() {
         stomp.startMinigame(
             lobbyId = _lobbyId.value,
@@ -355,6 +372,8 @@ open class AppViewModel(
             _diceValue.value = null
             _currentTurnPlayerId.value = null
             _reportablePlayerId.value = null
+            transientSkipJob?.cancel()
+            _transientSkipPlayerId.value = null
             _validMoveIds.value = emptyList()
             _remainingSteps.value = null
             _freePassCount.value = 0
@@ -394,6 +413,8 @@ open class AppViewModel(
         _diceValue.value = null
         _currentTurnPlayerId.value = null
         _reportablePlayerId.value = null
+        transientSkipJob?.cancel()
+        _transientSkipPlayerId.value = null
         _validMoveIds.value = emptyList()
         _remainingSteps.value = null
         _freePassCount.value = 0
@@ -665,6 +686,13 @@ open class AppViewModel(
                             val skipSet = _mustSkipPlayers.value
                             val feedback = if (target in skipSet) ReportFeedback.HIT else ReportFeedback.MISS
                             _lastReportFeedback.value = feedback
+                            // MISS, aber wir tragen kein mustSkip-Flag -> der Server hat unseren
+                            // laufenden Zug ausgesetzt (Falschmeldung im eigenen Zug). Das
+                            // persistente "skip turn"-Label hat hier keine Quelle, also kurz
+                            // selbst einblenden.
+                            if (feedback == ReportFeedback.MISS && _playerName.value !in skipSet) {
+                                showTransientSelfSkip(_playerName.value)
+                            }
                             pendingReportTarget = null
                         }
                     }

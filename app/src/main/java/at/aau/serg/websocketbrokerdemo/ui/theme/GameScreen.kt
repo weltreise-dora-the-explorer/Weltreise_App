@@ -466,6 +466,7 @@ fun GameScreen(viewModel: AppViewModel) {
         ) {
             val disconnectedPlayers by viewModel.disconnectedPlayers.collectAsState()
             val mustSkipPlayers by viewModel.mustSkipPlayers.collectAsState()
+            val transientSkipPlayerId by viewModel.transientSkipPlayerId.collectAsState()
             var reportingPlayer by remember { mutableStateOf<String?>(null) }
             playersList.forEachIndexed { index, playerName ->
                 val avatar = avatars.getOrNull(index % avatars.size)
@@ -473,7 +474,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 val displayName = if (isFirstPlayer) "$playerName (Host)" else playerName
                 val isOtherPlayer = playerName != currentPlayerName
                 val isHighlighted = highlightedPlayerId == playerName
-                val mustSkip = playerName in mustSkipPlayers
+                val mustSkip = playerName in mustSkipPlayers || playerName == transientSkipPlayerId
                 val canBeReported = isOtherPlayer
                         && gamePhase != GameConstants.PHASE_LOBBY
                         && playerName == reportablePlayerId

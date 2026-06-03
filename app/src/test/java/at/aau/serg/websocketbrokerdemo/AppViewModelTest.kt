@@ -1283,6 +1283,8 @@ class AppViewModelTest {
         ],"phase":"IN_TURN","currentPlayerId":"Bob"}}""")
 
         assertEquals(ReportFeedback.MISS, viewModel.lastReportFeedback.value)
+        // No server skip flag in the forfeit case, so a transient "skip turn" hint marks us.
+        assertEquals("Alice", viewModel.transientSkipPlayerId.value)
     }
 
     @Test
