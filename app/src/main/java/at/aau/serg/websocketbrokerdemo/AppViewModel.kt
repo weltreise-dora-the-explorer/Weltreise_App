@@ -69,6 +69,12 @@ open class AppViewModel(
     private val _currentTurnPlayerId = MutableStateFlow<String?>(null)
     val currentTurnPlayerId: StateFlow<String?> = _currentTurnPlayerId.asStateFlow()
 
+    // Letzter Spieler, der gewuerfelt hat. Bleibt ueber den Zugwechsel hinweg melde-bar,
+    // bis ein anderer Spieler wuerfelt – passend zum Report-Fenster des Servers, das sich
+    // ebenfalls erst beim naechsten Wurf schliesst (nicht beim Zugwechsel).
+    private val _reportablePlayerId = MutableStateFlow<String?>(null)
+    val reportablePlayerId: StateFlow<String?> = _reportablePlayerId.asStateFlow()
+
     private val _gamePhase = MutableStateFlow("LOBBY")
     val gamePhase: StateFlow<String> = _gamePhase.asStateFlow()
 
@@ -348,6 +354,7 @@ open class AppViewModel(
             _playerCurrentCities.value = emptyMap()
             _diceValue.value = null
             _currentTurnPlayerId.value = null
+            _reportablePlayerId.value = null
             _validMoveIds.value = emptyList()
             _remainingSteps.value = null
             _freePassCount.value = 0
@@ -386,6 +393,7 @@ open class AppViewModel(
         _playerCurrentCities.value = emptyMap()
         _diceValue.value = null
         _currentTurnPlayerId.value = null
+        _reportablePlayerId.value = null
         _validMoveIds.value = emptyList()
         _remainingSteps.value = null
         _freePassCount.value = 0
@@ -602,6 +610,14 @@ open class AppViewModel(
                     val newCurrentPlayerId = stateJson.optString("currentPlayerId").ifEmpty { null }
                     val isTurnChange = newCurrentPlayerId != _currentTurnPlayerId.value
                     _currentTurnPlayerId.value = newCurrentPlayerId
+
+                    // Melde-bar bleibt der letzte Wuerfler: nur bei einem tatsaechlichen Wurf
+                    // (diceValue != null) wechselt das Ziel auf den aktuellen Spieler. Bei reinem
+                    // Zugwechsel (diceValue == null, naechster Spieler noch nicht gewuerfelt) bleibt
+                    // der bisherige Wuerfler melde-bar.
+                    if (_diceValue.value != null && newCurrentPlayerId != null) {
+                        _reportablePlayerId.value = newCurrentPlayerId
+                    }
 
                     val validIds = mutableListOf<String>()
                     if (!isTurnChange && newCurrentPlayerId == _playerName.value) {

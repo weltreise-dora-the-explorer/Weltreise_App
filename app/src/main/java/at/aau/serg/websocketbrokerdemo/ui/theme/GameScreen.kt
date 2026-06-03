@@ -96,6 +96,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val gameMode by viewModel.gameMode.collectAsState()
     val diceValue by viewModel.diceValue.collectAsState()
     val currentTurnPlayerId by viewModel.currentTurnPlayerId.collectAsState()
+    val reportablePlayerId by viewModel.reportablePlayerId.collectAsState()
     val gamePhase by viewModel.gamePhase.collectAsState()
     val minigameWinnerPlayerId by viewModel.minigameWinnerPlayerId.collectAsState()
     val ownedCities by viewModel.ownedCities.collectAsState()
@@ -475,8 +476,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 val mustSkip = playerName in mustSkipPlayers
                 val canBeReported = isOtherPlayer
                         && gamePhase != GameConstants.PHASE_LOBBY
-                        && playerName == currentTurnPlayerId
-                        && diceValue != null
+                        && playerName == reportablePlayerId
                         && playerName !in disconnectedPlayers
                         && !mustSkip
                 PlayerCard(
