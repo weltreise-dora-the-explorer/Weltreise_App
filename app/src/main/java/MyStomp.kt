@@ -305,11 +305,12 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
-    fun startGameCmd(lobbyId: String, stops: Int) {
+    fun startGameCmd(lobbyId: String, playerId: String, stops: Int) {
         scope.launch {
             try {
                 val command = JSONObject()
                 command.put("type", "START_GAME")
+                command.put("playerId", playerId)
                 command.put("stops", stops)
                 session?.sendText("/app/lobby/$lobbyId/command", command.toString())
             } catch (e: Exception) {
