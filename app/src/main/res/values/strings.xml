@@ -61,4 +61,27 @@
     <string name="free_pass_dialog_question">Do you want to use your Free Pass or play the mini-game?</string>
     <string name="free_pass_use_button">Use Free Pass</string>
     <string name="free_pass_play_minigame_button">Play Mini-Game</string>
+
+    <string name="reaction_game_title">Reaction Game</string>
+    <string name="reaction_countdown_hint">Get ready...</string>
+
+    <string name="reaction_status_pressed">Pressed</string>
+    <string name="reaction_status_ready">Ready</string>
+    <string name="reaction_status_waiting">Waiting...</string>
+
+    <string name="reaction_minigame_title">Minigame</string>
+    <string name="reaction_lobby_subtitle">A reaction game starts!</string>
+    <string name="reaction_lobby_ready_hint">Press Ready when you are prepared.</string>
+    <string name="reaction_ready_button">Ready</string>
+
+    <string name="reaction_now_title">Now</string>
+    <string name="reaction_wait_title">Wait...</string>
+    <string name="reaction_now_hint">Press as fast as you can!</string>
+    <string name="reaction_wait_hint">Do not press too early!</string>
+
+    <string name="reaction_press_symbol">!</string>
+
+    <string name="reaction_result_title">Result</string>
+    <string name="reaction_continue_button">Continue</string>
+    <string name="reaction_result_seconds">%1$.3fs</string>
 </resources>
