@@ -314,6 +314,7 @@ open class AppViewModel(
     }
 
     fun onShakeCheat() {
+        Log.d("ShakeCheat", "phase=${_gamePhase.value} player=${_currentTurnPlayerId.value} me=${_playerName.value} steps=${_remainingSteps.value}")
         if (_gamePhase.value != "IN_TURN") return
         if (_currentTurnPlayerId.value != _playerName.value) return
         if (_remainingSteps.value != 1) return
@@ -523,6 +524,10 @@ open class AppViewModel(
                             if(pId == _playerName.value){
                                 _freePassCount.value = playerObj.optInt("freePassCount", 0)
                             }
+                            if (pId == stateJson.optString("currentPlayerId")) {
+                                val playerRs = playerObj.optInt("remainingSteps", -1)
+                                if (playerRs >= 0) _remainingSteps.value = playerRs
+                            }
 
                             if (playerObj.has("connected") && !playerObj.getBoolean("connected")) {
                                 disconnectedNow.add(pId)
@@ -631,6 +636,7 @@ open class AppViewModel(
                     val newCurrentPlayerId = stateJson.optString("currentPlayerId").ifEmpty { null }
                     val isTurnChange = newCurrentPlayerId != _currentTurnPlayerId.value
                     _currentTurnPlayerId.value = newCurrentPlayerId
+                    if (isTurnChange) _remainingSteps.value = null
 
                     // Melde-bar bleibt der letzte Wuerfler: nur bei einem tatsaechlichen Wurf
                     // (diceValue != null) wechselt das Ziel auf den aktuellen Spieler. Bei reinem
@@ -649,8 +655,9 @@ open class AppViewModel(
                     }
                     _validMoveIds.value = validIds
 
-                    val rs = stateJson.optInt("remainingSteps", -1)
-                    _remainingSteps.value = if (rs >= 0) rs else null
+                    if (stateJson.has("remainingSteps") && !stateJson.isNull("remainingSteps")) {
+                        _remainingSteps.value = stateJson.getInt("remainingSteps")
+                    }
 
                     // hostId aus dem State lesen — fuer Auto-Rejoin (wir wissen sonst nicht
                     // ob der zurueckkehrende Spieler Host war).

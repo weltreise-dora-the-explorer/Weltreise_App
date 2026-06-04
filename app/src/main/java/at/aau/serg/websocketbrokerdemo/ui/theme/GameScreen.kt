@@ -1521,9 +1521,7 @@ fun PlayerCard(
                 }
                 if (diceValue != null) {
                     Spacer(modifier = Modifier.width(6.dp))
-                    val stepsLabel = if (remainingSteps != null && remainingSteps != diceValue)
-                        "🎲$diceValue →$remainingSteps" else "🎲$diceValue"
-                    Text(text = stepsLabel, fontSize = 11.sp, color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold)
+                    Text(text = "🎲${remainingSteps ?: diceValue}", fontSize = 11.sp, color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold)
                 }
             }
             when {
