@@ -9,7 +9,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.delay
-import kotlin.random.Random
 
 enum class ReactionScreenState {
     READY,
@@ -32,11 +31,17 @@ fun ReactionMinigame(
     playerAvatars: List<ImageBitmap?>,
     currentPlayerName: String,
     canFinishMinigame: Boolean,
+    reactionReadyPlayerIds: List<String>,
+    reactionStartTimeMs: Long?,
+    reactionPressTimesMs: Map<String, Long>,
+    reactionButtonVisibleAtMs: Long?,
+    minigameWinnerPlayerId: String?,
+    onReactionReady: () -> Unit,
+    onReactionPress: () -> Unit,
     onFinishMinigame: (winnerPlayerId: String) -> Unit
 ) {
     var currentScreen by remember { mutableStateOf(ReactionScreenState.READY) }
     var countdownValue by remember { mutableStateOf(3) }
-    var localReactionStartTime by remember { mutableStateOf(0L) }
     var reactionButtonVisible by remember { mutableStateOf(false) }
 
     val players = remember(playerNames, playerAvatars) {
@@ -55,6 +60,45 @@ fun ReactionMinigame(
 
     val playerList = players.values.toList()
 
+    LaunchedEffect(reactionReadyPlayerIds) {
+        playerNames.forEach { playerName ->
+            players[playerName]?.let { player ->
+                players[playerName] = player.copy(
+                    isReady = reactionReadyPlayerIds.contains(playerName)
+                )
+            }
+        }
+    }
+
+    LaunchedEffect(reactionStartTimeMs) {
+        if (reactionStartTimeMs != null && currentScreen == ReactionScreenState.READY) {
+            currentScreen = ReactionScreenState.COUNTDOWN
+        }
+    }
+
+    LaunchedEffect(reactionPressTimesMs) {
+        playerNames.forEach { playerName ->
+            players[playerName]?.let { player ->
+                val serverReactionTime = reactionPressTimesMs[playerName]
+
+                players[playerName] = player.copy(
+                    hasPressed = serverReactionTime != null,
+                    reactionTimeMs = serverReactionTime?.toInt()
+                )
+            }
+        }
+
+        val allPlayersPressed =
+            playerNames.isNotEmpty() &&
+                    playerNames.all { playerName ->
+                        reactionPressTimesMs.containsKey(playerName)
+                    }
+
+        if (allPlayersPressed && currentScreen == ReactionScreenState.REACTION) {
+            currentScreen = ReactionScreenState.RESULT
+        }
+    }
+
     LaunchedEffect(currentScreen) {
         if (currentScreen == ReactionScreenState.COUNTDOWN) {
             countdownValue = 3
@@ -65,12 +109,21 @@ fun ReactionMinigame(
             delay(800)
             currentScreen = ReactionScreenState.REACTION
         }
+    }
 
-        if (currentScreen == ReactionScreenState.REACTION) {
-            reactionButtonVisible = false
-            delay(Random.nextLong(900, 1800))
+    LaunchedEffect(reactionButtonVisibleAtMs, currentScreen) {
+        if (
+            currentScreen == ReactionScreenState.REACTION &&
+            reactionButtonVisibleAtMs != null
+        ) {
+            val delayMs =
+                reactionButtonVisibleAtMs - System.currentTimeMillis()
+
+            if (delayMs > 0) {
+                delay(delayMs)
+            }
+
             reactionButtonVisible = true
-            localReactionStartTime = System.currentTimeMillis()
         }
     }
 
@@ -84,15 +137,8 @@ fun ReactionMinigame(
                         players[currentPlayerName] = currentPlayer.copy(isReady = true)
                     }
 
-                    // App-only Prototyp:
-                    // Später wartet hier der Server wirklich auf alle Spieler.
-                    playerNames.forEach { playerName ->
-                        players[playerName]?.let { player ->
-                            players[playerName] = player.copy(isReady = true)
-                        }
-                    }
-
-                    currentScreen = ReactionScreenState.COUNTDOWN
+                    onReactionReady()
+                    // Der Countdown startet später automatisch, sobald der Server reactionStartTimeMs setzt.
                 }
             )
         }
@@ -109,38 +155,22 @@ fun ReactionMinigame(
                 players = playerList,
                 buttonVisible = reactionButtonVisible,
                 onReactionClick = {
-                    val ownReactionTime = (System.currentTimeMillis() - localReactionStartTime)
-                        .toInt()
-                        .coerceAtLeast(120)
+                    onReactionPress()
 
                     players[currentPlayerName]?.let { currentPlayer ->
                         players[currentPlayerName] = currentPlayer.copy(
-                            hasPressed = true,
-                            reactionTimeMs = ownReactionTime
+                            hasPressed = true
                         )
                     }
-
-                    // App-only Prototyp:
-                    // Andere Spieler bekommen simulierte Zeiten.
-                    playerNames
-                        .filter { it != currentPlayerName }
-                        .forEach { playerName ->
-                            players[playerName]?.let { player ->
-                                players[playerName] = player.copy(
-                                    hasPressed = true,
-                                    reactionTimeMs = Random.nextInt(220, 650)
-                                )
-                            }
-                        }
-
-                    currentScreen = ReactionScreenState.RESULT
                 }
             )
         }
 
         ReactionScreenState.RESULT -> {
             val sortedResults = playerList.sortedBy { it.reactionTimeMs ?: Int.MAX_VALUE }
-            val winnerPlayerId = sortedResults.firstOrNull()?.playerName ?: currentPlayerName
+            val winnerPlayerId = minigameWinnerPlayerId
+                ?: sortedResults.firstOrNull()?.playerName
+                ?: currentPlayerName
 
             ReactionResultScreen(
                 results = sortedResults,

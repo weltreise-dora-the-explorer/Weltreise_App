@@ -45,7 +45,13 @@ fun MinigameOverlay(
     currentPlayerName: String,
     announcedWinnerPlayerId: String?,
     canFinishMinigame: Boolean,
+    reactionReadyPlayerIds: List<String>,
+    reactionStartTimeMs: Long?,
+    reactionPressTimesMs: Map<String, Long>,
+    reactionButtonVisibleAtMs: Long?,
     onAnnounceMinigameResult: (winnerPlayerId: String) -> Unit,
+    onReactionReady: () -> Unit,
+    onReactionPress: () -> Unit,
     onFinishMinigame: (winnerPlayerId: String) -> Unit
 ) {
     val otherPlayerName = opponentPlayerNames.firstOrNull() ?: targetPlayerName
@@ -256,6 +262,13 @@ fun MinigameOverlay(
                         playerAvatars = listOf(targetPlayerAvatar) + opponentPlayerAvatars,
                         currentPlayerName = currentPlayerName,
                         canFinishMinigame = canFinishMinigame,
+                        reactionReadyPlayerIds = reactionReadyPlayerIds,
+                        reactionStartTimeMs = reactionStartTimeMs,
+                        reactionPressTimesMs = reactionPressTimesMs,
+                        reactionButtonVisibleAtMs = reactionButtonVisibleAtMs,
+                        minigameWinnerPlayerId = announcedWinnerPlayerId,
+                        onReactionReady = onReactionReady,
+                        onReactionPress = onReactionPress,
                         onFinishMinigame = onFinishMinigame
                     )
                 }

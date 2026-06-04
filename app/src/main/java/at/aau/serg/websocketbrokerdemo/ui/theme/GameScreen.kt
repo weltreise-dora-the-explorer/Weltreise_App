@@ -96,6 +96,10 @@ fun GameScreen(viewModel: AppViewModel) {
     val currentTurnPlayerId by viewModel.currentTurnPlayerId.collectAsState()
     val gamePhase by viewModel.gamePhase.collectAsState()
     val minigameWinnerPlayerId by viewModel.minigameWinnerPlayerId.collectAsState()
+    val reactionReadyPlayerIds by viewModel.reactionReadyPlayerIds.collectAsState()
+    val reactionStartTimeMs by viewModel.reactionStartTimeMs.collectAsState()
+    val reactionButtonVisibleAtMs by viewModel.reactionButtonVisibleAtMs.collectAsState()
+    val reactionPressTimesMs by viewModel.reactionPressTimesMs.collectAsState()
     val ownedCities by viewModel.ownedCities.collectAsState()
     val allCities by viewModel.allCities.collectAsState()
     val startCity by viewModel.startCity.collectAsState()
@@ -328,8 +332,18 @@ fun GameScreen(viewModel: AppViewModel) {
                     currentPlayerName = currentPlayerName,
                     announcedWinnerPlayerId = minigameWinnerPlayerId,
                     canFinishMinigame = canFinishMinigame,
+                    reactionReadyPlayerIds = reactionReadyPlayerIds,
+                    reactionStartTimeMs = reactionStartTimeMs,
+                    reactionButtonVisibleAtMs = reactionButtonVisibleAtMs,
+                    reactionPressTimesMs = reactionPressTimesMs,
                     onAnnounceMinigameResult = { winnerPlayerId ->
                         viewModel.announceMinigameResult(winnerPlayerId)
+                    },
+                    onReactionReady = {
+                        viewModel.reactionReady()
+                    },
+                    onReactionPress = {
+                        viewModel.reactionPress()
                     },
                     onFinishMinigame = { winnerPlayerId ->
                         viewModel.finishMinigame(winnerPlayerId)
