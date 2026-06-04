@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ButtonDefaults
+import at.aau.serg.websocketbrokerdemo.ui.theme.minigames.reaction.ReactionMinigame
 
 private enum class MinigameResultType {
     TARGET_PLAYER_WINS,
@@ -41,6 +42,7 @@ fun MinigameOverlay(
     targetCityName: String,
     targetPlayerAvatar: ImageBitmap?,
     opponentPlayerAvatars: List<ImageBitmap?>,
+    currentPlayerName: String,
     announcedWinnerPlayerId: String?,
     canFinishMinigame: Boolean,
     onAnnounceMinigameResult: (winnerPlayerId: String) -> Unit,
@@ -249,34 +251,13 @@ fun MinigameOverlay(
                 }
 
                 else -> {
-                    Text(
-                        text = stringResource(R.string.minigame_popup_title),
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
+                    ReactionMinigame(
+                        playerNames = listOf(targetPlayerName) + opponentPlayerNames,
+                        playerAvatars = listOf(targetPlayerAvatar) + opponentPlayerAvatars,
+                        currentPlayerName = currentPlayerName,
+                        canFinishMinigame = canFinishMinigame,
+                        onFinishMinigame = onFinishMinigame
                     )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = {
-                            onAnnounceMinigameResult(targetPlayerName)
-                        },
-                        enabled = canFinishMinigame
-                    ) {
-                        Text(text = stringResource(R.string.minigame_target_player_wins_button))
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = {
-                            onAnnounceMinigameResult(otherPlayerName)
-                        },
-                        enabled = canFinishMinigame
-                    ) {
-                        Text(text = stringResource(R.string.minigame_other_player_wins_button))
-                    }
                 }
             }
         }

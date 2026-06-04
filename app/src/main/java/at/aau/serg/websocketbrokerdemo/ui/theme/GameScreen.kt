@@ -325,6 +325,7 @@ fun GameScreen(viewModel: AppViewModel) {
                     targetCityName = playerCurrentCities[minigameTargetPlayer]?.name ?: "",
                     targetPlayerAvatar = minigameTargetAvatar,
                     opponentPlayerAvatars = playersList.filter {it != minigameTargetPlayer}.map {opponentName -> avatars.getOrNull(playersList.indexOf(opponentName))},
+                    currentPlayerName = currentPlayerName,
                     announcedWinnerPlayerId = minigameWinnerPlayerId,
                     canFinishMinigame = canFinishMinigame,
                     onAnnounceMinigameResult = { winnerPlayerId ->
