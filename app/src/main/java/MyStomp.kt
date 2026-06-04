@@ -455,6 +455,52 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
+    fun reactionReady(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_REACTION_READY)
+                command.put("playerId", playerId)
+
+                if (session == null) {
+                    Log.e("MyStomp", "reactionReady ABGEBROCHEN: session ist null!")
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                Log.d("MyStomp", "reactionReady gesendet -> $command")
+
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler bei reactionReady", e)
+            }
+        }
+    }
+
+    fun reactionPress(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_REACTION_PRESS)
+                command.put("playerId", playerId)
+
+                if (session == null) {
+                    Log.e("MyStomp", "reactionPress ABGEBROCHEN: session ist null!")
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                Log.d("MyStomp", "reactionPress gesendet -> $command")
+
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler bei reactionPress", e)
+            }
+        }
+    }
+
     fun useFreePass(lobbyId: String, playerId: String) {
         scope.launch {
             try {
