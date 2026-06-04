@@ -19,6 +19,7 @@ import org.json.JSONObject
 import at.aau.serg.websocketbrokerdemo.GameConstants
 
 private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
+//private const val WEBSOCKET_URI = "ws://localhost:8080/websocket-example-broker" // physisches Gerät: adb reverse tcp:8080 tcp:8080 nötig
 //private const val WEBSOCKET_URI = "ws://se2-demo.aau.at:53205/websocket-example-broker"
 private const val RECONNECT_INITIAL_DELAY_MS = 2000L
 private const val RECONNECT_MAX_DELAY_MS = 30_000L
@@ -46,8 +47,6 @@ class MyStomp(val callbacks: Callbacks) {
 
     @Volatile
     private var reconnecting: Boolean = false
-
-    fun isConnected(): Boolean = session != null
 
     fun connect() {
         client = StompClient(OkHttpWebSocketClient()) // other config can be passed in here
@@ -473,6 +472,51 @@ class MyStomp(val callbacks: Callbacks) {
                 Log.d("MyStomp", "useFreePass gesendet -> $command")
             } catch (e : Exception) {
                 Log.e("MyStomp", "Fehler beim Verwenden des Freepasses", e)
+            }
+        }
+    }
+
+    fun reportCheat(lobbyId: String, playerId: String, reportedPlayerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_REPORT_CHEAT)
+                command.put("playerId", playerId)
+                command.put("reportedPlayerId", reportedPlayerId)
+
+                if (session == null) {
+                    Log.e("MyStomp", "reportCheat ABGEBROCHEN: session ist null!")
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                Log.d("MyStomp", "reportCheat gesendet -> $command")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Report-Cheat", e)
+            }
+        }
+    }
+
+    fun useShakeCheat(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_USE_SHAKE_CHEAT)
+                command.put("playerId", playerId)
+
+                if (session == null) {
+                    Log.e("MyStomp", "useShakeCheat ABGEBROCHEN: session ist null!")
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                Log.d("MyStomp", "useShakeCheat gesendet -> $command")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Shake-Cheat", e)
             }
         }
     }

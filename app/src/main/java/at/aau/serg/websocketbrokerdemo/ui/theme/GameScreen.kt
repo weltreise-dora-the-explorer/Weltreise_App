@@ -44,7 +44,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
+import at.aau.serg.websocketbrokerdemo.ReportFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -94,6 +96,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val gameMode by viewModel.gameMode.collectAsState()
     val diceValue by viewModel.diceValue.collectAsState()
     val currentTurnPlayerId by viewModel.currentTurnPlayerId.collectAsState()
+    val reportablePlayerId by viewModel.reportablePlayerId.collectAsState()
     val gamePhase by viewModel.gamePhase.collectAsState()
     val minigameWinnerPlayerId by viewModel.minigameWinnerPlayerId.collectAsState()
     val ownedCities by viewModel.ownedCities.collectAsState()
@@ -102,6 +105,16 @@ fun GameScreen(viewModel: AppViewModel) {
     val playerCityCounts by viewModel.playerCityCounts.collectAsState()
     val allPlayerOwnedCities by viewModel.allPlayerOwnedCities.collectAsState()
     val playerCurrentCities by viewModel.playerCurrentCities.collectAsState()
+    val reportFeedback by viewModel.lastReportFeedback.collectAsState()
+    LaunchedEffect(reportFeedback) {
+        val feedback = reportFeedback ?: return@LaunchedEffect
+        val message = when (feedback) {
+            ReportFeedback.HIT -> "Caught the cheater!"
+            ReportFeedback.MISS -> "False accusation — you lose a turn."
+        }
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        viewModel.consumeReportFeedback()
+    }
     var highlightedPlayerId by remember { mutableStateOf<String?>(null) }
     val playerVisitedBucketIds = remember { mutableStateMapOf<String, MutableSet<String>>() }
     LaunchedEffect(playerCurrentCities, allPlayerOwnedCities) {
@@ -452,12 +465,21 @@ fun GameScreen(viewModel: AppViewModel) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             val disconnectedPlayers by viewModel.disconnectedPlayers.collectAsState()
+            val mustSkipPlayers by viewModel.mustSkipPlayers.collectAsState()
+            val transientSkipPlayerId by viewModel.transientSkipPlayerId.collectAsState()
+            var reportingPlayer by remember { mutableStateOf<String?>(null) }
             playersList.forEachIndexed { index, playerName ->
                 val avatar = avatars.getOrNull(index % avatars.size)
                 val isFirstPlayer = index == 0
                 val displayName = if (isFirstPlayer) "$playerName (Host)" else playerName
                 val isOtherPlayer = playerName != currentPlayerName
                 val isHighlighted = highlightedPlayerId == playerName
+                val mustSkip = playerName in mustSkipPlayers || playerName == transientSkipPlayerId
+                val canBeReported = isOtherPlayer
+                        && gamePhase != GameConstants.PHASE_LOBBY
+                        && playerName == reportablePlayerId
+                        && playerName !in disconnectedPlayers
+                        && !mustSkip
                 PlayerCard(
                     name = displayName,
                     bucketListCount = playerCityCounts[playerName] ?: 0,
@@ -469,9 +491,31 @@ fun GameScreen(viewModel: AppViewModel) {
                     freePassCount = playerFreePassCounts[playerName] ?: 0,
                     freePassIcon = freePassBitmap,
                     isHighlighted = isHighlighted,
+                    mustSkip = mustSkip,
+                    canBeReported = canBeReported,
+                    onReport = if (canBeReported) { { reportingPlayer = playerName } } else null,
                     onTap = if (isOtherPlayer) {
                         { highlightedPlayerId = if (isHighlighted) null else playerName }
                     } else null
+                )
+            }
+
+            reportingPlayer?.let { target ->
+                AlertDialog(
+                    onDismissRequest = { reportingPlayer = null },
+                    title = { Text("Report cheating") },
+                    text = {
+                        Text("Report $target for cheating? If you are wrong, you skip your next turn.")
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            viewModel.reportCheat(target)
+                            reportingPlayer = null
+                        }) { Text("Report") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { reportingPlayer = null }) { Text("Cancel") }
+                    }
                 )
             }
         }
@@ -731,16 +775,18 @@ fun GameScreen(viewModel: AppViewModel) {
                 .padding(start = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            //Roll Dice
-            GameButton(
-                text = "ROLL DICE",
-                imageBitmap = diceBitmap,
-                enabled = canRoll,
-                blinkBorder = canRoll,
-                onClick = { playSound(context, "rolling_dice"); viewModel.onRollDice() }
-            )
+            //Roll Dice – nur sichtbar wenn dran und noch nicht gewürfelt
+            if (canRoll) {
+                GameButton(
+                    text = "ROLL DICE",
+                    imageBitmap = diceBitmap,
+                    enabled = true,
+                    blinkBorder = true,
+                    onClick = { playSound(context, "rolling_dice"); viewModel.onRollDice() }
+                )
 
-            Spacer(modifier = Modifier.height(1.dp))
+                Spacer(modifier = Modifier.height(1.dp))
+            }
 
             //Bucket List
             GameButton(
@@ -1403,6 +1449,9 @@ fun PlayerCard(
     freePassCount: Int = 0,
     freePassIcon: ImageBitmap? = null,
     isHighlighted: Boolean = false,
+    mustSkip: Boolean = false,
+    canBeReported: Boolean = false,
+    onReport: (() -> Unit)? = null,
     onTap: (() -> Unit)? = null
 ) {
     Row(
@@ -1472,20 +1521,37 @@ fun PlayerCard(
                 }
                 if (diceValue != null) {
                     Spacer(modifier = Modifier.width(6.dp))
-                    val stepsLabel = if (remainingSteps != null && remainingSteps != diceValue)
-                        "🎲$diceValue →$remainingSteps" else "🎲$diceValue"
-                    Text(text = stepsLabel, fontSize = 11.sp, color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold)
+                    Text(text = "🎲${remainingSteps ?: diceValue}", fontSize = 11.sp, color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold)
                 }
             }
-            if (disconnected) {
-                Text(
+            when {
+                disconnected -> Text(
                     text = "(reconnecting)",
                     fontSize = 9.sp,
-                    color = Color.Gray,
+                    color = Color.Black,
                     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                 )
-            } else {
-                Text(text = "Bucket List: $bucketListCount", fontSize = 10.sp, color = Color.Gray)
+                mustSkip -> Text(
+                    text = "skip turn",
+                    fontSize = 10.sp,
+                    color = Color(0xFFC0392B),
+                    fontWeight = FontWeight.Bold
+                )
+                else -> Text(text = "Bucket List: $bucketListCount", fontSize = 10.sp, color = Color.Gray)
+            }
+        }
+
+        if (canBeReported && onReport != null) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.85f))
+                    .clickable { onReport() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "🚨", fontSize = 14.sp)
             }
         }
     }
