@@ -80,15 +80,8 @@ fun ReactionGameScreen(
                     onReactionClick()
                 },
             contentAlignment = Alignment.Center
-        ) {
-            if (buttonVisible) {
-                Text(
-                    text = stringResource(R.string.reaction_press_symbol),
-                    color = ReactionGameStyle.primaryTextColor,
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+        ){
+            //absichtlich leer: Der Kreis selbst ist der Button
         }
 
         Spacer(modifier = Modifier.height(ReactionGameStyle.buttonSpacing))

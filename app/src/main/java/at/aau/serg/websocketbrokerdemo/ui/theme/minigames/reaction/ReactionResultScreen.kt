@@ -155,6 +155,15 @@ private fun ReactionResultRow(
             modifier = Modifier.weight(1f)
         )
 
+        if (isWinner) {
+            Text(
+                text = "👑",
+                fontSize = 16.sp
+            )
+
+            Spacer(modifier = Modifier.width(6.dp))
+        }
+
         Text(
             text = stringResource(R.string.reaction_result_seconds, reactionTimeSeconds),
             color = ReactionResultStyle.primaryBlue,
