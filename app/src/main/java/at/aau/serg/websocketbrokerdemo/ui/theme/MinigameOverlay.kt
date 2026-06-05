@@ -61,17 +61,17 @@ fun MinigameOverlay(
     var showVsScreen by remember { mutableStateOf(true) }
     var resultType by remember { mutableStateOf<MinigameResultType?>(null)}
 
-    LaunchedEffect(announcedWinnerPlayerId) {
-        if (announcedWinnerPlayerId == null) return@LaunchedEffect
-
-        showVsScreen = false
-        resultType =
-            if (announcedWinnerPlayerId == targetPlayerName) {
-                MinigameResultType.TARGET_PLAYER_WINS
-            } else {
-                MinigameResultType.OTHER_PLAYER_WINS
-            }
-    }
+//    LaunchedEffect(announcedWinnerPlayerId) {
+//        if (announcedWinnerPlayerId == null) return@LaunchedEffect
+//
+//        showVsScreen = false
+//        resultType =
+//            if (announcedWinnerPlayerId == targetPlayerName) {
+//                MinigameResultType.TARGET_PLAYER_WINS
+//            } else {
+//                MinigameResultType.OTHER_PLAYER_WINS
+//            }
+//    }
 
     LaunchedEffect(Unit){
         delay(2000)
@@ -273,7 +273,14 @@ fun MinigameOverlay(
                         minigameWinnerPlayerId = announcedWinnerPlayerId,
                         onReactionReady = onReactionReady,
                         onReactionPress = onReactionPress,
-                        onFinishMinigame = onFinishMinigame
+                        onFinishMinigame = { winnerPlayerId ->
+                            resultType =
+                                if (winnerPlayerId == targetPlayerName) {
+                                    MinigameResultType.TARGET_PLAYER_WINS
+                                } else {
+                                    MinigameResultType.OTHER_PLAYER_WINS
+                                }
+                        }
                     )
                 }
             }

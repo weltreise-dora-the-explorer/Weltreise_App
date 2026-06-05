@@ -14,6 +14,7 @@ enum class ReactionScreenState {
     READY,
     COUNTDOWN,
     REACTION,
+    ROUND_ENDED,
     RESULT
 }
 
@@ -113,7 +114,7 @@ fun ReactionMinigame(
                     }
 
         if (allPlayersPressed && currentScreen == ReactionScreenState.REACTION) {
-            currentScreen = ReactionScreenState.RESULT
+            currentScreen = ReactionScreenState.ROUND_ENDED
         }
     }
 
@@ -160,6 +161,13 @@ fun ReactionMinigame(
         }
     }
 
+    LaunchedEffect(currentScreen) {
+        if (currentScreen == ReactionScreenState.ROUND_ENDED) {
+            delay(4000)
+            currentScreen = ReactionScreenState.RESULT
+        }
+    }
+
     when (currentScreen) {
         ReactionScreenState.READY -> {
             ReactionLobbyScreen(
@@ -196,6 +204,14 @@ fun ReactionMinigame(
                         )
                     }
                 }
+            )
+        }
+
+        ReactionScreenState.ROUND_ENDED -> {
+            val sortedResults = playerList.sortedBy { it.reactionTimeMs ?: Int.MAX_VALUE }
+
+            ReactionRoundEndedScreen(
+                results = sortedResults
             )
         }
 
