@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.myapplication.R
 
 private object ReactionRoundEndedStyle {
     val titleSize = 42.sp
@@ -31,7 +33,7 @@ fun ReactionRoundEndedScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Round ended",
+            text = stringResource(R.string.reaction_round_ended_title),
             color = ReactionRoundEndedStyle.primaryTextColor,
             fontSize = ReactionRoundEndedStyle.titleSize,
             fontWeight = FontWeight.Bold
@@ -40,7 +42,7 @@ fun ReactionRoundEndedScreen(
         Spacer(modifier = androidx.compose.ui.Modifier.height(ReactionRoundEndedStyle.titleTrophySpacing))
 
         Text(
-            text = "🏆",
+            text = stringResource(R.string.reaction_round_ended_trophy),
             fontSize = ReactionRoundEndedStyle.trophySize
         )
 

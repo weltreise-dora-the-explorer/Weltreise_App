@@ -84,4 +84,11 @@
     <string name="reaction_result_title">Result</string>
     <string name="reaction_continue_button">Continue</string>
     <string name="reaction_result_seconds">%1$.3fs</string>
+
+    <string name="reaction_ready_checkmark">✓</string>
+    <string name="reaction_round_ended_title">Round ended</string>
+    <string name="reaction_round_ended_trophy">🏆</string>
+    <string name="reaction_result_winner_crown">👑</string>
+    <string name="reaction_avatar_fallback_description">Player avatar</string>
+    <string name="reaction_game_button_empty_description">Reaction button</string>
 </resources>

@@ -163,7 +163,7 @@ private fun ReactionLobbyAvatar(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "✓",
+                    text = stringResource(R.string.reaction_ready_checkmark),
                     color = Color.White,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold

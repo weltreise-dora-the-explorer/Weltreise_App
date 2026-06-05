@@ -157,7 +157,7 @@ private fun ReactionResultRow(
 
         if (isWinner) {
             Text(
-                text = "👑",
+                text = stringResource(R.string.reaction_result_winner_crown),
                 fontSize = 16.sp
             )
 
