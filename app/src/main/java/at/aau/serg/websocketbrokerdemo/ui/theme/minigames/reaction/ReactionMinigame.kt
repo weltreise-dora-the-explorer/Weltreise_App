@@ -32,9 +32,11 @@ fun ReactionMinigame(
     currentPlayerName: String,
     canFinishMinigame: Boolean,
     reactionReadyPlayerIds: List<String>,
+    reactionReadyEndsAtMs: Long?,
     reactionStartTimeMs: Long?,
     reactionPressTimesMs: Map<String, Long>,
     reactionButtonVisibleAtMs: Long?,
+    reactionRoundEndsAtMs: Long?,
     minigameWinnerPlayerId: String?,
     onReactionReady: () -> Unit,
     onReactionPress: () -> Unit,
@@ -67,6 +69,22 @@ fun ReactionMinigame(
                     isReady = reactionReadyPlayerIds.contains(playerName)
                 )
             }
+        }
+    }
+
+    LaunchedEffect(reactionReadyEndsAtMs) {
+        if (
+            reactionReadyEndsAtMs != null &&
+            currentScreen == ReactionScreenState.READY
+        ) {
+            val delayMs =
+                reactionReadyEndsAtMs - System.currentTimeMillis()
+
+            if (delayMs > 0) {
+                delay(delayMs)
+            }
+
+            onReactionReady()
         }
     }
 
@@ -124,6 +142,21 @@ fun ReactionMinigame(
             }
 
             reactionButtonVisible = true
+        }
+    }
+
+    LaunchedEffect(reactionRoundEndsAtMs, currentScreen) {
+        if (
+            currentScreen == ReactionScreenState.REACTION &&
+            reactionRoundEndsAtMs != null
+        ) {
+            val delayMs = reactionRoundEndsAtMs - System.currentTimeMillis()
+
+            if (delayMs > 0) {
+                delay(delayMs)
+            }
+
+            onReactionPress()
         }
     }
 
