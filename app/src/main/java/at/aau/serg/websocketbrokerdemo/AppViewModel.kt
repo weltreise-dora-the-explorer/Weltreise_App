@@ -76,11 +76,17 @@ open class AppViewModel(
     private val _reactionReadyPlayerIds = MutableStateFlow<List<String>>(emptyList())
     val reactionReadyPlayerIds: StateFlow<List<String>> = _reactionReadyPlayerIds.asStateFlow()
 
+    private val _reactionReadyEndsAtMs = MutableStateFlow<Long?>(null)
+    val reactionReadyEndsAtMs: StateFlow<Long?> = _reactionReadyEndsAtMs.asStateFlow()
+
     private val _reactionStartTimeMs = MutableStateFlow<Long?>(null)
     val reactionStartTimeMs: StateFlow<Long?> = _reactionStartTimeMs.asStateFlow()
 
     private val _reactionButtonVisibleAtMs = MutableStateFlow<Long?>(null)
     val reactionButtonVisibleAtMs: StateFlow<Long?> = _reactionButtonVisibleAtMs.asStateFlow()
+
+    private val _reactionRoundEndsAtMs = MutableStateFlow<Long?>(null)
+    val reactionRoundEndsAtMs: StateFlow<Long?> = _reactionRoundEndsAtMs.asStateFlow()
 
     private val _reactionPressTimesMs = MutableStateFlow<Map<String, Long>>(emptyMap())
     val reactionPressTimesMs: StateFlow<Map<String, Long>> = _reactionPressTimesMs.asStateFlow()
@@ -622,6 +628,10 @@ open class AppViewModel(
                     }
                     _reactionReadyPlayerIds.value = readyIds
 
+                    _reactionReadyEndsAtMs.value =
+                        if (stateJson.isNull("reactionReadyEndsAtMs")) null
+                        else stateJson.optLong("reactionReadyEndsAtMs")
+
                     _reactionStartTimeMs.value =
                         if (stateJson.isNull("reactionStartTimeMs")) null
                         else stateJson.optLong("reactionStartTimeMs")
@@ -629,6 +639,10 @@ open class AppViewModel(
                     _reactionButtonVisibleAtMs.value =
                         if (stateJson.isNull("reactionButtonVisibleAtMs")) null
                         else stateJson.optLong("reactionButtonVisibleAtMs")
+
+                    _reactionRoundEndsAtMs.value =
+                        if (stateJson.isNull("reactionRoundEndsAtMs")) null
+                        else stateJson.optLong("reactionRoundEndsAtMs")
 
                     val pressTimesObject = stateJson.optJSONObject("reactionPressTimesMs")
                     val pressTimes = mutableMapOf<String, Long>()
