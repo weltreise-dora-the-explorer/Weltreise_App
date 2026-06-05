@@ -4,6 +4,8 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,15 +13,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,13 +38,15 @@ private object ReactionCountdownStyle {
     val countdownTextSize = 72.sp
     val titleHintSpacing = 14.dp
     val countdownSpacing = 24.dp
-    val playerGridRowSpacing = 8.dp
+    val avatarSpacing = 22.dp
+    val avatarSize = 44.dp
     val countdownRingWidth = 12.dp
     val countdownAnimationDurationMs = 800
 
     val primaryTextColor = Color.White
     val ringBackgroundColor = Color(0xFF2A3440)
     val ringProgressColor = Color(0xFF35C7FF)
+    val avatarFallbackColor = Color.DarkGray
 }
 
 @Composable
@@ -49,12 +56,12 @@ fun ReactionCountdownScreen(
 ) {
     val ringProgress = remember { Animatable(1f) }
 
-    LaunchedEffect(countdownValue) {
+    LaunchedEffect(Unit) {
         ringProgress.snapTo(1f)
         ringProgress.animateTo(
             targetValue = 0f,
             animationSpec = tween(
-                durationMillis = ReactionCountdownStyle.countdownAnimationDurationMs,
+                durationMillis = 2400,
                 easing = LinearEasing
             )
         )
@@ -117,14 +124,42 @@ fun ReactionCountdownScreen(
 
         Spacer(modifier = Modifier.height(ReactionCountdownStyle.countdownSpacing))
 
-        players.chunked(2).forEach { rowPlayers ->
-            Row(horizontalArrangement = Arrangement.Center) {
-                rowPlayers.forEach { player ->
-                    ReactionPlayerStatusCard(player = player)
-                }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(ReactionCountdownStyle.avatarSpacing),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            players.forEach { player ->
+                ReactionCountdownAvatar(player = player)
             }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(ReactionCountdownStyle.playerGridRowSpacing))
+@Composable
+private fun ReactionCountdownAvatar(
+    player: ReactionPlayerUiState
+) {
+    Box(
+        modifier = Modifier
+            .size(ReactionCountdownStyle.avatarSize)
+            .clip(CircleShape)
+            .background(ReactionCountdownStyle.avatarFallbackColor),
+        contentAlignment = Alignment.Center
+    ) {
+        if (player.avatar != null) {
+            Image(
+                bitmap = player.avatar,
+                contentDescription = player.playerName,
+                modifier = Modifier.size(ReactionCountdownStyle.avatarSize),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Text(
+                text = player.playerName.take(1).uppercase(),
+                color = Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
