@@ -18,8 +18,8 @@ import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 import at.aau.serg.websocketbrokerdemo.GameConstants
 
-private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
-//private const val WEBSOCKET_URI = "ws://localhost:8080/websocket-example-broker" // physisches Gerät: adb reverse tcp:8080 tcp:8080 nötig
+//private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
+private const val WEBSOCKET_URI = "ws://localhost:8080/websocket-example-broker" // physisches Gerät: adb reverse tcp:8080 tcp:8080 nötig
 //private const val WEBSOCKET_URI = "ws://se2-demo.aau.at:53205/websocket-example-broker"
 private const val RECONNECT_INITIAL_DELAY_MS = 2000L
 private const val RECONNECT_MAX_DELAY_MS = 30_000L
@@ -540,6 +540,29 @@ class MyStomp(val callbacks: Callbacks) {
                 Log.d("MyStomp", "startMinigame gesendet -> $command")
             } catch (e: Exception) {
                 Log.e("MyStomp", "Fehler beim Starten des Minigames", e)
+            }
+        }
+    }
+
+    fun submitGuess(lobbyId: String, playerId: String, guess: Int) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_SUBMIT_GUESS)
+                command.put("playerId", playerId)
+                command.put("guess", guess)
+
+                if (session == null) {
+                    Log.e("MyStomp", "submitGuess ABGEBROCHEN: session ist null!")
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                Log.d("MyStomp", "submitGuess gesendet -> $command")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Einreichen der Schätzung", e)
             }
         }
     }

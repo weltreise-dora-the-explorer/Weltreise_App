@@ -158,11 +158,20 @@ fun GameScreen(viewModel: AppViewModel) {
     val effectiveIsMyTurn = isMyTurn && !isGameOver && !isMinigamePhase
     val canRoll = effectiveIsMyTurn && diceValue == null
     val canEndTurn = effectiveIsMyTurn && diceValue != null
-    val canFinishMinigame = true
     val minigameTargetPlayer = currentTurnPlayerId ?: currentPlayerName
+    val canFinishMinigame = (currentPlayerName == minigameTargetPlayer)
     val minigameLostCityName by viewModel.minigameLostCityName.collectAsState()
     val minigameNewCityName by viewModel.minigameNewCityName.collectAsState()
     val playerFreePassCounts by viewModel.playerFreePassCounts.collectAsState()
+    val minigameSubPhase by viewModel.minigameSubPhase.collectAsState()
+    val selectedMinigame by viewModel.selectedMinigame.collectAsState()
+    val guessQuestionText by viewModel.guessQuestionText.collectAsState()
+    val guessQuestionAnswer by viewModel.guessQuestionAnswer.collectAsState()
+    val guessTimerEndMillis by viewModel.guessTimerEndMillis.collectAsState()
+    val guessTimerDurationSeconds by viewModel.guessTimerDurationSeconds.collectAsState()
+    val guessSubmissions by viewModel.guessSubmissions.collectAsState()
+    val guessSubmissionTimes by viewModel.guessSubmissionTimes.collectAsState()
+    val myGuessSubmitted by viewModel.myGuessSubmitted.collectAsState()
 
 
     // Hintergrundmusik – läuft solange GameScreen aktiv ist
@@ -273,23 +282,14 @@ fun GameScreen(viewModel: AppViewModel) {
     }
 
     LaunchedEffect(minigameLostCityName, minigameNewCityName) {
-        if(minigameLostCityName != null && minigameNewCityName != null) {
+        if (minigameLostCityName != null && minigameNewCityName != null
+            && currentPlayerName == minigameTargetPlayer) {
             showNewDestinationOverlay = true
             newDestinationAlpha.snapTo(1f)
         }
     }
 
-    var showMinigameOverlay by remember {mutableStateOf(false)}
-
-    LaunchedEffect(gamePhase) {
-        if(gamePhase == GameConstants.PHASE_MINIGAME) {
-            showMinigameOverlay = false
-            delay(4000)
-            showMinigameOverlay = true
-        } else {
-            showMinigameOverlay = false
-        }
-    }
+    val showMinigameOverlay = (gamePhase == GameConstants.PHASE_MINIGAME)
 
     // Box (Schichten-Design)
     Box(
@@ -337,7 +337,7 @@ fun GameScreen(viewModel: AppViewModel) {
                     opponentPlayerNames = playersList.filter { it != minigameTargetPlayer },
                     targetCityName = playerCurrentCities[minigameTargetPlayer]?.name ?: "",
                     targetPlayerAvatar = minigameTargetAvatar,
-                    opponentPlayerAvatars = playersList.filter {it != minigameTargetPlayer}.map {opponentName -> avatars.getOrNull(playersList.indexOf(opponentName))},
+                    opponentPlayerAvatars = playersList.filter { it != minigameTargetPlayer }.map { opponentName -> avatars.getOrNull(playersList.indexOf(opponentName)) },
                     announcedWinnerPlayerId = minigameWinnerPlayerId,
                     canFinishMinigame = canFinishMinigame,
                     onAnnounceMinigameResult = { winnerPlayerId ->
@@ -345,7 +345,18 @@ fun GameScreen(viewModel: AppViewModel) {
                     },
                     onFinishMinigame = { winnerPlayerId ->
                         viewModel.finishMinigame(winnerPlayerId)
-                    }
+                    },
+                    minigameSubPhase = minigameSubPhase,
+                    selectedMinigame = selectedMinigame,
+                    guessQuestionText = guessQuestionText,
+                    guessQuestionAnswer = guessQuestionAnswer,
+                    guessTimerEndMillis = guessTimerEndMillis,
+                    guessTimerDurationSeconds = guessTimerDurationSeconds,
+                    guessSubmissions = guessSubmissions,
+                    guessSubmissionTimes = guessSubmissionTimes,
+                    myGuessSubmitted = myGuessSubmitted,
+                    myPlayerId = currentPlayerName,
+                    onSubmitGuess = { viewModel.submitGuess(it) }
                 )
             }
         }
