@@ -711,13 +711,6 @@ open class AppViewModel(
                         if (stateJson.isNull("minigameWinnerPlayerId")) null
                         else stateJson.optString("minigameWinnerPlayerId").ifBlank { null }
 
-                    _minigameLostCityName.value =
-                        if (stateJson.isNull("minigameLostCityName")) null
-                        else stateJson.optString("minigameLostCityName").ifBlank { null }
-
-                    _minigameNewCityName.value =
-                        if (stateJson.isNull("minigameNewCityName")) null
-                        else stateJson.optString("minigameNewCityName").ifBlank { null }
 
                     // Parse minigame sub-phase and guess-game fields
                     val subPhase = if (stateJson.isNull("minigameSubPhase")) null
@@ -869,6 +862,16 @@ open class AppViewModel(
             )
         } catch (e: Exception) {
             Log.e("AppViewModel", "Failed to parse goal-reached", e)
+        }
+    }
+
+    override fun onMinigameLost(res: String) {
+        try {
+            val json = JSONObject(res)
+            _minigameLostCityName.value = json.optString("lostCityName").ifBlank { null }
+            _minigameNewCityName.value = json.optString("newCityName").ifBlank { null }
+        } catch (e: Exception) {
+            Log.e("AppViewModel", "Failed to parse minigame-lost", e)
         }
     }
 
