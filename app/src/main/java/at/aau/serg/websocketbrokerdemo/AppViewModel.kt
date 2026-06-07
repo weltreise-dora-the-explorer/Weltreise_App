@@ -275,7 +275,7 @@ open class AppViewModel(
             "Epic Voyage" -> 12
             else -> 9
         }
-        stomp.startGameCmd(_lobbyId.value, stops)
+        stomp.startGameCmd(_lobbyId.value, _playerName.value, stops)
     }
 
     fun onRollDice() {

@@ -322,7 +322,8 @@ class AppViewModelTest {
 
         viewModel.startGame()
 
-        verify { mockStomp.startGameCmd(lobbyId, any()) }
+        // playerId must be sent so the server's session authorization accepts START_GAME.
+        verify { mockStomp.startGameCmd(lobbyId, "Host", any()) }
     }
 
     // ========== PLAYER LIST TESTS ==========
