@@ -90,14 +90,15 @@ fun ReactionMinigame(
             reactionReadyEndsAtMs != null &&
             currentScreen == ReactionScreenState.READY
         ) {
-            val delayMs =
-                reactionReadyEndsAtMs - System.currentTimeMillis()
+            val delayMs = reactionReadyEndsAtMs - correctedNowMs()
 
             if (delayMs > 0) {
                 delay(delayMs)
             }
 
-            onReactionReady()
+            if (currentScreen == ReactionScreenState.READY) {
+                onReactionReady()
+            }
         }
     }
 
@@ -172,17 +173,20 @@ fun ReactionMinigame(
         }
     }
 
-    LaunchedEffect(reactionRoundEndsAtMs, currentScreen) {
+    LaunchedEffect(reactionRoundEndsAtMs) {
+        val roundEndsAtMs = reactionRoundEndsAtMs ?: return@LaunchedEffect
+
+        val delayMs = roundEndsAtMs - correctedNowMs()
+
+        if (delayMs > 0) {
+            delay(delayMs)
+        }
+
         if (
             currentScreen == ReactionScreenState.REACTION &&
-            reactionRoundEndsAtMs != null
+            currentScreen != ReactionScreenState.ROUND_ENDED &&
+            currentScreen != ReactionScreenState.RESULT
         ) {
-            val delayMs = reactionRoundEndsAtMs - System.currentTimeMillis()
-
-            if (delayMs > 0) {
-                delay(delayMs)
-            }
-
             onReactionPress()
         }
     }
