@@ -23,11 +23,10 @@ fun WeltreiseBucketList(
     chosenCity: String?,
     visitedCities: Set<String> = emptySet(),
     onCityChosen: (String?) -> Unit,
+    onCityOrderChanged: (List<String>) -> Unit,
     onDismiss: () -> Unit = {}
 ) {
-    val sortableList = remember(drawnCities) {
-        drawnCities.toMutableStateList()
-    }
+
 
     if (isVisible) {
         Box(
@@ -45,11 +44,11 @@ fun WeltreiseBucketList(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp)
             ) {
-                itemsIndexed(sortableList) { index, city ->
+                itemsIndexed(drawnCities) { index, city ->
                     CityCard(
                         name = city,
                         canMoveLeft = index > 0,
-                        canMoveRight = index < sortableList.size - 1,
+                        canMoveRight = index < drawnCities.size - 1,
                         isChosen = city == chosenCity,
                         isVisited = visitedCities.contains(city),
                         onCardClick = {
@@ -59,14 +58,18 @@ fun WeltreiseBucketList(
                             }
                         },
                         toTheLeftClick = {
-                            val temp = sortableList[index]
-                            sortableList[index] = sortableList[index - 1]
-                            sortableList[index - 1] = temp
+                            val newList = drawnCities.toMutableList()
+                            val temp = newList[index]
+                            newList[index] = newList[index - 1]
+                            newList[index - 1] = temp
+                            onCityOrderChanged(newList)
                         },
                         toTheRightClick = {
-                            val temp = sortableList[index]
-                            sortableList[index] = sortableList[index + 1]
-                            sortableList[index + 1] = temp
+                            val newList = drawnCities.toMutableList()
+                            val temp = newList[index]
+                            newList[index] = newList[index + 1]
+                            newList[index + 1] = temp
+                            onCityOrderChanged(newList)
                         }
                     )
                 }
@@ -154,7 +157,7 @@ fun CityCard(
 @Preview(showBackground = true, widthDp = 800, heightDp = 360)
 @Composable
 fun PreviewBucketList() {
-    val testListe = listOf("Berlin", "Madrid", "London", "Wien", "Paris")
+    var testListe by remember { mutableStateOf(listOf("Berlin", "Madrid", "London", "Wien", "Paris")) }
     var nowChosen by remember { mutableStateOf<String?>("Madrid")}
     val visited = setOf("Berlin", "Paris")
 
@@ -163,6 +166,7 @@ fun PreviewBucketList() {
         isVisible = true,
         chosenCity = nowChosen,
         visitedCities = visited,
-        onCityChosen = { clickedCity -> nowChosen = clickedCity }
+        onCityChosen = { clickedCity -> nowChosen = clickedCity },
+        onCityOrderChanged = { newList -> testListe = newList }
     )
 }

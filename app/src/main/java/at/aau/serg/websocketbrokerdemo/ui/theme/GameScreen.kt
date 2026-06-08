@@ -36,6 +36,8 @@ fun GameScreen(viewModel: AppViewModel) {
     val playersList by viewModel.playersList.collectAsState()
     val currentPlayerName by viewModel.playerName.collectAsState()
     val gameMode by viewModel.gameMode.collectAsState()
+    val ownedCities by viewModel.ownedCities.collectAsState()
+    val visitedCities by viewModel.visitedCities.collectAsState()
 
     //Bilder
     val mapBitmap = loadAssetBitmap(context, "world_map_klein.png")
@@ -55,8 +57,6 @@ fun GameScreen(viewModel: AppViewModel) {
 
     var chosenCity by remember { mutableStateOf<String?>(null) }
     val visitedCities = remember { mutableSetOf<String>() }
-    //dummy Daten!
-    val testStaedte = listOf("Berlin", "Madrid", "London", "Wien", "Paris", "New York", "Sydney", "Kapstadt", "Rio de Janeiro", "Moskau", "Peking", "Kairo", "Roma")
 
 
     // Box (Schichten-Design)
@@ -139,13 +139,16 @@ fun GameScreen(viewModel: AppViewModel) {
 
     //Pop Up Bucket List
     WeltreiseBucketList(
-        drawnCities = testStaedte,
+        drawnCities = ownedCities,
         isVisible = showBucketListDialog,
         chosenCity = chosenCity,
         visitedCities = setOf("Berlin", "Paris"), //dummy Daten!
         onCityChosen = { clickedCity ->
             chosenCity = clickedCity
                        },
+        onCityOrderChanged = { neueListe ->
+            viewModel.sendNewOrderToServer(neueListe)
+        },
         onDismiss = {
             showBucketListDialog = false
         }
