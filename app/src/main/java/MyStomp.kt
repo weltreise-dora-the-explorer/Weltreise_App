@@ -33,7 +33,7 @@ class MyStomp(val callbacks: Callbacks) {
     private lateinit var client: StompClient
     private var session: StompSession? = null
 
-    /**
+    /**3
      * Defensiver Coroutine-Scope:
      *  - SupervisorJob: ein abstuerzender Topic-Flow cancelt nicht alle anderen
      *  - CoroutineExceptionHandler: unhandled Exceptions werden nur geloggt,
@@ -126,6 +126,12 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
+    private fun callbackMinigameLost(msg: String) {
+        Handler(Looper.getMainLooper()).post {
+            callbacks.onMinigameLost(msg)
+        }
+    }
+
     fun joinMultiplayerLobby(lobbyId: String, playerId: String, clientId: String? = null) {
         scope.launch {
             try {
@@ -143,6 +149,7 @@ class MyStomp(val callbacks: Callbacks) {
 
                 // 1. Subscribe to lobby events
                 subscribeLobbyEvents(lobbyId)
+                subscribePlayerEvents(lobbyId, playerId)
 
                 // 2. Warten, damit der Server das Subscribe sicher verarbeitet hat
                 delay(500)
@@ -183,6 +190,7 @@ class MyStomp(val callbacks: Callbacks) {
 
                 // 1. Subscribe to lobby events
                 subscribeLobbyEvents(lobbyId)
+                subscribePlayerEvents(lobbyId, playerId)
 
                 // 2. Warten, damit der Server das Subscribe sicher verarbeitet hat
                 delay(500)
@@ -223,6 +231,7 @@ class MyStomp(val callbacks: Callbacks) {
                 }
 
                 subscribeLobbyEvents(lobbyId)
+                subscribePlayerEvents(lobbyId, playerId)
                 delay(500)
 
                 val rejoinCommand = JSONObject()
@@ -235,6 +244,18 @@ class MyStomp(val callbacks: Callbacks) {
             } catch (e: Exception) {
                 Log.e("MyStomp", "Fehler beim Rejoin", e)
                 callback("Error: Lobby Rejoin Failed")
+            }
+        }
+    }
+
+    private suspend fun subscribePlayerEvents(lobbyId: String, playerId: String) {
+        val playerFlow = session?.subscribeText("/topic/lobby/$lobbyId/player/$playerId/events") ?: return
+        scope.launch {
+            collectSafely("player-events-$playerId") {
+                playerFlow.collect { msg ->
+                    Log.d("MyStomp", "PLAYER-EVENT received for $playerId: $msg")
+                    callbackMinigameLost(msg)
+                }
             }
         }
     }
@@ -540,6 +561,29 @@ class MyStomp(val callbacks: Callbacks) {
                 Log.d("MyStomp", "startMinigame gesendet -> $command")
             } catch (e: Exception) {
                 Log.e("MyStomp", "Fehler beim Starten des Minigames", e)
+            }
+        }
+    }
+
+    fun submitGuess(lobbyId: String, playerId: String, guess: Int) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_SUBMIT_GUESS)
+                command.put("playerId", playerId)
+                command.put("guess", guess)
+
+                if (session == null) {
+                    Log.e("MyStomp", "submitGuess ABGEBROCHEN: session ist null!")
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                Log.d("MyStomp", "submitGuess gesendet -> $command")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Fehler beim Einreichen der Schätzung", e)
             }
         }
     }

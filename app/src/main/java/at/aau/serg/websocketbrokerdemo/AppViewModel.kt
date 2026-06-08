@@ -167,6 +167,35 @@ open class AppViewModel(
     private val _playerFreePassCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val playerFreePassCounts: StateFlow<Map<String, Int>> = _playerFreePassCounts.asStateFlow()
 
+    private val _minigameSubPhase = MutableStateFlow<String?>(null)
+    val minigameSubPhase: StateFlow<String?> = _minigameSubPhase.asStateFlow()
+
+    private val _selectedMinigame = MutableStateFlow<String?>(null)
+    val selectedMinigame: StateFlow<String?> = _selectedMinigame.asStateFlow()
+
+    private val _guessQuestionText = MutableStateFlow<String?>(null)
+    val guessQuestionText: StateFlow<String?> = _guessQuestionText.asStateFlow()
+
+    private val _guessQuestionAnswer = MutableStateFlow<Int?>(null)
+    val guessQuestionAnswer: StateFlow<Int?> = _guessQuestionAnswer.asStateFlow()
+
+    private val _guessTimerEndMillis = MutableStateFlow<Long?>(null)
+    val guessTimerEndMillis: StateFlow<Long?> = _guessTimerEndMillis.asStateFlow()
+
+    private val _guessTimerDurationSeconds = MutableStateFlow<Int?>(null)
+    val guessTimerDurationSeconds: StateFlow<Int?> = _guessTimerDurationSeconds.asStateFlow()
+
+    private val _guessSubmissions = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val guessSubmissions: StateFlow<Map<String, Int>> = _guessSubmissions.asStateFlow()
+
+    private val _guessSubmissionTimes = MutableStateFlow<Map<String, Long>>(emptyMap())
+    val guessSubmissionTimes: StateFlow<Map<String, Long>> = _guessSubmissionTimes.asStateFlow()
+
+    private val _myGuessSubmitted = MutableStateFlow(false)
+    val myGuessSubmitted: StateFlow<Boolean> = _myGuessSubmitted.asStateFlow()
+
+    private var minigameStartSent = false
+
     fun loadAllCities(context: Context) {
         try {
             val json = context.assets.open("cities.json").bufferedReader().readText()
@@ -345,10 +374,16 @@ open class AppViewModel(
     }
 
     fun startMinigame() {
+        minigameStartSent = true
         stomp.startMinigame(
             lobbyId = _lobbyId.value,
             playerId = _playerName.value
         )
+    }
+
+    fun submitGuess(guess: Int) {
+        _myGuessSubmitted.value = true
+        stomp.submitGuess(_lobbyId.value, _playerName.value, guess)
     }
 
     fun announceMinigameResult(winnerPlayerId: String) {
@@ -668,6 +703,7 @@ open class AppViewModel(
 
                     // Navigation (dein bestehender Code)
                     val commandType = rootJson.optString("commandType", "")
+                    val prevPhase = _gamePhase.value
                     val phase = stateJson.optString("phase", "LOBBY")
                     _gamePhase.value = phase
 
@@ -675,13 +711,83 @@ open class AppViewModel(
                         if (stateJson.isNull("minigameWinnerPlayerId")) null
                         else stateJson.optString("minigameWinnerPlayerId").ifBlank { null }
 
-                    _minigameLostCityName.value =
-                        if (stateJson.isNull("minigameLostCityName")) null
-                        else stateJson.optString("minigameLostCityName").ifBlank { null }
 
-                    _minigameNewCityName.value =
-                        if (stateJson.isNull("minigameNewCityName")) null
-                        else stateJson.optString("minigameNewCityName").ifBlank { null }
+                    // Parse minigame sub-phase and guess-game fields
+                    val subPhase = if (stateJson.isNull("minigameSubPhase")) null
+                        else stateJson.optString("minigameSubPhase").ifBlank { null }
+
+                    if (prevPhase != GameConstants.PHASE_MINIGAME && phase == GameConstants.PHASE_MINIGAME) {
+                        minigameStartSent = false
+                        _myGuessSubmitted.value = false
+                        _minigameSubPhase.value = null
+                        _selectedMinigame.value = null
+                        _guessQuestionText.value = null
+                        _guessQuestionAnswer.value = null
+                        _guessTimerEndMillis.value = null
+                        _guessTimerDurationSeconds.value = null
+                        _guessSubmissions.value = emptyMap()
+                        _guessSubmissionTimes.value = emptyMap()
+                    }
+                    if (prevPhase == GameConstants.PHASE_MINIGAME && phase != GameConstants.PHASE_MINIGAME) {
+                        minigameStartSent = false
+                        _myGuessSubmitted.value = false
+                        _minigameSubPhase.value = null
+                        _selectedMinigame.value = null
+                        _guessQuestionText.value = null
+                        _guessQuestionAnswer.value = null
+                        _guessTimerEndMillis.value = null
+                        _guessTimerDurationSeconds.value = null
+                        _guessSubmissions.value = emptyMap()
+                        _guessSubmissionTimes.value = emptyMap()
+                    }
+                    if (subPhase == "SELECTING") {
+                        minigameStartSent = false
+                        _myGuessSubmitted.value = false
+                        _guessQuestionText.value = null
+                        _guessQuestionAnswer.value = null
+                        _guessTimerEndMillis.value = null
+                        _guessTimerDurationSeconds.value = null
+                        _guessSubmissions.value = emptyMap()
+                        _guessSubmissionTimes.value = emptyMap()
+                    }
+
+                    _minigameSubPhase.value = subPhase
+
+                    _selectedMinigame.value = if (stateJson.isNull("selectedMinigame")) null
+                        else stateJson.optString("selectedMinigame").ifBlank { null }
+
+                    _guessQuestionText.value = if (stateJson.isNull("guessQuestionText")) null
+                        else stateJson.optString("guessQuestionText").ifBlank { null }
+
+                    _guessQuestionAnswer.value = if (stateJson.isNull("guessQuestionAnswer")) null
+                        else stateJson.optInt("guessQuestionAnswer")
+
+                    _guessTimerEndMillis.value = if (stateJson.isNull("guessTimerEndMillis")) null
+                        else stateJson.optLong("guessTimerEndMillis").takeIf { it > 0L }
+
+                    _guessTimerDurationSeconds.value = if (stateJson.isNull("timerDurationSeconds")) null
+                        else stateJson.optInt("timerDurationSeconds").takeIf { it > 0 }
+
+                    val submissionsJson = stateJson.optJSONObject("guessSubmissions")
+                    if (submissionsJson != null) {
+                        val submissions = mutableMapOf<String, Int>()
+                        submissionsJson.keys().forEach { key -> submissions[key] = submissionsJson.optInt(key) }
+                        _guessSubmissions.value = submissions
+                        val times = _guessSubmissionTimes.value.toMutableMap()
+                        val now = System.currentTimeMillis()
+                        submissions.keys.forEach { key -> if (key !in times) times[key] = now }
+                        _guessSubmissionTimes.value = times
+                    } else {
+                        _guessSubmissions.value = emptyMap()
+                    }
+
+                    // Auto-trigger startMinigame for the current turn player on first MINIGAME entry
+                    if (phase == GameConstants.PHASE_MINIGAME && subPhase == null && !minigameStartSent) {
+                        if (newCurrentPlayerId == _playerName.value) {
+                            minigameStartSent = true
+                            startMinigame()
+                        }
+                    }
 
                     if (commandType == GameConstants.COMMAND_REPORT_CHEAT) {
                         val target = pendingReportTarget
@@ -756,6 +862,16 @@ open class AppViewModel(
             )
         } catch (e: Exception) {
             Log.e("AppViewModel", "Failed to parse goal-reached", e)
+        }
+    }
+
+    override fun onMinigameLost(res: String) {
+        try {
+            val json = JSONObject(res)
+            _minigameLostCityName.value = json.optString("lostCityName").ifBlank { null }
+            _minigameNewCityName.value = json.optString("newCityName").ifBlank { null }
+        } catch (e: Exception) {
+            Log.e("AppViewModel", "Failed to parse minigame-lost", e)
         }
     }
 
