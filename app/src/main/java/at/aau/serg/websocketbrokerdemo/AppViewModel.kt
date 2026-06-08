@@ -88,6 +88,9 @@ open class AppViewModel(
     private val _reactionRoundEndsAtMs = MutableStateFlow<Long?>(null)
     val reactionRoundEndsAtMs: StateFlow<Long?> = _reactionRoundEndsAtMs.asStateFlow()
 
+    private val _serverNowMs = MutableStateFlow<Long?>(null)
+    val serverNowMs: StateFlow<Long?> = _serverNowMs.asStateFlow()
+
     private val _reactionPressTimesMs = MutableStateFlow<Map<String, Long>>(emptyMap())
     val reactionPressTimesMs: StateFlow<Map<String, Long>> = _reactionPressTimesMs.asStateFlow()
 
@@ -643,6 +646,10 @@ open class AppViewModel(
                     _reactionRoundEndsAtMs.value =
                         if (stateJson.isNull("reactionRoundEndsAtMs")) null
                         else stateJson.optLong("reactionRoundEndsAtMs")
+
+                    _serverNowMs.value =
+                        if (stateJson.isNull("serverNowMs")) null
+                        else stateJson.optLong("serverNowMs")
 
                     val pressTimesObject = stateJson.optJSONObject("reactionPressTimesMs")
                     val pressTimes = mutableMapOf<String, Long>()

@@ -38,6 +38,7 @@ fun ReactionMinigame(
     reactionPressTimesMs: Map<String, Long>,
     reactionButtonVisibleAtMs: Long?,
     reactionRoundEndsAtMs: Long?,
+    serverNowMs: Long?,
     minigameWinnerPlayerId: String?,
     onReactionReady: () -> Unit,
     onReactionPress: () -> Unit,
@@ -46,6 +47,17 @@ fun ReactionMinigame(
     var currentScreen by remember { mutableStateOf(ReactionScreenState.READY) }
     var countdownValue by remember { mutableStateOf(3) }
     var reactionButtonVisible by remember { mutableStateOf(false) }
+
+    val serverTimeOffsetMs =
+        if (serverNowMs != null) {
+            serverNowMs - System.currentTimeMillis()
+        } else {
+            0L
+        }
+
+    fun correctedNowMs(): Long {
+        return System.currentTimeMillis() + serverTimeOffsetMs
+    }
 
     val players = remember(playerNames, playerAvatars) {
         mutableStateMapOf<String, ReactionPlayerUiState>().apply {
@@ -90,12 +102,29 @@ fun ReactionMinigame(
     }
 
     LaunchedEffect(reactionStartTimeMs) {
-        if (reactionStartTimeMs != null && currentScreen == ReactionScreenState.READY) {
-            currentScreen = ReactionScreenState.COUNTDOWN
+        reactionButtonVisible = false
+
+        if (reactionStartTimeMs == null) {
+            currentScreen = ReactionScreenState.READY
+            countdownValue = 3
+            return@LaunchedEffect
         }
+
+        currentScreen = ReactionScreenState.COUNTDOWN
+
+        countdownValue = 3
+        delay(1000L)
+
+        countdownValue = 2
+        delay(1000L)
+
+        countdownValue = 1
+        delay(1000L)
+
+        currentScreen = ReactionScreenState.REACTION
     }
 
-    LaunchedEffect(reactionPressTimesMs) {
+    LaunchedEffect(reactionPressTimesMs, minigameWinnerPlayerId) {
         playerNames.forEach { playerName ->
             players[playerName]?.let { player ->
                 val serverReactionTime = reactionPressTimesMs[playerName]
@@ -113,35 +142,32 @@ fun ReactionMinigame(
                         reactionPressTimesMs.containsKey(playerName)
                     }
 
-        if (allPlayersPressed && currentScreen == ReactionScreenState.REACTION) {
+        if (
+            (allPlayersPressed || minigameWinnerPlayerId != null) &&
+            currentScreen != ReactionScreenState.ROUND_ENDED &&
+            currentScreen != ReactionScreenState.RESULT
+        ) {
             currentScreen = ReactionScreenState.ROUND_ENDED
         }
     }
 
-    LaunchedEffect(currentScreen) {
-        if (currentScreen == ReactionScreenState.COUNTDOWN) {
-            countdownValue = 3
-            delay(800)
-            countdownValue = 2
-            delay(800)
-            countdownValue = 1
-            delay(800)
-            currentScreen = ReactionScreenState.REACTION
+    LaunchedEffect(reactionButtonVisibleAtMs) {
+        reactionButtonVisible = false
+
+        val visibleAtMs = reactionButtonVisibleAtMs ?: return@LaunchedEffect
+
+        val currentServerTimeMs = correctedNowMs()
+        val delayMs = visibleAtMs - currentServerTimeMs + 250L
+
+        if (delayMs > 0) {
+            delay(delayMs)
         }
-    }
 
-    LaunchedEffect(reactionButtonVisibleAtMs, currentScreen) {
         if (
-            currentScreen == ReactionScreenState.REACTION &&
-            reactionButtonVisibleAtMs != null
+            currentScreen != ReactionScreenState.ROUND_ENDED &&
+            currentScreen != ReactionScreenState.RESULT
         ) {
-            val delayMs =
-                reactionButtonVisibleAtMs - System.currentTimeMillis()
-
-            if (delayMs > 0) {
-                delay(delayMs)
-            }
-
+            currentScreen = ReactionScreenState.REACTION
             reactionButtonVisible = true
         }
     }
