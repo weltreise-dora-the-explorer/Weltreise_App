@@ -29,10 +29,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -69,6 +71,15 @@ fun MinigameFlagRound(
 ) {
     val isReveal = subPhase == "ROUND_REVEAL"
     val correctIndex = remember(correctName, options) { options.indexOf(correctName) }
+    val configuration = LocalConfiguration.current
+    val sizeScale = remember(configuration.screenHeightDp) {
+        when {
+            configuration.screenHeightDp < 600 -> 0.72f
+            configuration.screenHeightDp < 680 -> 0.82f
+            configuration.screenHeightDp < 760 -> 0.92f
+            else -> 1f
+        }
+    }
 
     // Lokale Auswahl: sperrt die Kacheln sofort (vor dem Server-Echo). Reset je Runde.
     var localPick by remember(roundIndex) { mutableStateOf<Int?>(null) }
@@ -76,7 +87,7 @@ fun MinigameFlagRound(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(300.dp)
+        modifier = Modifier.width(300.dp.scaled(sizeScale))
     ) {
         // Kopfzeile: Runde + eigener Punktestand
         Row(
@@ -98,11 +109,11 @@ fun MinigameFlagRound(
             )
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(14.dp.scaled(sizeScale)))
 
-        FlagImage(flagCode)
+        FlagImage(flagCode, sizeScale)
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(14.dp.scaled(sizeScale)))
 
         if (isReveal) {
             RevealFeedback(answered = effectivePick != null, correct = effectivePick == correctIndex)
@@ -110,7 +121,7 @@ fun MinigameFlagRound(
             FlagCountdown(timerEndMillis, timerDurationSeconds)
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(14.dp.scaled(sizeScale)))
 
         val selectable = !isReveal && effectivePick == null
         for (row in 0..1) {
@@ -121,6 +132,7 @@ fun MinigameFlagRound(
                         FlagOptionTile(
                             modifier = Modifier.weight(1f),
                             text = options[index],
+                            sizeScale = sizeScale,
                             baseColor = FlagOptionColors[index % FlagOptionColors.size],
                             isReveal = isReveal,
                             isCorrect = isReveal && index == correctIndex,
@@ -139,7 +151,7 @@ fun MinigameFlagRound(
         }
 
         if (isReveal) {
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp.scaled(sizeScale)))
             Text(
                 text = "Next flag…",
                 color = Color.LightGray,
@@ -150,17 +162,17 @@ fun MinigameFlagRound(
 }
 
 @Composable
-private fun FlagImage(flagCode: String?) {
+private fun FlagImage(flagCode: String?, sizeScale: Float) {
     val context = LocalContext.current
     val bitmap = remember(flagCode) { flagCode?.let { loadAssetBitmap(context, "flags/$it.png") } }
 
     Box(
         modifier = Modifier
-            .width(220.dp)
-            .height(140.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .width(220.dp.scaled(sizeScale))
+            .height(140.dp.scaled(sizeScale))
+            .clip(RoundedCornerShape(12.dp.scaled(sizeScale)))
             .background(Color(0xFF263238))
-            .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(12.dp)),
+            .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(12.dp.scaled(sizeScale))),
         contentAlignment = Alignment.Center
     ) {
         if (bitmap != null) {
@@ -229,6 +241,7 @@ private fun RevealFeedback(answered: Boolean, correct: Boolean) {
 private fun FlagOptionTile(
     modifier: Modifier,
     text: String,
+    sizeScale: Float,
     baseColor: Color,
     isReveal: Boolean,
     isCorrect: Boolean,
@@ -246,13 +259,13 @@ private fun FlagOptionTile(
 
     Box(
         modifier = modifier
-            .padding(5.dp)
-            .height(62.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .padding(5.dp.scaled(sizeScale))
+            .height(62.dp.scaled(sizeScale))
+            .clip(RoundedCornerShape(14.dp.scaled(sizeScale)))
             .background(background)
-            .then(if (border != null) Modifier.border(border, RoundedCornerShape(14.dp)) else Modifier)
+            .then(if (border != null) Modifier.border(border, RoundedCornerShape(14.dp.scaled(sizeScale))) else Modifier)
             .clickable(enabled = enabled) { onClick() }
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = 8.dp.scaled(sizeScale)),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -265,6 +278,8 @@ private fun FlagOptionTile(
         )
     }
 }
+
+private fun Dp.scaled(scale: Float): Dp = this * scale
 
 @Preview
 @Composable

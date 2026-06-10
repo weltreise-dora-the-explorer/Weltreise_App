@@ -74,12 +74,15 @@ fun MinigameOverlay(
     val isFlagGame = selectedMinigame == "FLAG_GAME"
     // RESULT-Guard (nur Schätzspiel wartet auf guessQuestionAnswer; Flaggenspiel hat keinen)
     val effectiveSubPhase = if (displayedSubPhase == "RESULT" && !isFlagGame && guessQuestionAnswer == null) null else displayedSubPhase
+    val overlayMinWidth = if (isFlagGame) 280.dp else 320.dp
+    val overlayHorizontalPadding = if (isFlagGame) 20.dp else 32.dp
+    val overlayVerticalPadding = if (isFlagGame) 14.dp else 20.dp
 
     Box(
         modifier = Modifier
-            .widthIn(min = 320.dp)
+            .widthIn(min = overlayMinWidth)
             .background(Color(0xDD000000), RoundedCornerShape(20.dp))
-            .padding(horizontal = 32.dp, vertical = 20.dp),
+            .padding(horizontal = overlayHorizontalPadding, vertical = overlayVerticalPadding),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
