@@ -25,6 +25,8 @@ data class NewDestinationMessage(
     val newCityName: String
 )
 
+enum class ReportFeedback { HIT, MISS }
+
 open class AppViewModel(
     stompInstance: MyStomp? = null,
     private val prefs: PreferencesHelper? = null
@@ -66,6 +68,12 @@ open class AppViewModel(
 
     private val _currentTurnPlayerId = MutableStateFlow<String?>(null)
     val currentTurnPlayerId: StateFlow<String?> = _currentTurnPlayerId.asStateFlow()
+
+    // Letzter Spieler, der gewuerfelt hat. Bleibt ueber den Zugwechsel hinweg melde-bar,
+    // bis ein anderer Spieler wuerfelt – passend zum Report-Fenster des Servers, das sich
+    // ebenfalls erst beim naechsten Wurf schliesst (nicht beim Zugwechsel).
+    private val _reportablePlayerId = MutableStateFlow<String?>(null)
+    val reportablePlayerId: StateFlow<String?> = _reportablePlayerId.asStateFlow()
 
     private val _gamePhase = MutableStateFlow("LOBBY")
     val gamePhase: StateFlow<String> = _gamePhase.asStateFlow()
@@ -150,6 +158,21 @@ open class AppViewModel(
     private val _disconnectedPlayers = MutableStateFlow<Set<String>>(emptySet())
     val disconnectedPlayers: StateFlow<Set<String>> = _disconnectedPlayers.asStateFlow()
 
+    private val _mustSkipPlayers = MutableStateFlow<Set<String>>(emptySet())
+    val mustSkipPlayers: StateFlow<Set<String>> = _mustSkipPlayers.asStateFlow()
+
+    private val _lastReportFeedback = MutableStateFlow<ReportFeedback?>(null)
+    val lastReportFeedback: StateFlow<ReportFeedback?> = _lastReportFeedback.asStateFlow()
+
+    // Kurzlebiger "skip turn"-Hinweis fuer eine Falschmeldung im eigenen Zug: dort verlieren
+    // wir sofort den laufenden Zug, ohne dass der Server ein mustSkipNextTurn-Flag setzt – das
+    // persistente Label haette also keine Datenquelle. Dieser Wert blendet das Label kurz ein.
+    private val _transientSkipPlayerId = MutableStateFlow<String?>(null)
+    val transientSkipPlayerId: StateFlow<String?> = _transientSkipPlayerId.asStateFlow()
+    private var transientSkipJob: Job? = null
+
+    private var pendingReportTarget: String? = null
+
     private val _secondsUntilRemoval = MutableStateFlow<Map<String, Int>>(emptyMap())
     val secondsUntilRemoval: StateFlow<Map<String, Int>> = _secondsUntilRemoval.asStateFlow()
 
@@ -164,6 +187,35 @@ open class AppViewModel(
 
     private val _playerFreePassCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val playerFreePassCounts: StateFlow<Map<String, Int>> = _playerFreePassCounts.asStateFlow()
+
+    private val _minigameSubPhase = MutableStateFlow<String?>(null)
+    val minigameSubPhase: StateFlow<String?> = _minigameSubPhase.asStateFlow()
+
+    private val _selectedMinigame = MutableStateFlow<String?>(null)
+    val selectedMinigame: StateFlow<String?> = _selectedMinigame.asStateFlow()
+
+    private val _guessQuestionText = MutableStateFlow<String?>(null)
+    val guessQuestionText: StateFlow<String?> = _guessQuestionText.asStateFlow()
+
+    private val _guessQuestionAnswer = MutableStateFlow<Int?>(null)
+    val guessQuestionAnswer: StateFlow<Int?> = _guessQuestionAnswer.asStateFlow()
+
+    private val _guessTimerEndMillis = MutableStateFlow<Long?>(null)
+    val guessTimerEndMillis: StateFlow<Long?> = _guessTimerEndMillis.asStateFlow()
+
+    private val _guessTimerDurationSeconds = MutableStateFlow<Int?>(null)
+    val guessTimerDurationSeconds: StateFlow<Int?> = _guessTimerDurationSeconds.asStateFlow()
+
+    private val _guessSubmissions = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val guessSubmissions: StateFlow<Map<String, Int>> = _guessSubmissions.asStateFlow()
+
+    private val _guessSubmissionTimes = MutableStateFlow<Map<String, Long>>(emptyMap())
+    val guessSubmissionTimes: StateFlow<Map<String, Long>> = _guessSubmissionTimes.asStateFlow()
+
+    private val _myGuessSubmitted = MutableStateFlow(false)
+    val myGuessSubmitted: StateFlow<Boolean> = _myGuessSubmitted.asStateFlow()
+
+    private var minigameStartSent = false
 
     fun loadAllCities(context: Context) {
         try {
@@ -273,7 +325,7 @@ open class AppViewModel(
             "Epic Voyage" -> 12
             else -> 9
         }
-        stomp.startGameCmd(_lobbyId.value, stops)
+        stomp.startGameCmd(_lobbyId.value, _playerName.value, stops)
     }
 
     fun onRollDice() {
@@ -311,11 +363,48 @@ open class AppViewModel(
         )
     }
 
+    fun onShakeCheat() {
+        Log.d("ShakeCheat", "phase=${_gamePhase.value} player=${_currentTurnPlayerId.value} me=${_playerName.value} steps=${_remainingSteps.value}")
+        if (_gamePhase.value != "IN_TURN") return
+        if (_currentTurnPlayerId.value != _playerName.value) return
+        if (_remainingSteps.value != 1) return
+        stomp.useShakeCheat(_lobbyId.value, _playerName.value)
+    }
+
+    fun reportCheat(reportedPlayerId: String) {
+        if (_gamePhase.value == "LOBBY") return
+        if (reportedPlayerId.isBlank()) return
+        if (reportedPlayerId == _playerName.value) return
+        if (reportedPlayerId !in _playersList.value) return
+        pendingReportTarget = reportedPlayerId
+        stomp.reportCheat(_lobbyId.value, _playerName.value, reportedPlayerId)
+    }
+
+    fun consumeReportFeedback() {
+        _lastReportFeedback.value = null
+    }
+
+    private fun showTransientSelfSkip(playerId: String) {
+        if (playerId.isBlank()) return
+        transientSkipJob?.cancel()
+        _transientSkipPlayerId.value = playerId
+        transientSkipJob = viewModelScope.launch {
+            delay(2500L)
+            _transientSkipPlayerId.value = null
+        }
+    }
+
     fun startMinigame() {
+        minigameStartSent = true
         stomp.startMinigame(
             lobbyId = _lobbyId.value,
             playerId = _playerName.value
         )
+    }
+
+    fun submitGuess(guess: Int) {
+        _myGuessSubmitted.value = true
+        stomp.submitGuess(_lobbyId.value, _playerName.value, guess)
     }
 
     fun announceMinigameResult(winnerPlayerId: String) {
@@ -353,6 +442,9 @@ open class AppViewModel(
             _playerCurrentCities.value = emptyMap()
             _diceValue.value = null
             _currentTurnPlayerId.value = null
+            _reportablePlayerId.value = null
+            transientSkipJob?.cancel()
+            _transientSkipPlayerId.value = null
             _validMoveIds.value = emptyList()
             _remainingSteps.value = null
             _freePassCount.value = 0
@@ -391,9 +483,13 @@ open class AppViewModel(
         _playerCurrentCities.value = emptyMap()
         _diceValue.value = null
         _currentTurnPlayerId.value = null
+        _reportablePlayerId.value = null
+        transientSkipJob?.cancel()
+        _transientSkipPlayerId.value = null
         _validMoveIds.value = emptyList()
         _remainingSteps.value = null
         _freePassCount.value = 0
+        _mustSkipPlayers.value = emptySet()
         clearDisconnectStates()
         navigateTo("login")
     }
@@ -440,13 +536,28 @@ open class AppViewModel(
                 // Prüfe success-Flag für Error-Handling
                 if (rootJson.has("success") && !rootJson.getBoolean("success")) {
                     val errorMsg = rootJson.optString("message", "Unbekannter Fehler")
+                    val failedCommandType = rootJson.optString("commandType")
+
+                    // Versteckter Shake-Cheat: Fehler nicht im UI anzeigen,
+                    // damit Mitspieler / der Spieler selbst nichts vom Versuch sieht.
+                    if (failedCommandType == GameConstants.COMMAND_USE_SHAKE_CHEAT) {
+                        Log.d("AppViewModel", "Shake-Cheat abgelehnt: $errorMsg")
+                        return
+                    }
+
+                    // Report-Cheat-Fehler: pendingReportTarget aufraeumen, sonst
+                    // koennte ein spaeterer fremder Report fälschlich als unser Feedback gewertet werden.
+                    if (failedCommandType == GameConstants.COMMAND_REPORT_CHEAT) {
+                        pendingReportTarget = null
+                    }
+
                     _errorMessage.value = errorMsg
                     Log.e("CityTap", "Server-Fehler nach MOVE_TO_CITY: $errorMsg")
                     Log.e("AppViewModel", "Server-Fehler: $errorMsg")
 
                     // REJOIN fehlgeschlagen (z.B. nach Grace Period Timeout)
                     // → lobbyId aus Prefs loeschen und zurueck zum Login
-                    if (rootJson.optString("commandType") == "REJOIN_LOBBY") {
+                    if (failedCommandType == "REJOIN_LOBBY") {
                         prefs?.clearLobbyId()
                         _lobbyId.value = ""
                         clearDisconnectStates()
@@ -473,6 +584,7 @@ open class AppViewModel(
                         val freePassCountsMap = mutableMapOf<String, Int>()
                         val startCityNamesMap = _playerStartCityNames.value.toMutableMap()
                         val disconnectedNow = mutableSetOf<String>()
+                        val mustSkipNow = mutableSetOf<String>()
 
                         for (i in 0 until playersArray.length()) {
                             val playerObj = playersArray.getJSONObject(i)
@@ -482,9 +594,17 @@ open class AppViewModel(
                             if(pId == _playerName.value){
                                 _freePassCount.value = playerObj.optInt("freePassCount", 0)
                             }
+                            if (pId == stateJson.optString("currentPlayerId")) {
+                                val playerRs = playerObj.optInt("remainingSteps", -1)
+                                if (playerRs >= 0) _remainingSteps.value = playerRs
+                            }
 
                             if (playerObj.has("connected") && !playerObj.getBoolean("connected")) {
                                 disconnectedNow.add(pId)
+                            }
+
+                            if (playerObj.optBoolean("mustSkipNextTurn", false)) {
+                                mustSkipNow.add(pId)
                             }
 
                             if (playerObj.has("currentCity") && !playerObj.isNull("currentCity")) {
@@ -577,6 +697,7 @@ open class AppViewModel(
                         _playerCurrentCities.value = currentCitiesMap
                         _playerFreePassCounts.value = freePassCountsMap
                         _optimisticPlayerCity.value = null
+                        _mustSkipPlayers.value = mustSkipNow
                         applyConnectionStatus(disconnectedNow)
                     }
 
@@ -585,6 +706,15 @@ open class AppViewModel(
                     val newCurrentPlayerId = stateJson.optString("currentPlayerId").ifEmpty { null }
                     val isTurnChange = newCurrentPlayerId != _currentTurnPlayerId.value
                     _currentTurnPlayerId.value = newCurrentPlayerId
+                    if (isTurnChange) _remainingSteps.value = null
+
+                    // Melde-bar bleibt der letzte Wuerfler: nur bei einem tatsaechlichen Wurf
+                    // (diceValue != null) wechselt das Ziel auf den aktuellen Spieler. Bei reinem
+                    // Zugwechsel (diceValue == null, naechster Spieler noch nicht gewuerfelt) bleibt
+                    // der bisherige Wuerfler melde-bar.
+                    if (_diceValue.value != null && newCurrentPlayerId != null) {
+                        _reportablePlayerId.value = newCurrentPlayerId
+                    }
 
                     val validIds = mutableListOf<String>()
                     if (!isTurnChange && newCurrentPlayerId == _playerName.value) {
@@ -595,8 +725,9 @@ open class AppViewModel(
                     }
                     _validMoveIds.value = validIds
 
-                    val rs = stateJson.optInt("remainingSteps", -1)
-                    _remainingSteps.value = if (rs >= 0) rs else null
+                    if (stateJson.has("remainingSteps") && !stateJson.isNull("remainingSteps")) {
+                        _remainingSteps.value = stateJson.getInt("remainingSteps")
+                    }
 
                     // hostId aus dem State lesen — fuer Auto-Rejoin (wir wissen sonst nicht
                     // ob der zurueckkehrende Spieler Host war).
@@ -607,6 +738,7 @@ open class AppViewModel(
 
                     // Navigation (dein bestehender Code)
                     val commandType = rootJson.optString("commandType", "")
+                    val prevPhase = _gamePhase.value
                     val phase = stateJson.optString("phase", "LOBBY")
                     _gamePhase.value = phase
 
@@ -614,13 +746,104 @@ open class AppViewModel(
                         if (stateJson.isNull("minigameWinnerPlayerId")) null
                         else stateJson.optString("minigameWinnerPlayerId").ifBlank { null }
 
-                    _minigameLostCityName.value =
-                        if (stateJson.isNull("minigameLostCityName")) null
-                        else stateJson.optString("minigameLostCityName").ifBlank { null }
 
-                    _minigameNewCityName.value =
-                        if (stateJson.isNull("minigameNewCityName")) null
-                        else stateJson.optString("minigameNewCityName").ifBlank { null }
+                    // Parse minigame sub-phase and guess-game fields
+                    val subPhase = if (stateJson.isNull("minigameSubPhase")) null
+                        else stateJson.optString("minigameSubPhase").ifBlank { null }
+
+                    if (prevPhase != GameConstants.PHASE_MINIGAME && phase == GameConstants.PHASE_MINIGAME) {
+                        minigameStartSent = false
+                        _myGuessSubmitted.value = false
+                        _minigameSubPhase.value = null
+                        _selectedMinigame.value = null
+                        _guessQuestionText.value = null
+                        _guessQuestionAnswer.value = null
+                        _guessTimerEndMillis.value = null
+                        _guessTimerDurationSeconds.value = null
+                        _guessSubmissions.value = emptyMap()
+                        _guessSubmissionTimes.value = emptyMap()
+                    }
+                    if (prevPhase == GameConstants.PHASE_MINIGAME && phase != GameConstants.PHASE_MINIGAME) {
+                        minigameStartSent = false
+                        _myGuessSubmitted.value = false
+                        _minigameSubPhase.value = null
+                        _selectedMinigame.value = null
+                        _guessQuestionText.value = null
+                        _guessQuestionAnswer.value = null
+                        _guessTimerEndMillis.value = null
+                        _guessTimerDurationSeconds.value = null
+                        _guessSubmissions.value = emptyMap()
+                        _guessSubmissionTimes.value = emptyMap()
+                    }
+                    if (subPhase == "SELECTING") {
+                        minigameStartSent = false
+                        _myGuessSubmitted.value = false
+                        _guessQuestionText.value = null
+                        _guessQuestionAnswer.value = null
+                        _guessTimerEndMillis.value = null
+                        _guessTimerDurationSeconds.value = null
+                        _guessSubmissions.value = emptyMap()
+                        _guessSubmissionTimes.value = emptyMap()
+                    }
+
+                    _minigameSubPhase.value = subPhase
+
+                    _selectedMinigame.value = if (stateJson.isNull("selectedMinigame")) null
+                        else stateJson.optString("selectedMinigame").ifBlank { null }
+
+                    _guessQuestionText.value = if (stateJson.isNull("guessQuestionText")) null
+                        else stateJson.optString("guessQuestionText").ifBlank { null }
+
+                    _guessQuestionAnswer.value = if (stateJson.isNull("guessQuestionAnswer")) null
+                        else stateJson.optInt("guessQuestionAnswer")
+
+                    _guessTimerEndMillis.value = if (stateJson.isNull("guessTimerEndMillis")) null
+                        else stateJson.optLong("guessTimerEndMillis").takeIf { it > 0L }
+
+                    _guessTimerDurationSeconds.value = if (stateJson.isNull("timerDurationSeconds")) null
+                        else stateJson.optInt("timerDurationSeconds").takeIf { it > 0 }
+
+                    val submissionsJson = stateJson.optJSONObject("guessSubmissions")
+                    if (submissionsJson != null) {
+                        val submissions = mutableMapOf<String, Int>()
+                        submissionsJson.keys().forEach { key -> submissions[key] = submissionsJson.optInt(key) }
+                        _guessSubmissions.value = submissions
+                        val times = _guessSubmissionTimes.value.toMutableMap()
+                        val now = System.currentTimeMillis()
+                        submissions.keys.forEach { key -> if (key !in times) times[key] = now }
+                        _guessSubmissionTimes.value = times
+                    } else {
+                        _guessSubmissions.value = emptyMap()
+                    }
+
+                    // Auto-trigger startMinigame for the current turn player on first MINIGAME entry
+                    if (phase == GameConstants.PHASE_MINIGAME && subPhase == null && !minigameStartSent) {
+                        if (newCurrentPlayerId == _playerName.value) {
+                            minigameStartSent = true
+                            startMinigame()
+                        }
+                    }
+
+                    if (commandType == GameConstants.COMMAND_REPORT_CHEAT) {
+                        val target = pendingReportTarget
+                        if (target != null) {
+                            // Ein angenommener Report ist ein Treffer, wenn der Gemeldete jetzt
+                            // aussetzen muss – sonst war es eine Falschmeldung. Nicht am eigenen
+                            // mustSkip-Flag festmachen: bei einer Falschmeldung waehrend des eigenen
+                            // Zugs verlieren wir stattdessen sofort den laufenden Zug (kein Flag).
+                            val skipSet = _mustSkipPlayers.value
+                            val feedback = if (target in skipSet) ReportFeedback.HIT else ReportFeedback.MISS
+                            _lastReportFeedback.value = feedback
+                            // MISS, aber wir tragen kein mustSkip-Flag -> der Server hat unseren
+                            // laufenden Zug ausgesetzt (Falschmeldung im eigenen Zug). Das
+                            // persistente "skip turn"-Label hat hier keine Quelle, also kurz
+                            // selbst einblenden.
+                            if (feedback == ReportFeedback.MISS && _playerName.value !in skipSet) {
+                                showTransientSelfSkip(_playerName.value)
+                            }
+                            pendingReportTarget = null
+                        }
+                    }
 
                     val readyArray = stateJson.optJSONArray("reactionReadyPlayerIds")
                     val readyIds = mutableListOf<String>()
@@ -714,6 +937,16 @@ open class AppViewModel(
             )
         } catch (e: Exception) {
             Log.e("AppViewModel", "Failed to parse goal-reached", e)
+        }
+    }
+
+    override fun onMinigameLost(res: String) {
+        try {
+            val json = JSONObject(res)
+            _minigameLostCityName.value = json.optString("lostCityName").ifBlank { null }
+            _minigameNewCityName.value = json.optString("newCityName").ifBlank { null }
+        } catch (e: Exception) {
+            Log.e("AppViewModel", "Failed to parse minigame-lost", e)
         }
     }
 

@@ -108,6 +108,11 @@ fun GameRulesButton(modifier: Modifier = Modifier) {
                         )
 
                         ExpandableRule(
+                            title = stringResource(R.string.rule_cheat_title),
+                            content = stringResource(R.string.rule_cheat_content)
+                        )
+
+                        ExpandableRule(
                             title = stringResource(R.string.rule_end_title),
                             content = stringResource(R.string.rule_end_content)
                         )

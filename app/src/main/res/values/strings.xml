@@ -24,6 +24,9 @@
     <string name="rule_minigame_title">🧩 Minigames</string>
     <string name="rule_minigame_content">Each destination city has a minigame. Winning completes it, losing replaces it with a new one.</string>
 
+    <string name="rule_cheat_title">🤫 Cheating &amp; Reporting</string>
+    <string name="rule_cheat_content">If you have exactly 1 movement point left, you can secretly shake your phone to gain an extra step. But watch out: every player can report a suspected cheater. A correct report makes the cheater skip their next turn — a false accusation costs you your own next turn instead.</string>
+
     <string name="rule_end_title">🏁 End of the Game</string>
     <string name="rule_end_content">After completing all destinations, return to your starting city. The first player to do so wins.</string>
 
