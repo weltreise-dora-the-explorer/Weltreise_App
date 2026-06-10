@@ -177,6 +177,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val flagOptions by viewModel.flagOptions.collectAsState()
     val flagCorrectName by viewModel.flagCorrectName.collectAsState()
     val flagScores by viewModel.flagScores.collectAsState()
+    val flagTotalTimeMs by viewModel.flagTotalTimeMs.collectAsState()
 
 
     // Hintergrundmusik – läuft solange GameScreen aktiv ist
@@ -366,7 +367,8 @@ fun GameScreen(viewModel: AppViewModel) {
                     flagCode = flagCode,
                     flagOptions = flagOptions,
                     flagCorrectName = flagCorrectName,
-                    flagScores = flagScores
+                    flagScores = flagScores,
+                    flagTotalTimeMs = flagTotalTimeMs
                 )
             }
         }

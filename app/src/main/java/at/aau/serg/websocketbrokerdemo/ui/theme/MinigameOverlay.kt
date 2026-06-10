@@ -61,7 +61,8 @@ fun MinigameOverlay(
     flagCode: String?,
     flagOptions: List<String>,
     flagCorrectName: String?,
-    flagScores: Map<String, Int>
+    flagScores: Map<String, Int>,
+    flagTotalTimeMs: Map<String, Long>
 ) {
     val allPlayers = listOf(targetPlayerName) + opponentPlayerNames
 
@@ -127,6 +128,7 @@ fun MinigameOverlay(
                     MinigameFlagResultScreen(
                         winnerPlayerId = announcedWinnerPlayerId,
                         flagScores = flagScores,
+                        flagTotalTimeMs = flagTotalTimeMs,
                         allPlayers = allPlayers,
                         canFinishMinigame = canFinishMinigame,
                         onFinishMinigame = onFinishMinigame
@@ -494,15 +496,22 @@ private fun MinigameResultScreen(
     }
 }
 
+private fun formatFlagTime(ms: Long?): String =
+    if (ms == null || ms <= 0L) "—" else "%.1fs".format(ms / 1000.0)
+
 @Composable
 private fun MinigameFlagResultScreen(
     winnerPlayerId: String?,
     flagScores: Map<String, Int>,
+    flagTotalTimeMs: Map<String, Long>,
     allPlayers: List<String>,
     canFinishMinigame: Boolean,
     onFinishMinigame: (String) -> Unit
 ) {
-    val ranked = allPlayers.sortedByDescending { flagScores[it] ?: 0 }
+    val ranked = allPlayers.sortedWith(
+        compareByDescending<String> { flagScores[it] ?: 0 }
+            .thenBy { flagTotalTimeMs[it] ?: Long.MAX_VALUE }
+    )
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -538,6 +547,12 @@ private fun MinigameFlagResultScreen(
                     color = if (isWinner) Color(0xFFD4AF37) else Color.White,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "⏱ ${formatFlagTime(flagTotalTimeMs[playerId])}",
+                    color = Color.LightGray,
+                    fontSize = 12.sp
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
