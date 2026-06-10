@@ -1,36 +1,52 @@
 package at.aau.serg.websocketbrokerdemo.ui.theme
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 
@@ -108,7 +124,9 @@ fun MinigameOverlay(
                         timerEndMillis = guessTimerEndMillis,
                         timerDurationSeconds = guessTimerDurationSeconds,
                         guessSubmissions = guessSubmissions,
+                        guessSubmissionTimes = guessSubmissionTimes,
                         allPlayers = allPlayers,
+                        playerAvatars = listOf(targetPlayerAvatar) + opponentPlayerAvatars,
                         myGuessSubmitted = myGuessSubmitted,
                         myPlayerId = myPlayerId,
                         onSubmitGuess = onSubmitGuess
@@ -262,34 +280,176 @@ private fun MinigameSelectingScreen(selectedMinigame: String?) {
     }
 }
 
+// --- Variant B "Timer Ring" design helpers --------------------------------
+
+private val GuessAmber = Color(0xFFF5C451)
+private val GuessAmberUrgent = Color(0xFFF58F6F)
+private val GuessGreen = Color(0xFF73D08A)
+private val GuessWhite65 = Color(0xA8FFFFFF)
+private val GuessWhite40 = Color(0x66FFFFFF)
+private val GuessPlayerColors = listOf(
+    Color(0xFF73D08A), Color(0xFF6FB7E8), Color(0xFFF5A65B), Color(0xFFC79BEA)
+)
+
+@Composable
+private fun GuessTimerRing(
+    frac: Float,
+    urgent: Boolean,
+    ringSize: Dp = 200.dp,
+    content: @Composable () -> Unit
+) {
+    val ringColor by animateColorAsState(
+        targetValue = if (urgent) GuessAmberUrgent else GuessAmber,
+        animationSpec = tween(300),
+        label = "ringColor"
+    )
+    // Source already updates every 50 ms — no extra animation needed
+    val safeFrac = frac.coerceIn(0f, 1f)
+
+    Box(modifier = Modifier.size(ringSize), contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokePx = 9.dp.toPx()
+            val inset = strokePx / 2f
+            val arcTL = Offset(inset, inset)
+            val arcSz = Size(size.width - strokePx, size.height - strokePx)
+
+            // Track ring
+            drawArc(
+                color = Color(0x1AFFFFFF),
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = arcTL,
+                size = arcSz,
+                style = Stroke(width = strokePx, cap = StrokeCap.Round)
+            )
+            // Glow pass (half the original width)
+            if (safeFrac > 0.01f) {
+                drawArc(
+                    color = ringColor.copy(alpha = 0.20f),
+                    startAngle = -90f,
+                    sweepAngle = 360f * safeFrac,
+                    useCenter = false,
+                    topLeft = arcTL,
+                    size = arcSz,
+                    style = Stroke(width = strokePx * 1.75f, cap = StrokeCap.Round)
+                )
+            }
+            // Progress ring
+            drawArc(
+                color = ringColor,
+                startAngle = -90f,
+                sweepAngle = 360f * safeFrac,
+                useCenter = false,
+                topLeft = arcTL,
+                size = arcSz,
+                style = Stroke(width = strokePx, cap = StrokeCap.Round)
+            )
+        }
+        content()
+    }
+}
+
+@Composable
+private fun GuessNumberLine(
+    submissions: Map<String, Int>,
+    answer: Int,
+    winnerPlayerId: String?
+) {
+    val entries = remember(submissions) { submissions.entries.toList() }
+    val lo = remember(submissions, answer) {
+        minOf(answer.toFloat(), entries.minOfOrNull { it.value.toFloat() } ?: answer.toFloat())
+    }
+    val hi = remember(submissions, answer) {
+        maxOf(answer.toFloat(), entries.maxOfOrNull { it.value.toFloat() } ?: answer.toFloat())
+    }
+    val pad = maxOf(20f, (hi - lo) * 0.18f)
+    val minVal = lo - pad
+    val maxVal = hi + pad
+    val range = (maxVal - minVal).let { if (it == 0f) 1f else it }
+    val posOf: (Int) -> Float = { v -> ((v - minVal) / range).coerceIn(0f, 1f) }
+
+    // Canvas: gray track + amber answer marker + colored player dots
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .padding(horizontal = 6.dp)
+    ) {
+        val trackY = size.height * 0.72f
+        val dotR = 7.dp.toPx()
+        val ansX = posOf(answer) * size.width
+
+        // Track
+        drawLine(
+            color = Color(0x26FFFFFF),
+            start = Offset(0f, trackY),
+            end = Offset(size.width, trackY),
+            strokeWidth = 3.dp.toPx(),
+            cap = StrokeCap.Round
+        )
+
+        // Answer marker: glow + solid line
+        drawLine(
+            color = GuessAmber.copy(alpha = 0.28f),
+            start = Offset(ansX, 4.dp.toPx()),
+            end = Offset(ansX, trackY + 4.dp.toPx()),
+            strokeWidth = 6.dp.toPx()
+        )
+        drawLine(
+            color = GuessAmber,
+            start = Offset(ansX, 4.dp.toPx()),
+            end = Offset(ansX, trackY + 4.dp.toPx()),
+            strokeWidth = 2.dp.toPx()
+        )
+
+        // Player guess dots
+        entries.forEachIndexed { index, (playerId, guess) ->
+            val x = posOf(guess) * size.width
+            val dotColor = GuessPlayerColors[index % GuessPlayerColors.size]
+            val isWinner = playerId == winnerPlayerId
+            if (isWinner) {
+                drawCircle(
+                    color = GuessAmber,
+                    radius = dotR + 3.dp.toPx(),
+                    center = Offset(x, trackY),
+                    style = Stroke(width = 2.dp.toPx())
+                )
+            }
+            drawCircle(color = dotColor, radius = dotR, center = Offset(x, trackY))
+        }
+    }
+}
+
+// --- Playing screen (Variant B Timer Ring) --------------------------------
+
 @Composable
 private fun MinigamePlayingScreen(
     questionText: String?,
     timerEndMillis: Long?,
     timerDurationSeconds: Int?,
     guessSubmissions: Map<String, Int>,
+    guessSubmissionTimes: Map<String, Long>,
     allPlayers: List<String>,
+    playerAvatars: List<ImageBitmap?>,
     myGuessSubmitted: Boolean,
     myPlayerId: String,
     onSubmitGuess: (Int) -> Unit
 ) {
+    // ── Integer seconds for the text label (original logic, untouched) ──
     var remainingSeconds by remember(timerDurationSeconds, timerEndMillis) {
         mutableStateOf(
             timerDurationSeconds
                 ?: ((timerEndMillis ?: 0L) - System.currentTimeMillis()).div(1000L).coerceAtLeast(0L).toInt()
         )
     }
-
     LaunchedEffect(timerDurationSeconds, timerEndMillis) {
         if (timerDurationSeconds != null) {
-            // Server schickt einheitliche Dauer → für alle Clients gleiches Runterz‌ählen
             while (remainingSeconds > 0) {
                 delay(1000L)
                 remainingSeconds = (remainingSeconds - 1).coerceAtLeast(0)
             }
         } else {
-            // Fallback: live aus absolutem Timestamp berechnen — selbstkorrigierend,
-            // beide Clients sehen zur selben Uhrzeit denselben Wert
             while (true) {
                 delay(500L)
                 val r = ((timerEndMillis ?: 0L) - System.currentTimeMillis())
@@ -297,6 +457,31 @@ private fun MinigamePlayingScreen(
                 remainingSeconds = r
                 if (r <= 0) break
             }
+        }
+    }
+
+    // ── Smooth float for the ring + capture game start for elapsed-time display ──
+    var ringFrac by remember { mutableStateOf(1f) }
+    var gameStartMs by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(timerDurationSeconds, timerEndMillis) {
+        val startMs = System.currentTimeMillis()
+        gameStartMs = startMs
+        val totalMs = when {
+            timerDurationSeconds != null -> timerDurationSeconds * 1000L
+            timerEndMillis != null       -> (timerEndMillis - startMs).coerceAtLeast(1000L)
+            else                         -> 30_000L
+        }
+        while (true) {
+            delay(50L)
+            val remaining = when {
+                timerDurationSeconds != null ->
+                    (totalMs - (System.currentTimeMillis() - startMs)).coerceAtLeast(0L)
+                timerEndMillis != null ->
+                    (timerEndMillis - System.currentTimeMillis()).coerceAtLeast(0L)
+                else -> 0L
+            }
+            ringFrac = (remaining.toFloat() / totalMs).coerceIn(0f, 1f)
+            if (remaining <= 0L) break
         }
     }
 
@@ -314,92 +499,201 @@ private fun MinigamePlayingScreen(
         }
     }
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    val urgent = remainingSeconds in 1..6
+
+    // ── Adaptive sizing based on window height ──
+    val screenHeight = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.height.toDp()
+    }
+    val ringSize = when {
+        screenHeight < 580.dp -> 140.dp
+        screenHeight < 660.dp -> 158.dp
+        screenHeight < 740.dp -> 174.dp
+        else                  -> 196.dp
+    }
+    val vGap = when {
+        screenHeight < 580.dp -> 8.dp
+        screenHeight < 660.dp -> 11.dp
+        screenHeight < 740.dp -> 14.dp
+        else                  -> 18.dp
+    }
+    val inputFontSize = when {
+        screenHeight < 660.dp -> 38.sp
+        else                  -> 46.sp
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .widthIn(max = 320.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        // Question text
         Text(
             text = questionText ?: "",
             color = Color.White,
-            fontSize = 18.sp,
+            fontSize = 15.sp,
             fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            lineHeight = 21.sp,
+            modifier = Modifier.padding(horizontal = 4.dp)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(vGap))
 
-        Text(
-            text = "Zeit: ${remainingSeconds}s",
-            color = if (remainingSeconds in 1..10) Color(0xFFE53935) else Color.White,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = guessInput,
-            onValueChange = { if (!inputDisabled) guessInput = it.filter { c -> c.isDigit() } },
-            label = { Text("Deine Schätzung", color = Color.LightGray) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            enabled = !inputDisabled,
-            singleLine = true,
-            modifier = Modifier.width(200.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                disabledTextColor = Color.Gray,
-                focusedBorderColor = Color.White,
-                unfocusedBorderColor = Color.Gray,
-                disabledBorderColor = Color.DarkGray
-            )
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Button(
-            onClick = {
-                val guess = guessInput.toIntOrNull() ?: return@Button
-                onSubmitGuess(guess)
-            },
-            enabled = !inputDisabled && guessInput.isNotBlank(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8DB6CD)),
-            shape = RoundedCornerShape(14.dp),
-            modifier = Modifier
-                .width(180.dp)
-                .height(52.dp)
-        ) {
-            Text(
-                text = "Absenden",
-                color = Color.White,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.Bold
-            )
+        // Timer Ring hero — smooth ringFrac, input or locked value inside
+        GuessTimerRing(frac = ringFrac, urgent = urgent, ringSize = ringSize) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                if (myGuessSubmitted) {
+                    Text(
+                        text = if (guessInput.isNotEmpty()) guessInput else "—",
+                        color = Color.White,
+                        fontSize = inputFontSize,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center
+                    )
+                } else {
+                    BasicTextField(
+                        value = guessInput,
+                        onValueChange = { if (!inputDisabled) guessInput = it.filter { c -> c.isDigit() }.take(6) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        enabled = !inputDisabled,
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            color = Color.White,
+                            fontSize = inputFontSize,
+                            fontWeight = FontWeight.ExtraBold,
+                            textAlign = TextAlign.Center
+                        ),
+                        modifier = Modifier.width(118.dp),
+                        decorationBox = { innerTextField ->
+                            Box(contentAlignment = Alignment.Center) {
+                                if (guessInput.isEmpty()) {
+                                    Text(
+                                        text = "?",
+                                        color = Color(0x44FFFFFF),
+                                        fontSize = inputFontSize,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        }
+                    )
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "${remainingSeconds}s",
+                    color = if (urgent) GuessAmberUrgent else GuessWhite65,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(vGap))
 
+        // Player submission avatars — amber ring when locked, elapsed time below
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.Top
         ) {
             allPlayers.forEachIndexed { index, playerId ->
                 val hasSubmitted = playerId in guessSubmissions
-                Box(
-                    modifier = Modifier
-                        .size(10.dp)
-                        .clip(CircleShape)
-                        .background(if (hasSubmitted) Color(0xFF43A047) else Color.Gray)
-                )
-                Spacer(modifier = Modifier.width(5.dp))
-                Text(
-                    text = playerId,
-                    color = if (hasSubmitted) Color(0xFF43A047) else Color.LightGray,
-                    fontSize = 12.sp
-                )
-                if (index != allPlayers.lastIndex) {
-                    Spacer(modifier = Modifier.width(14.dp))
+                val avatar = playerAvatars.getOrNull(index)
+                val fallbackColor = GuessPlayerColors[index % GuessPlayerColors.size]
+                val elapsedStr: String? = guessSubmissionTimes[playerId]?.let { submittedAt ->
+                    val ms = (submittedAt - gameStartMs).coerceAtLeast(0L)
+                    val hs = ms / 10L
+                    "%02d:%02d".format(hs / 100L, hs % 100L)
                 }
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(fallbackColor.copy(alpha = if (hasSubmitted) 1f else 0.30f))
+                            .then(
+                                if (hasSubmitted) Modifier.border(2.dp, GuessAmber, CircleShape)
+                                else Modifier
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (avatar != null) {
+                            Image(
+                                bitmap = avatar,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Text(
+                                text = playerId.take(1).uppercase(),
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        }
+                    }
+                    Text(
+                        text = elapsedStr ?: "—",
+                        color = if (elapsedStr != null) GuessWhite65 else Color(0x2EFFFFFF),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                if (index != allPlayers.lastIndex) Spacer(Modifier.width(10.dp))
             }
         }
+
+        Spacer(modifier = Modifier.height(vGap))
+
+        if (myGuessSubmitted) {
+            Text(
+                text = "✓  Gesperrt – warte auf andere…",
+                color = GuessGreen,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
+            )
+        } else {
+            Button(
+                onClick = {
+                    val guess = guessInput.toIntOrNull() ?: return@Button
+                    onSubmitGuess(guess)
+                },
+                enabled = !inputDisabled && guessInput.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GuessAmber,
+                    disabledContainerColor = Color(0xFF3A3520)
+                ),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                    .width(176.dp)
+                    .height(50.dp)
+            ) {
+                Text(
+                    text = "Absenden",
+                    color = Color(0xFF0C1622),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+        }
+        // Bottom padding so scroll always reveals the button above the nav bar
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
+
+// --- Result screen (Variant B: count-up answer + number line) -------------
 
 @Composable
 private fun MinigameResultScreen(
@@ -414,85 +708,125 @@ private fun MinigameResultScreen(
     val sortedEntries = guessSubmissions.entries.sortedBy { (_, guess) -> abs(guess - correctAnswer) }
     val timeFmt = remember { java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()) }
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    // Count-up animation for the revealed answer
+    var displayedAnswer by remember(guessQuestionAnswer) { mutableStateOf(0) }
+    LaunchedEffect(guessQuestionAnswer) {
+        val target = guessQuestionAnswer ?: return@LaunchedEffect
+        val steps = 28
+        for (i in 1..steps) {
+            displayedAnswer = target * i / steps
+            delay(28L)
+        }
+        displayedAnswer = target
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.widthIn(max = 320.dp)
+    ) {
+        // "THE ANSWER" label
         Text(
-            text = "Richtige Antwort: $correctAnswer",
-            color = Color(0xFFD4AF37),
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold
+            text = "DIE ANTWORT",
+            color = GuessWhite40,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 2.sp
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Animated count-up number
+        Text(
+            text = "$displayedAnswer",
+            color = GuessAmber,
+            fontSize = 44.sp,
+            fontWeight = FontWeight.ExtraBold
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
+        // Number line: plots each guess relative to the correct answer
+        if (guessSubmissions.isNotEmpty()) {
+            GuessNumberLine(
+                submissions = guessSubmissions,
+                answer = correctAnswer,
+                winnerPlayerId = winnerPlayerId
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Ranked player rows
         if (sortedEntries.isEmpty()) {
             Text(
                 text = "Keine Einsendungen",
-                color = Color.LightGray,
+                color = GuessWhite65,
                 fontSize = 15.sp
             )
         } else {
-            sortedEntries.forEach { (playerId, guess) ->
+            sortedEntries.forEachIndexed { rank, (playerId, guess) ->
                 val distance = abs(guess - correctAnswer)
                 val isWinner = playerId == winnerPlayerId
                 val timeStr = guessSubmissionTimes[playerId]
                     ?.let { timeFmt.format(java.util.Date(it)) }
-                    ?: "--:--:--"
+                    ?: "—"
 
-                Column(
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
+                        .fillMaxWidth()
                         .background(
-                            if (isWinner) Color(0xFF43A047).copy(alpha = 0.3f) else Color.Transparent,
+                            if (isWinner) Color(0xFF43A047).copy(alpha = 0.22f) else Color.Transparent,
                             RoundedCornerShape(8.dp)
                         )
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = if (isWinner) "🏆" else "${rank + 1}.",
+                        fontSize = 14.sp,
+                        color = if (isWinner) GuessAmber else GuessWhite65,
+                        modifier = Modifier.width(26.dp)
+                    )
+                    Text(
+                        text = playerId,
+                        color = if (isWinner) GuessAmber else Color.White,
+                        fontSize = 15.sp,
+                        fontWeight = if (isWinner) FontWeight.ExtraBold else FontWeight.Normal,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = if (isWinner) "🏆 " else "   ",
-                            fontSize = 16.sp
+                            text = "$guess  (±$distance)",
+                            color = if (isWinner) GuessAmber else GuessWhite65,
+                            fontSize = 13.sp,
+                            fontWeight = if (isWinner) FontWeight.Bold else FontWeight.Normal
                         )
                         Text(
-                            text = playerId,
-                            color = if (isWinner) Color(0xFFD4AF37) else Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = if (isWinner) FontWeight.Bold else FontWeight.Normal,
-                            modifier = Modifier.width(100.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "$guess  (Δ$distance)",
-                            color = if (isWinner) Color(0xFFD4AF37) else Color.White,
-                            fontSize = 14.sp
+                            text = "⏱ $timeStr",
+                            color = GuessWhite40,
+                            fontSize = 10.sp
                         )
                     }
-                    Text(
-                        text = "⏱ $timeStr",
-                        color = Color.LightGray,
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(start = 24.dp)
-                    )
                 }
-
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(3.dp))
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         if (canFinishMinigame) {
             Button(
                 onClick = { onFinishMinigame(winnerPlayerId ?: "") },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8DB6CD)),
+                colors = ButtonDefaults.buttonColors(containerColor = GuessAmber),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
-                    .width(220.dp)
-                    .height(56.dp)
+                    .width(200.dp)
+                    .height(52.dp)
             ) {
                 Text(
                     text = "Weiter",
-                    color = Color.White,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold
+                    color = Color(0xFF0C1622),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold
                 )
             }
         }
