@@ -87,8 +87,12 @@ fun MinigameOverlay(
         if (displayedSubPhase == "RESULT" && guessQuestionAnswer == null) null
         else displayedSubPhase
 
-    LaunchedEffect(announcedWinnerPlayerId) {
+    LaunchedEffect(announcedWinnerPlayerId, selectedMinigame) {
         if (announcedWinnerPlayerId == null) return@LaunchedEffect
+
+        if (selectedMinigame == "REACTION_GAME") {
+            return@LaunchedEffect
+        }
 
         showVsScreen = false
         resultType =
