@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -69,6 +70,10 @@ fun MinigameFlagRound(
     val isReveal = subPhase == "ROUND_REVEAL"
     val correctIndex = remember(correctName, options) { options.indexOf(correctName) }
 
+    // Lokale Auswahl: sperrt die Kacheln sofort (vor dem Server-Echo). Reset je Runde.
+    var localPick by remember(roundIndex) { mutableStateOf<Int?>(null) }
+    val effectivePick = mySubmittedIndex ?: localPick
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.width(300.dp)
@@ -100,14 +105,14 @@ fun MinigameFlagRound(
         Spacer(modifier = Modifier.height(14.dp))
 
         if (isReveal) {
-            RevealFeedback(answered = mySubmittedIndex != null, correct = mySubmittedIndex == correctIndex)
+            RevealFeedback(answered = effectivePick != null, correct = effectivePick == correctIndex)
         } else {
             FlagCountdown(timerEndMillis, timerDurationSeconds)
         }
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        val selectable = !isReveal && mySubmittedIndex == null
+        val selectable = !isReveal && effectivePick == null
         for (row in 0..1) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 for (col in 0..1) {
@@ -119,9 +124,12 @@ fun MinigameFlagRound(
                             baseColor = FlagOptionColors[index % FlagOptionColors.size],
                             isReveal = isReveal,
                             isCorrect = isReveal && index == correctIndex,
-                            isMySelection = index == mySubmittedIndex,
+                            isMySelection = index == effectivePick,
                             enabled = selectable,
-                            onClick = { onSelectOption(index) }
+                            onClick = {
+                                localPick = index
+                                onSelectOption(index)
+                            }
                         )
                     } else {
                         Spacer(modifier = Modifier.weight(1f))

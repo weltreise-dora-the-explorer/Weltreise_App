@@ -326,6 +326,19 @@ class AppViewModelTest {
         verify { mockStomp.startGameCmd(lobbyId, "Host", any()) }
     }
 
+    @Test
+    fun `submitGuess sends the option index and marks own submission`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+        viewModel.hostLobby("Host")
+        val lobbyId = viewModel.lobbyId.value
+
+        viewModel.submitGuess(2)   // flag option index (or numeric guess for GUESS_GAME)
+
+        verify { mockStomp.submitGuess(lobbyId, "Host", 2) }
+        assertTrue(viewModel.myGuessSubmitted.value)
+    }
+
     // ========== PLAYER LIST TESTS ==========
 
     @Test
