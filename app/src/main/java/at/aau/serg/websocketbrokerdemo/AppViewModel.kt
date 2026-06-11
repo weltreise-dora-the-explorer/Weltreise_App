@@ -215,6 +215,34 @@ open class AppViewModel(
     private val _myGuessSubmitted = MutableStateFlow(false)
     val myGuessSubmitted: StateFlow<Boolean> = _myGuessSubmitted.asStateFlow()
 
+    // FLAG_GAME state (broadcast from the server)
+    private val _flagRoundIndex = MutableStateFlow(0)
+    val flagRoundIndex: StateFlow<Int> = _flagRoundIndex.asStateFlow()
+
+    private val _flagCode = MutableStateFlow<String?>(null)
+    val flagCode: StateFlow<String?> = _flagCode.asStateFlow()
+
+    private val _flagOptions = MutableStateFlow<List<String>>(emptyList())
+    val flagOptions: StateFlow<List<String>> = _flagOptions.asStateFlow()
+
+    private val _flagCorrectName = MutableStateFlow<String?>(null)
+    val flagCorrectName: StateFlow<String?> = _flagCorrectName.asStateFlow()
+
+    private val _flagScores = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val flagScores: StateFlow<Map<String, Int>> = _flagScores.asStateFlow()
+
+    private val _flagTotalTimeMs = MutableStateFlow<Map<String, Long>>(emptyMap())
+    val flagTotalTimeMs: StateFlow<Map<String, Long>> = _flagTotalTimeMs.asStateFlow()
+
+    private fun resetFlagClientState() {
+        _flagRoundIndex.value = 0
+        _flagCode.value = null
+        _flagOptions.value = emptyList()
+        _flagCorrectName.value = null
+        _flagScores.value = emptyMap()
+        _flagTotalTimeMs.value = emptyMap()
+    }
+
     private var minigameStartSent = false
 
     fun loadAllCities(context: Context) {
@@ -762,6 +790,7 @@ open class AppViewModel(
                         _guessTimerDurationSeconds.value = null
                         _guessSubmissions.value = emptyMap()
                         _guessSubmissionTimes.value = emptyMap()
+                        resetFlagClientState()
                     }
                     if (prevPhase == GameConstants.PHASE_MINIGAME && phase != GameConstants.PHASE_MINIGAME) {
                         minigameStartSent = false
@@ -774,6 +803,7 @@ open class AppViewModel(
                         _guessTimerDurationSeconds.value = null
                         _guessSubmissions.value = emptyMap()
                         _guessSubmissionTimes.value = emptyMap()
+                        resetFlagClientState()
                     }
                     if (subPhase == "SELECTING") {
                         minigameStartSent = false
@@ -784,6 +814,7 @@ open class AppViewModel(
                         _guessTimerDurationSeconds.value = null
                         _guessSubmissions.value = emptyMap()
                         _guessSubmissionTimes.value = emptyMap()
+                        resetFlagClientState()
                     }
 
                     _minigameSubPhase.value = subPhase
@@ -814,6 +845,39 @@ open class AppViewModel(
                         _guessSubmissionTimes.value = times
                     } else {
                         _guessSubmissions.value = emptyMap()
+                    }
+
+                    // FLAG_GAME fields
+                    _flagRoundIndex.value = if (stateJson.isNull("flagRoundIndex")) 0
+                        else stateJson.optInt("flagRoundIndex")
+
+                    _flagCode.value = if (stateJson.isNull("flagCode")) null
+                        else stateJson.optString("flagCode").ifBlank { null }
+
+                    _flagCorrectName.value = if (stateJson.isNull("flagCorrectName")) null
+                        else stateJson.optString("flagCorrectName").ifBlank { null }
+
+                    val flagOptionsJson = stateJson.optJSONArray("flagOptions")
+                    _flagOptions.value = if (flagOptionsJson != null) {
+                        (0 until flagOptionsJson.length()).map { flagOptionsJson.optString(it) }
+                    } else emptyList()
+
+                    val flagScoresJson = stateJson.optJSONObject("flagScores")
+                    if (flagScoresJson != null) {
+                        val scores = mutableMapOf<String, Int>()
+                        flagScoresJson.keys().forEach { key -> scores[key] = flagScoresJson.optInt(key) }
+                        _flagScores.value = scores
+                    } else {
+                        _flagScores.value = emptyMap()
+                    }
+
+                    val flagTimesJson = stateJson.optJSONObject("flagTotalTimeMs")
+                    if (flagTimesJson != null) {
+                        val times = mutableMapOf<String, Long>()
+                        flagTimesJson.keys().forEach { key -> times[key] = flagTimesJson.optLong(key) }
+                        _flagTotalTimeMs.value = times
+                    } else {
+                        _flagTotalTimeMs.value = emptyMap()
                     }
 
                     // Auto-trigger startMinigame for the current turn player on first MINIGAME entry

@@ -70,13 +70,21 @@ fun MinigameOverlay(
     guessSubmissionTimes: Map<String, Long>,
     myGuessSubmitted: Boolean,
     myPlayerId: String,
-    onSubmitGuess: (Int) -> Unit
+    onSubmitGuess: (Int) -> Unit,
+
+    flagRoundIndex: Int,
+    flagCode: String?,
+    flagOptions: List<String>,
+    flagCorrectName: String?,
+    flagScores: Map<String, Int>,
+    flagTotalTimeMs: Map<String, Long>
 ) {
     val otherPlayerName = opponentPlayerNames.firstOrNull() ?: targetPlayerName
     var showVsScreen by remember { mutableStateOf(true) }
     var resultType by remember { mutableStateOf<MinigameResultType?>(null) }
 
     val allPlayers = listOf(targetPlayerName) + opponentPlayerNames
+    val isFlagGame = selectedMinigame == "FLAG_GAME"
 
     var displayedSubPhase by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(minigameSubPhase) {
@@ -84,15 +92,16 @@ fun MinigameOverlay(
     }
 
     val effectiveSubPhase =
-        if (displayedSubPhase == "RESULT" && guessQuestionAnswer == null) null
+        if (displayedSubPhase == "RESULT" && !isFlagGame && guessQuestionAnswer == null) null
         else displayedSubPhase
+
+    val overlayMinWidth = if (isFlagGame) 280.dp else 320.dp
+    val overlayHorizontalPadding = if (isFlagGame) 20.dp else 32.dp
+    val overlayVerticalPadding = if (isFlagGame) 14.dp else 20.dp
 
     LaunchedEffect(announcedWinnerPlayerId, selectedMinigame) {
         if (announcedWinnerPlayerId == null) return@LaunchedEffect
-
-        if (selectedMinigame == "REACTION_GAME") {
-            return@LaunchedEffect
-        }
+        if (selectedMinigame == "REACTION_GAME") return@LaunchedEffect
 
         showVsScreen = false
         resultType =
@@ -110,9 +119,9 @@ fun MinigameOverlay(
 
     Box(
         modifier = Modifier
-            .widthIn(min = 320.dp)
+            .widthIn(min = overlayMinWidth)
             .background(Color(0xDD000000), RoundedCornerShape(20.dp))
-            .padding(horizontal = 32.dp, vertical = 20.dp),
+            .padding(horizontal = overlayHorizontalPadding, vertical = overlayVerticalPadding),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -128,10 +137,7 @@ fun MinigameOverlay(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                MinigamePlayerAvatar(
-                                    playerName = targetPlayerName,
-                                    avatar = targetPlayerAvatar
-                                )
+                                MinigamePlayerAvatar(targetPlayerName, targetPlayerAvatar)
 
                                 Spacer(modifier = Modifier.width(36.dp))
 
@@ -218,27 +224,70 @@ fun MinigameOverlay(
                 }
 
                 effectiveSubPhase == "PLAYING" -> {
-                    MinigamePlayingScreen(
-                        questionText = guessQuestionText,
+                    if (isFlagGame) {
+                        MinigameFlagRound(
+                            subPhase = "PLAYING",
+                            roundIndex = flagRoundIndex,
+                            totalRounds = 5,
+                            flagCode = flagCode,
+                            options = flagOptions,
+                            correctName = null,
+                            timerEndMillis = guessTimerEndMillis,
+                            timerDurationSeconds = guessTimerDurationSeconds,
+                            mySubmittedIndex = guessSubmissions[myPlayerId],
+                            myScore = flagScores[myPlayerId] ?: 0,
+                            onSelectOption = onSubmitGuess
+                        )
+                    } else {
+                        MinigamePlayingScreen(
+                            questionText = guessQuestionText,
+                            timerEndMillis = guessTimerEndMillis,
+                            timerDurationSeconds = guessTimerDurationSeconds,
+                            guessSubmissions = guessSubmissions,
+                            allPlayers = allPlayers,
+                            myGuessSubmitted = myGuessSubmitted,
+                            myPlayerId = myPlayerId,
+                            onSubmitGuess = onSubmitGuess
+                        )
+                    }
+                }
+
+                effectiveSubPhase == "ROUND_REVEAL" -> {
+                    MinigameFlagRound(
+                        subPhase = "ROUND_REVEAL",
+                        roundIndex = flagRoundIndex,
+                        totalRounds = 5,
+                        flagCode = flagCode,
+                        options = flagOptions,
+                        correctName = flagCorrectName,
                         timerEndMillis = guessTimerEndMillis,
                         timerDurationSeconds = guessTimerDurationSeconds,
-                        guessSubmissions = guessSubmissions,
-                        allPlayers = allPlayers,
-                        myGuessSubmitted = myGuessSubmitted,
-                        myPlayerId = myPlayerId,
-                        onSubmitGuess = onSubmitGuess
+                        mySubmittedIndex = guessSubmissions[myPlayerId],
+                        myScore = flagScores[myPlayerId] ?: 0,
+                        onSelectOption = onSubmitGuess
                     )
                 }
 
                 effectiveSubPhase == "RESULT" -> {
-                    MinigameResultScreen(
-                        guessSubmissions = guessSubmissions,
-                        guessSubmissionTimes = guessSubmissionTimes,
-                        guessQuestionAnswer = guessQuestionAnswer,
-                        winnerPlayerId = announcedWinnerPlayerId,
-                        canFinishMinigame = canFinishMinigame,
-                        onFinishMinigame = onFinishMinigame
-                    )
+                    if (isFlagGame) {
+                        MinigameFlagResultScreen(
+                            winnerPlayerId = announcedWinnerPlayerId,
+                            flagScores = flagScores,
+                            flagTotalTimeMs = flagTotalTimeMs,
+                            allPlayers = allPlayers,
+                            canFinishMinigame = canFinishMinigame,
+                            onFinishMinigame = onFinishMinigame
+                        )
+                    } else {
+                        MinigameResultScreen(
+                            guessSubmissions = guessSubmissions,
+                            guessSubmissionTimes = guessSubmissionTimes,
+                            guessQuestionAnswer = guessQuestionAnswer,
+                            winnerPlayerId = announcedWinnerPlayerId,
+                            canFinishMinigame = canFinishMinigame,
+                            onFinishMinigame = onFinishMinigame
+                        )
+                    }
                 }
 
                 else -> {
@@ -325,7 +374,7 @@ private fun ReactionResultInfoScreen(
 private val KNOWN_MINIGAMES = listOf(
     "GUESS_GAME" to "Schätzspiel",
     "QUIZ_GAME" to "Quizspiel",
-    "MEMORY_GAME" to "Memory",
+    "FLAG_GAME" to "Guess the Flag",
     "REACTION_GAME" to "Reaktionsspiel",
 )
 
@@ -635,6 +684,90 @@ private fun MinigameResultScreen(
 
                 Spacer(modifier = Modifier.height(4.dp))
             }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        if (canFinishMinigame) {
+            Button(
+                onClick = { onFinishMinigame(winnerPlayerId ?: "") },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8DB6CD)),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                    .width(220.dp)
+                    .height(56.dp)
+            ) {
+                Text(
+                    text = "Weiter",
+                    color = Color.White,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+private fun formatFlagTime(ms: Long?): String =
+    if (ms == null || ms <= 0L) "—" else "%.1fs".format(ms / 1000.0)
+
+@Composable
+private fun MinigameFlagResultScreen(
+    winnerPlayerId: String?,
+    flagScores: Map<String, Int>,
+    flagTotalTimeMs: Map<String, Long>,
+    allPlayers: List<String>,
+    canFinishMinigame: Boolean,
+    onFinishMinigame: (String) -> Unit
+) {
+    val ranked = allPlayers.sortedWith(
+        compareByDescending<String> { flagScores[it] ?: 0 }
+            .thenBy { flagTotalTimeMs[it] ?: Long.MAX_VALUE }
+    )
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = winnerPlayerId?.let { "🏆 $it wins!" } ?: "Result",
+            color = Color(0xFFD4AF37),
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        ranked.forEach { playerId ->
+            val isWinner = playerId == winnerPlayerId
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .background(
+                        if (isWinner) Color(0xFF43A047).copy(alpha = 0.3f) else Color.Transparent,
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(text = if (isWinner) "🏆 " else "   ", fontSize = 16.sp)
+                Text(
+                    text = playerId,
+                    color = if (isWinner) Color(0xFFD4AF37) else Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = if (isWinner) FontWeight.Bold else FontWeight.Normal,
+                    modifier = Modifier.width(140.dp)
+                )
+                Text(
+                    text = "${flagScores[playerId] ?: 0} / 5",
+                    color = if (isWinner) Color(0xFFD4AF37) else Color.White,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "⏱ ${formatFlagTime(flagTotalTimeMs[playerId])}",
+                    color = Color.LightGray,
+                    fontSize = 12.sp
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
         }
 
         Spacer(modifier = Modifier.height(20.dp))

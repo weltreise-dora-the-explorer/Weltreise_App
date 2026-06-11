@@ -179,6 +179,12 @@ fun GameScreen(viewModel: AppViewModel) {
     val guessSubmissions by viewModel.guessSubmissions.collectAsState()
     val guessSubmissionTimes by viewModel.guessSubmissionTimes.collectAsState()
     val myGuessSubmitted by viewModel.myGuessSubmitted.collectAsState()
+    val flagRoundIndex by viewModel.flagRoundIndex.collectAsState()
+    val flagCode by viewModel.flagCode.collectAsState()
+    val flagOptions by viewModel.flagOptions.collectAsState()
+    val flagCorrectName by viewModel.flagCorrectName.collectAsState()
+    val flagScores by viewModel.flagScores.collectAsState()
+    val flagTotalTimeMs by viewModel.flagTotalTimeMs.collectAsState()
 
 
     // Hintergrundmusik – läuft solange GameScreen aktiv ist
@@ -381,7 +387,13 @@ fun GameScreen(viewModel: AppViewModel) {
                     guessSubmissionTimes = guessSubmissionTimes,
                     myGuessSubmitted = myGuessSubmitted,
                     myPlayerId = currentPlayerName,
-                    onSubmitGuess = { viewModel.submitGuess(it) }
+                    onSubmitGuess = { viewModel.submitGuess(it) },
+                    flagRoundIndex = flagRoundIndex,
+                    flagCode = flagCode,
+                    flagOptions = flagOptions,
+                    flagCorrectName = flagCorrectName,
+                    flagScores = flagScores,
+                    flagTotalTimeMs = flagTotalTimeMs
                 )
             }
         }
