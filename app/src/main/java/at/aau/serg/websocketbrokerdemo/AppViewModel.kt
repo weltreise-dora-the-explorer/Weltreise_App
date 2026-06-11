@@ -90,6 +90,9 @@ open class AppViewModel(
     private val _playerCityCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val playerCityCounts: StateFlow<Map<String, Int>> = _playerCityCounts.asStateFlow()
 
+    private val _playerReachedCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val playerReachedCounts: StateFlow<Map<String, Int>> = _playerReachedCounts.asStateFlow()
+
     private val _allPlayerOwnedCities = MutableStateFlow<Map<String, List<City>>>(emptyMap())
     val allPlayerOwnedCities: StateFlow<Map<String, List<City>>> = _allPlayerOwnedCities.asStateFlow()
 
@@ -436,6 +439,7 @@ open class AppViewModel(
             _ownedCities.value = emptyList()
             _startCity.value = null
             _playerCityCounts.value = emptyMap()
+            _playerReachedCounts.value = emptyMap()
             _playerCurrentCities.value = emptyMap()
             _diceValue.value = null
             _currentTurnPlayerId.value = null
@@ -476,6 +480,7 @@ open class AppViewModel(
         _ownedCities.value = emptyList()
         _startCity.value = null
         _playerCityCounts.value = emptyMap()
+        _playerReachedCounts.value = emptyMap()
         _allPlayerOwnedCities.value = emptyMap()
         _playerCurrentCities.value = emptyMap()
         _diceValue.value = null
@@ -576,6 +581,7 @@ open class AppViewModel(
                         val playersArray = stateJson.getJSONArray("players")
                         val newList = mutableListOf<String>()
                         val cityCountsMap = mutableMapOf<String, Int>()
+                        val reachedCountsMap = mutableMapOf<String, Int>()
                         val allOwnedMap = _allPlayerOwnedCities.value.toMutableMap()
                         val currentCitiesMap = mutableMapOf<String, City?>()
                         val freePassCountsMap = mutableMapOf<String, Int>()
@@ -632,6 +638,8 @@ open class AppViewModel(
                             if (playerObj.has("ownedCities")) {
                                 val citiesArray = playerObj.getJSONArray("ownedCities")
                                 cityCountsMap[pId] = citiesArray.length()
+                                val visitedCount = if (playerObj.has("visitedCities")) playerObj.getJSONArray("visitedCities").length() else 0
+                                reachedCountsMap[pId] = visitedCount
 
                                 val cities = mutableListOf<City>()
                                 for (j in 0 until citiesArray.length()) {
@@ -694,6 +702,7 @@ open class AppViewModel(
                         _playerStartCityNames.value = startCityNamesMap
                         _playersList.value = newList
                         _playerCityCounts.value = cityCountsMap
+                        _playerReachedCounts.value = reachedCountsMap
                         _allPlayerOwnedCities.value = allOwnedMap
                         _playerCurrentCities.value = currentCitiesMap
                         _playerFreePassCounts.value = freePassCountsMap

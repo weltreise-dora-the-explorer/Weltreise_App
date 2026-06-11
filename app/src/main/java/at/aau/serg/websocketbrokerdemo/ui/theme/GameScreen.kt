@@ -103,6 +103,8 @@ fun GameScreen(viewModel: AppViewModel) {
     val allCities by viewModel.allCities.collectAsState()
     val startCity by viewModel.startCity.collectAsState()
     val playerCityCounts by viewModel.playerCityCounts.collectAsState()
+    val playerReachedCounts by viewModel.playerReachedCounts.collectAsState()
+    val playerStartCityNames by viewModel.playerStartCityNames.collectAsState()
     val allPlayerOwnedCities by viewModel.allPlayerOwnedCities.collectAsState()
     val playerCurrentCities by viewModel.playerCurrentCities.collectAsState()
     val reportFeedback by viewModel.lastReportFeedback.collectAsState()
@@ -279,13 +281,28 @@ fun GameScreen(viewModel: AppViewModel) {
     // Goal-Reached fade-out nach 4 Sekunden
     var showGoalReachedOverlay by remember { mutableStateOf(false) }
     val goalReachedAlpha = remember { Animatable(0f) }
+    var showAllReachedOverlay by remember { mutableStateOf(false) }
+    var allReachedPlayerName by remember { mutableStateOf("") }
+    var allReachedStartCityName by remember { mutableStateOf("") }
+    val allReachedAlpha = remember { Animatable(0f) }
     LaunchedEffect(goalReachedMessage) {
         if (goalReachedMessage != null) {
             showGoalReachedOverlay = true
             goalReachedAlpha.snapTo(1f)
+            if (goalReachedMessage!!.reached >= goalReachedMessage!!.total) {
+                allReachedPlayerName = goalReachedMessage!!.playerName
+                allReachedStartCityName = playerStartCityNames[goalReachedMessage!!.playerName] ?: ""
+                showAllReachedOverlay = true
+                allReachedAlpha.snapTo(1f)
+            }
             delay(3000)
             goalReachedAlpha.animateTo(0f, animationSpec = tween(1000))
             showGoalReachedOverlay = false
+            if (showAllReachedOverlay) {
+                delay(2000)
+                allReachedAlpha.animateTo(0f, animationSpec = tween(1000))
+                showAllReachedOverlay = false
+            }
         }
     }
 
@@ -516,6 +533,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 PlayerCard(
                     name = displayName,
                     bucketListCount = playerCityCounts[playerName] ?: 0,
+                    reachedCityCount = playerReachedCounts[playerName] ?: 0,
                     avatar = avatar,
                     isActive = playerName == currentTurnPlayerId,
                     diceValue = if (playerName == currentTurnPlayerId) diceValue else null,
@@ -615,6 +633,34 @@ fun GameScreen(viewModel: AppViewModel) {
                     Text(
                         text = "(${msg.reached}/${msg.total})",
                         fontSize = 16.sp,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+
+        // Alle Ziele erreicht – Broadcast-Overlay
+        if (showAllReachedOverlay) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .offset(y = 80.dp)
+                    .alpha(allReachedAlpha.value)
+                    .background(Color(0xCC1A237E), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 32.dp, vertical = 20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "$allReachedPlayerName hat alle Ziele erreicht!",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFD4AF37)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Weiter zur Startstadt: $allReachedStartCityName",
+                        fontSize = 15.sp,
                         color = Color.White
                     )
                 }
@@ -1505,6 +1551,7 @@ fun ZoomableMap(
 fun PlayerCard(
     name: String,
     bucketListCount: Int,
+    reachedCityCount: Int = 0,
     avatar: ImageBitmap?,
     isActive: Boolean,
     diceValue: Int? = null,
@@ -1601,7 +1648,7 @@ fun PlayerCard(
                     color = Color(0xFFC0392B),
                     fontWeight = FontWeight.Bold
                 )
-                else -> Text(text = "Bucket List: $bucketListCount", fontSize = 10.sp, color = Color.Gray)
+                else -> Text(text = "Bucket List: $reachedCityCount/$bucketListCount", fontSize = 10.sp, color = Color.Gray)
             }
         }
 
