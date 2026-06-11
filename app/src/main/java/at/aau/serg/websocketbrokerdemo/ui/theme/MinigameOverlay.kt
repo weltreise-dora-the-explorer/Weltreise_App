@@ -1,38 +1,39 @@
 package at.aau.serg.websocketbrokerdemo.ui.theme
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import at.aau.serg.websocketbrokerdemo.ui.theme.minigames.reaction.ReactionMinigame
+import com.example.myapplication.R
 import kotlinx.coroutines.delay
 import kotlin.math.abs
+
+private enum class MinigameResultType {
+    TARGET_PLAYER_WINS,
+    OTHER_PLAYER_WINS
+}
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
@@ -42,10 +43,23 @@ fun MinigameOverlay(
     targetCityName: String,
     targetPlayerAvatar: ImageBitmap?,
     opponentPlayerAvatars: List<ImageBitmap?>,
+    currentPlayerName: String,
     announcedWinnerPlayerId: String?,
     canFinishMinigame: Boolean,
+
+    reactionReadyPlayerIds: List<String>,
+    reactionReadyEndsAtMs: Long?,
+    reactionStartTimeMs: Long?,
+    reactionPressTimesMs: Map<String, Long>,
+    reactionButtonVisibleAtMs: Long?,
+    reactionRoundEndsAtMs: Long?,
+    serverNowMs: Long?,
+    onReactionReady: () -> Unit,
+    onReactionPress: () -> Unit,
+
     onAnnounceMinigameResult: (winnerPlayerId: String) -> Unit,
     onFinishMinigame: (winnerPlayerId: String) -> Unit,
+
     minigameSubPhase: String?,
     selectedMinigame: String?,
     guessQuestionText: String?,
@@ -57,6 +71,7 @@ fun MinigameOverlay(
     myGuessSubmitted: Boolean,
     myPlayerId: String,
     onSubmitGuess: (Int) -> Unit,
+
     flagRoundIndex: Int,
     flagCode: String?,
     flagOptions: List<String>,
@@ -64,19 +79,43 @@ fun MinigameOverlay(
     flagScores: Map<String, Int>,
     flagTotalTimeMs: Map<String, Long>
 ) {
+    val otherPlayerName = opponentPlayerNames.firstOrNull() ?: targetPlayerName
+    var showVsScreen by remember { mutableStateOf(true) }
+    var resultType by remember { mutableStateOf<MinigameResultType?>(null) }
+
     val allPlayers = listOf(targetPlayerName) + opponentPlayerNames
+    val isFlagGame = selectedMinigame == "FLAG_GAME"
 
     var displayedSubPhase by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(minigameSubPhase) {
         displayedSubPhase = minigameSubPhase
     }
 
-    val isFlagGame = selectedMinigame == "FLAG_GAME"
-    // RESULT-Guard (nur Schätzspiel wartet auf guessQuestionAnswer; Flaggenspiel hat keinen)
-    val effectiveSubPhase = if (displayedSubPhase == "RESULT" && !isFlagGame && guessQuestionAnswer == null) null else displayedSubPhase
+    val effectiveSubPhase =
+        if (displayedSubPhase == "RESULT" && !isFlagGame && guessQuestionAnswer == null) null
+        else displayedSubPhase
+
     val overlayMinWidth = if (isFlagGame) 280.dp else 320.dp
     val overlayHorizontalPadding = if (isFlagGame) 20.dp else 32.dp
     val overlayVerticalPadding = if (isFlagGame) 14.dp else 20.dp
+
+    LaunchedEffect(announcedWinnerPlayerId, selectedMinigame) {
+        if (announcedWinnerPlayerId == null) return@LaunchedEffect
+        if (selectedMinigame == "REACTION_GAME") return@LaunchedEffect
+
+        showVsScreen = false
+        resultType =
+            if (announcedWinnerPlayerId == targetPlayerName) {
+                MinigameResultType.TARGET_PLAYER_WINS
+            } else {
+                MinigameResultType.OTHER_PLAYER_WINS
+            }
+    }
+
+    LaunchedEffect(Unit) {
+        delay(4000)
+        showVsScreen = false
+    }
 
     Box(
         modifier = Modifier
@@ -86,66 +125,171 @@ fun MinigameOverlay(
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            when (effectiveSubPhase) {
-                "SELECTING" -> MinigameSelectingScreen(selectedMinigame)
-                "PLAYING" -> if (isFlagGame) {
+            when {
+                effectiveSubPhase == "SELECTING" -> {
+                    MinigameSelectingScreen(selectedMinigame)
+                }
+
+                selectedMinigame == "REACTION_GAME" || selectedMinigame == null -> {
+                    when {
+                        showVsScreen -> {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                MinigamePlayerAvatar(targetPlayerName, targetPlayerAvatar)
+
+                                Spacer(modifier = Modifier.width(36.dp))
+
+                                Text(
+                                    text = stringResource(R.string.minigame_vs_title),
+                                    color = Color.White,
+                                    fontSize = 40.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                Spacer(modifier = Modifier.width(36.dp))
+
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    opponentPlayerNames.forEachIndexed { index, opponentName ->
+                                        MinigamePlayerAvatar(
+                                            playerName = opponentName,
+                                            avatar = opponentPlayerAvatars.getOrNull(index)
+                                        )
+
+                                        if (index != opponentPlayerNames.lastIndex) {
+                                            Spacer(modifier = Modifier.height(10.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        resultType == MinigameResultType.TARGET_PLAYER_WINS -> {
+                            ReactionResultInfoScreen(
+                                title = stringResource(R.string.minigame_result_target_wins_title),
+                                text = stringResource(
+                                    R.string.minigame_result_target_wins_text,
+                                    targetPlayerName,
+                                    targetCityName.ifBlank { "the target city" }
+                                ),
+                                playerNames = listOf(targetPlayerName),
+                                playerAvatars = listOf(targetPlayerAvatar),
+                                onContinue = { onFinishMinigame(targetPlayerName) }
+                            )
+                        }
+
+                        resultType == MinigameResultType.OTHER_PLAYER_WINS -> {
+                            ReactionResultInfoScreen(
+                                title = stringResource(R.string.minigame_result_other_wins_title),
+                                text = stringResource(
+                                    R.string.minigame_result_other_wins_text,
+                                    otherPlayerName,
+                                    targetPlayerName,
+                                    targetCityName.ifBlank { "the target city" }
+                                ),
+                                playerNames = opponentPlayerNames,
+                                playerAvatars = opponentPlayerAvatars,
+                                onContinue = { onFinishMinigame(otherPlayerName) }
+                            )
+                        }
+
+                        else -> {
+                            ReactionMinigame(
+                                playerNames = allPlayers,
+                                playerAvatars = listOf(targetPlayerAvatar) + opponentPlayerAvatars,
+                                currentPlayerName = currentPlayerName,
+                                canFinishMinigame = canFinishMinigame,
+                                reactionReadyPlayerIds = reactionReadyPlayerIds,
+                                reactionReadyEndsAtMs = reactionReadyEndsAtMs,
+                                reactionStartTimeMs = reactionStartTimeMs,
+                                reactionPressTimesMs = reactionPressTimesMs,
+                                reactionButtonVisibleAtMs = reactionButtonVisibleAtMs,
+                                reactionRoundEndsAtMs = reactionRoundEndsAtMs,
+                                serverNowMs = serverNowMs,
+                                minigameWinnerPlayerId = announcedWinnerPlayerId,
+                                onReactionReady = onReactionReady,
+                                onReactionPress = onReactionPress,
+                                onFinishMinigame = { winnerPlayerId ->
+                                    resultType =
+                                        if (winnerPlayerId == targetPlayerName) {
+                                            MinigameResultType.TARGET_PLAYER_WINS
+                                        } else {
+                                            MinigameResultType.OTHER_PLAYER_WINS
+                                        }
+                                }
+                            )
+                        }
+                    }
+                }
+
+                effectiveSubPhase == "PLAYING" -> {
+                    if (isFlagGame) {
+                        MinigameFlagRound(
+                            subPhase = "PLAYING",
+                            roundIndex = flagRoundIndex,
+                            totalRounds = 5,
+                            flagCode = flagCode,
+                            options = flagOptions,
+                            correctName = null,
+                            timerEndMillis = guessTimerEndMillis,
+                            timerDurationSeconds = guessTimerDurationSeconds,
+                            mySubmittedIndex = guessSubmissions[myPlayerId],
+                            myScore = flagScores[myPlayerId] ?: 0,
+                            onSelectOption = onSubmitGuess
+                        )
+                    } else {
+                        MinigamePlayingScreen(
+                            questionText = guessQuestionText,
+                            timerEndMillis = guessTimerEndMillis,
+                            timerDurationSeconds = guessTimerDurationSeconds,
+                            guessSubmissions = guessSubmissions,
+                            allPlayers = allPlayers,
+                            myGuessSubmitted = myGuessSubmitted,
+                            myPlayerId = myPlayerId,
+                            onSubmitGuess = onSubmitGuess
+                        )
+                    }
+                }
+
+                effectiveSubPhase == "ROUND_REVEAL" -> {
                     MinigameFlagRound(
-                        subPhase = "PLAYING",
+                        subPhase = "ROUND_REVEAL",
                         roundIndex = flagRoundIndex,
                         totalRounds = 5,
                         flagCode = flagCode,
                         options = flagOptions,
-                        correctName = null,
+                        correctName = flagCorrectName,
                         timerEndMillis = guessTimerEndMillis,
                         timerDurationSeconds = guessTimerDurationSeconds,
                         mySubmittedIndex = guessSubmissions[myPlayerId],
                         myScore = flagScores[myPlayerId] ?: 0,
                         onSelectOption = onSubmitGuess
                     )
-                } else {
-                    MinigamePlayingScreen(
-                        questionText = guessQuestionText,
-                        timerEndMillis = guessTimerEndMillis,
-                        timerDurationSeconds = guessTimerDurationSeconds,
-                        guessSubmissions = guessSubmissions,
-                        allPlayers = allPlayers,
-                        myGuessSubmitted = myGuessSubmitted,
-                        myPlayerId = myPlayerId,
-                        onSubmitGuess = onSubmitGuess
-                    )
                 }
-                "ROUND_REVEAL" -> MinigameFlagRound(
-                    subPhase = "ROUND_REVEAL",
-                    roundIndex = flagRoundIndex,
-                    totalRounds = 5,
-                    flagCode = flagCode,
-                    options = flagOptions,
-                    correctName = flagCorrectName,
-                    timerEndMillis = guessTimerEndMillis,
-                    timerDurationSeconds = guessTimerDurationSeconds,
-                    mySubmittedIndex = guessSubmissions[myPlayerId],
-                    myScore = flagScores[myPlayerId] ?: 0,
-                    onSelectOption = onSubmitGuess
-                )
-                "RESULT" -> if (isFlagGame) {
-                    MinigameFlagResultScreen(
-                        winnerPlayerId = announcedWinnerPlayerId,
-                        flagScores = flagScores,
-                        flagTotalTimeMs = flagTotalTimeMs,
-                        allPlayers = allPlayers,
-                        canFinishMinigame = canFinishMinigame,
-                        onFinishMinigame = onFinishMinigame
-                    )
-                } else {
-                    MinigameResultScreen(
-                        guessSubmissions = guessSubmissions,
-                        guessSubmissionTimes = guessSubmissionTimes,
-                        guessQuestionAnswer = guessQuestionAnswer,
-                        winnerPlayerId = announcedWinnerPlayerId,
-                        canFinishMinigame = canFinishMinigame,
-                        onFinishMinigame = onFinishMinigame
-                    )
+
+                effectiveSubPhase == "RESULT" -> {
+                    if (isFlagGame) {
+                        MinigameFlagResultScreen(
+                            winnerPlayerId = announcedWinnerPlayerId,
+                            flagScores = flagScores,
+                            flagTotalTimeMs = flagTotalTimeMs,
+                            allPlayers = allPlayers,
+                            canFinishMinigame = canFinishMinigame,
+                            onFinishMinigame = onFinishMinigame
+                        )
+                    } else {
+                        MinigameResultScreen(
+                            guessSubmissions = guessSubmissions,
+                            guessSubmissionTimes = guessSubmissionTimes,
+                            guessQuestionAnswer = guessQuestionAnswer,
+                            winnerPlayerId = announcedWinnerPlayerId,
+                            canFinishMinigame = canFinishMinigame,
+                            onFinishMinigame = onFinishMinigame
+                        )
+                    }
                 }
+
                 else -> {
                     Text(
                         text = "Minispiel wird geladen...",
@@ -159,11 +303,78 @@ fun MinigameOverlay(
     }
 }
 
-// Alle bekannten Minispiele — neue Spiele hier ergänzen (id to Anzeigename)
+@Composable
+private fun ReactionResultInfoScreen(
+    title: String,
+    text: String,
+    playerNames: List<String>,
+    playerAvatars: List<ImageBitmap?>,
+    onContinue: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            playerNames.forEachIndexed { index, playerName ->
+                MinigamePlayerAvatar(
+                    playerName = playerName,
+                    avatar = playerAvatars.getOrNull(index)
+                )
+
+                if (index != playerNames.lastIndex) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.width(48.dp))
+
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = title,
+                color = Color.White,
+                fontSize = 34.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = text,
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+
+            Spacer(modifier = Modifier.height(26.dp))
+
+            Button(
+                onClick = onContinue,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8DB6CD)),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                    .width(220.dp)
+                    .height(56.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.minigame_result_continue_button),
+                    color = Color.White,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
 private val KNOWN_MINIGAMES = listOf(
-    "GUESS_GAME"    to "Schätzspiel",
-    "QUIZ_GAME"     to "Quizspiel",
-    "FLAG_GAME"     to "Guess the Flag",
+    "GUESS_GAME" to "Schätzspiel",
+    "QUIZ_GAME" to "Quizspiel",
+    "FLAG_GAME" to "Guess the Flag",
     "REACTION_GAME" to "Reaktionsspiel",
 )
 
@@ -181,11 +392,13 @@ private fun MinigameSelectingScreen(selectedMinigame: String?) {
         val totalSteps = 24
         for (i in 0 until totalSteps) {
             highlightedIndex = i % KNOWN_MINIGAMES.size
-            delay(when {
-                i < totalSteps * 0.50 -> 70L
-                i < totalSteps * 0.75 -> 150L
-                else                  -> 260L
-            })
+            delay(
+                when {
+                    i < totalSteps * 0.50 -> 70L
+                    i < totalSteps * 0.75 -> 150L
+                    else -> 260L
+                }
+            )
         }
         highlightedIndex = targetIndex
         revealed = true
@@ -205,7 +418,6 @@ private fun MinigameSelectingScreen(selectedMinigame: String?) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // 2×2 Karten-Grid — jede Karte leuchtet auf wenn sie gerade markiert ist
         for (row in 0..1) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 for (col in 0..1) {
@@ -220,9 +432,9 @@ private fun MinigameSelectingScreen(selectedMinigame: String?) {
                             .padding(5.dp)
                             .background(
                                 color = when {
-                                    isSelected    -> Color(0xFF1B5E20)
+                                    isSelected -> Color(0xFF1B5E20)
                                     isHighlighted -> Color(0xFF37474F)
-                                    else          -> Color(0xFF263238)
+                                    else -> Color(0xFF263238)
                                 },
                                 shape = RoundedCornerShape(12.dp)
                             )
@@ -237,9 +449,9 @@ private fun MinigameSelectingScreen(selectedMinigame: String?) {
                         Text(
                             text = name,
                             color = when {
-                                isSelected    -> Color(0xFFD4AF37)
+                                isSelected -> Color(0xFFD4AF37)
                                 isHighlighted -> Color.White
-                                else          -> Color(0xFF78909C)
+                                else -> Color(0xFF78909C)
                             },
                             fontSize = 15.sp,
                             fontWeight = if (isSelected || isHighlighted) FontWeight.Bold else FontWeight.Normal,
@@ -248,6 +460,7 @@ private fun MinigameSelectingScreen(selectedMinigame: String?) {
                     }
                 }
             }
+
             if (row == 0) Spacer(modifier = Modifier.height(2.dp))
         }
 
@@ -276,20 +489,18 @@ private fun MinigamePlayingScreen(
     var remainingSeconds by remember(timerDurationSeconds, timerEndMillis) {
         mutableStateOf(
             timerDurationSeconds
-                ?: ((timerEndMillis ?: 0L) - System.currentTimeMillis()).div(1000L).coerceAtLeast(0L).toInt()
+                ?: ((timerEndMillis ?: 0L) - System.currentTimeMillis()).div(1000L)
+                    .coerceAtLeast(0L).toInt()
         )
     }
 
     LaunchedEffect(timerDurationSeconds, timerEndMillis) {
         if (timerDurationSeconds != null) {
-            // Server schickt einheitliche Dauer → für alle Clients gleiches Runterz‌ählen
             while (remainingSeconds > 0) {
                 delay(1000L)
                 remainingSeconds = (remainingSeconds - 1).coerceAtLeast(0)
             }
         } else {
-            // Fallback: live aus absolutem Timestamp berechnen — selbstkorrigierend,
-            // beide Clients sehen zur selben Uhrzeit denselben Wert
             while (true) {
                 delay(500L)
                 val r = ((timerEndMillis ?: 0L) - System.currentTimeMillis())
@@ -376,9 +587,7 @@ private fun MinigamePlayingScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             allPlayers.forEachIndexed { index, playerId ->
                 val hasSubmitted = playerId in guessSubmissions
                 Box(
@@ -580,5 +789,46 @@ private fun MinigameFlagResultScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun MinigamePlayerAvatar(
+    playerName: String,
+    avatar: ImageBitmap?
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(CircleShape)
+                .background(Color.DarkGray),
+            contentAlignment = Alignment.Center
+        ) {
+            if (avatar != null) {
+                Image(
+                    bitmap = avatar,
+                    contentDescription = playerName,
+                    modifier = Modifier.size(72.dp),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Text(
+                    text = playerName.take(1).uppercase(),
+                    color = Color.White,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = playerName,
+            color = Color.White,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
