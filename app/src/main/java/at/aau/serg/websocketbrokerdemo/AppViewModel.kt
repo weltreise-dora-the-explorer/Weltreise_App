@@ -167,6 +167,9 @@ open class AppViewModel(
     private val _playerFreePassCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val playerFreePassCounts: StateFlow<Map<String, Int>> = _playerFreePassCounts.asStateFlow()
 
+    private val _freePassReceivedEvent = MutableStateFlow(0)
+    val freePassReceivedEvent: StateFlow<Int> = _freePassReceivedEvent.asStateFlow()
+
     private val _minigameSubPhase = MutableStateFlow<String?>(null)
     val minigameSubPhase: StateFlow<String?> = _minigameSubPhase.asStateFlow()
 
@@ -401,7 +404,8 @@ open class AppViewModel(
         }
     }
 
-    fun startMinigame() {
+    fun startMinigame(force: Boolean = false) {
+        if (minigameStartSent && !force) return
         minigameStartSent = true
         stomp.startMinigame(
             lobbyId = _lobbyId.value,
@@ -585,7 +589,11 @@ open class AppViewModel(
                             newList.add(pId)
                             freePassCountsMap[pId] = playerObj.optInt("freePassCount", 0)
                             if(pId == _playerName.value){
-                                _freePassCount.value = playerObj.optInt("freePassCount", 0)
+                                val newCount = playerObj.optInt("freePassCount", 0)
+                                if (newCount > _freePassCount.value) {
+                                    _freePassReceivedEvent.value += 1
+                                }
+                                _freePassCount.value = newCount
                             }
                             if (pId == stateJson.optString("currentPlayerId")) {
                                 val playerRs = playerObj.optInt("remainingSteps", -1)
@@ -745,7 +753,6 @@ open class AppViewModel(
                         else stateJson.optString("minigameSubPhase").ifBlank { null }
 
                     if (prevPhase != GameConstants.PHASE_MINIGAME && phase == GameConstants.PHASE_MINIGAME) {
-                        minigameStartSent = false
                         _myGuessSubmitted.value = false
                         _minigameSubPhase.value = null
                         _selectedMinigame.value = null
@@ -845,10 +852,10 @@ open class AppViewModel(
                         _flagTotalTimeMs.value = emptyMap()
                     }
 
-                    // Auto-trigger startMinigame for the current turn player on first MINIGAME entry
+                    // Auto-trigger startMinigame for the current turn player on first MINIGAME entry.
+                    // Skip if player has a free pass — they must choose via the dialog first.
                     if (phase == GameConstants.PHASE_MINIGAME && subPhase == null && !minigameStartSent) {
-                        if (newCurrentPlayerId == _playerName.value) {
-                            minigameStartSent = true
+                        if (newCurrentPlayerId == _playerName.value && _freePassCount.value == 0) {
                             startMinigame()
                         }
                     }

@@ -131,6 +131,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val remainingSteps by viewModel.remainingSteps.collectAsState()
     val isGameOver by viewModel.isGameOver.collectAsState()
     val freePassCount by viewModel.freePassCount.collectAsState()
+    val freePassReceivedEvent by viewModel.freePassReceivedEvent.collectAsState()
     val goalReachedMessage by viewModel.goalReachedMessage.collectAsState()
     val lastConqueredCityId = remember(goalReachedMessage) {
         goalReachedMessage?.let { msg ->
@@ -244,6 +245,18 @@ fun GameScreen(viewModel: AppViewModel) {
     LaunchedEffect(shouldShowFreePassDecision, myCurrentCity?.id) {
         if(shouldShowFreePassDecision) {
             showFreePassDialog.value = true
+        }
+    }
+
+    var showFreePassReceivedOverlay by remember { mutableStateOf(false) }
+    val freePassReceivedAlpha = remember { Animatable(0f) }
+    LaunchedEffect(freePassReceivedEvent) {
+        if (freePassReceivedEvent > 0) {
+            showFreePassReceivedOverlay = true
+            freePassReceivedAlpha.snapTo(1f)
+            delay(2500)
+            freePassReceivedAlpha.animateTo(0f, animationSpec = tween(800))
+            showFreePassReceivedOverlay = false
         }
     }
 
@@ -445,10 +458,7 @@ fun GameScreen(viewModel: AppViewModel) {
                             onClick = {
                                 freePassDecisionMade.value = true
                                 showFreePassDialog.value = false
-
-                                if (!isMinigamePhase) {
-                                    viewModel.startMinigame()
-                                }
+                                viewModel.startMinigame(force = true)
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF8DB6CD)
@@ -606,6 +616,37 @@ fun GameScreen(viewModel: AppViewModel) {
                         text = "(${msg.reached}/${msg.total})",
                         fontSize = 16.sp,
                         color = Color.White
+                    )
+                }
+            }
+        }
+
+        // Freepass-Erhalten-Animation – nur für den lokalen Spieler sichtbar
+        if (showFreePassReceivedOverlay && freePassBitmap != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(freePassReceivedAlpha.value),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .background(Color(0xCC000000), RoundedCornerShape(24.dp))
+                        .padding(horizontal = 40.dp, vertical = 28.dp)
+                ) {
+                    Image(
+                        bitmap = freePassBitmap,
+                        contentDescription = "Freepass",
+                        modifier = Modifier.size(120.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "You received a Freepass!",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFD4AF37),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             }
