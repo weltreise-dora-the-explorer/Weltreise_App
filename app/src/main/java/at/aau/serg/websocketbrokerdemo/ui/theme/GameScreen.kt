@@ -99,6 +99,13 @@ fun GameScreen(viewModel: AppViewModel) {
     val reportablePlayerId by viewModel.reportablePlayerId.collectAsState()
     val gamePhase by viewModel.gamePhase.collectAsState()
     val minigameWinnerPlayerId by viewModel.minigameWinnerPlayerId.collectAsState()
+    val reactionReadyPlayerIds by viewModel.reactionReadyPlayerIds.collectAsState()
+    val reactionReadyEndsAtMs by viewModel.reactionReadyEndsAtMs.collectAsState()
+    val reactionStartTimeMs by viewModel.reactionStartTimeMs.collectAsState()
+    val reactionButtonVisibleAtMs by viewModel.reactionButtonVisibleAtMs.collectAsState()
+    val reactionRoundEndsAtMs by viewModel.reactionRoundEndsAtMs.collectAsState()
+    val reactionPressTimesMs by viewModel.reactionPressTimesMs.collectAsState()
+    val serverNowMs by viewModel.serverNowMs.collectAsState()
     val ownedCities by viewModel.ownedCities.collectAsState()
     val allCities by viewModel.allCities.collectAsState()
     val startCity by viewModel.startCity.collectAsState()
@@ -356,15 +363,33 @@ fun GameScreen(viewModel: AppViewModel) {
                     opponentPlayerNames = playersList.filter { it != minigameTargetPlayer },
                     targetCityName = playerCurrentCities[minigameTargetPlayer]?.name ?: "",
                     targetPlayerAvatar = minigameTargetAvatar,
-                    opponentPlayerAvatars = playersList.filter { it != minigameTargetPlayer }.map { opponentName -> avatars.getOrNull(playersList.indexOf(opponentName)) },
+                    opponentPlayerAvatars = playersList.filter { it != minigameTargetPlayer }
+                        .map { opponentName -> avatars.getOrNull(playersList.indexOf(opponentName)) },
+                    currentPlayerName = currentPlayerName,
                     announcedWinnerPlayerId = minigameWinnerPlayerId,
                     canFinishMinigame = canFinishMinigame,
+
+                    reactionReadyPlayerIds = reactionReadyPlayerIds,
+                    reactionReadyEndsAtMs = reactionReadyEndsAtMs,
+                    reactionStartTimeMs = reactionStartTimeMs,
+                    reactionButtonVisibleAtMs = reactionButtonVisibleAtMs,
+                    reactionRoundEndsAtMs = reactionRoundEndsAtMs,
+                    serverNowMs = serverNowMs,
+                    reactionPressTimesMs = reactionPressTimesMs,
+                    onReactionReady = {
+                        viewModel.reactionReady()
+                    },
+                    onReactionPress = {
+                        viewModel.reactionPress()
+                    },
+
                     onAnnounceMinigameResult = { winnerPlayerId ->
                         viewModel.announceMinigameResult(winnerPlayerId)
                     },
                     onFinishMinigame = { winnerPlayerId ->
                         viewModel.finishMinigame(winnerPlayerId)
                     },
+
                     minigameSubPhase = minigameSubPhase,
                     selectedMinigame = selectedMinigame,
                     guessQuestionText = guessQuestionText,
