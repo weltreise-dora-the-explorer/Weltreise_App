@@ -275,7 +275,9 @@ fun MinigameOverlay(
                             timerEndMillis = guessTimerEndMillis,
                             timerDurationSeconds = guessTimerDurationSeconds,
                             guessSubmissions = guessSubmissions,
+                            guessSubmissionTimes = guessSubmissionTimes,
                             allPlayers = allPlayers,
+                            playerAvatars = listOf(targetPlayerAvatar) + opponentPlayerAvatars,
                             myGuessSubmitted = myGuessSubmitted,
                             myPlayerId = myPlayerId,
                             onSubmitGuess = onSubmitGuess
@@ -284,32 +286,34 @@ fun MinigameOverlay(
                 }
 
                 effectiveSubPhase == "ROUND_REVEAL" -> {
-                    MinigameFlagRound(
-                        subPhase = "ROUND_REVEAL",
-                        roundIndex = flagRoundIndex,
-                        totalRounds = 5,
-                        flagCode = flagCode,
-                        options = flagOptions,
-                        correctName = flagCorrectName,
-                        timerEndMillis = guessTimerEndMillis,
-                        timerDurationSeconds = guessTimerDurationSeconds,
-                        mySubmittedIndex = guessSubmissions[myPlayerId],
-                        myScore = flagScores[myPlayerId] ?: 0,
-                        onSelectOption = onSubmitGuess
-                    )
-                } else {
-                    MinigamePlayingScreen(
-                        questionText = guessQuestionText,
-                        timerEndMillis = guessTimerEndMillis,
-                        timerDurationSeconds = guessTimerDurationSeconds,
-                        guessSubmissions = guessSubmissions,
-                        guessSubmissionTimes = guessSubmissionTimes,
-                        allPlayers = allPlayers,
-                        playerAvatars = listOf(targetPlayerAvatar) + opponentPlayerAvatars,
-                        myGuessSubmitted = myGuessSubmitted,
-                        myPlayerId = myPlayerId,
-                        onSubmitGuess = onSubmitGuess
-                    )
+                    if (isFlagGame) {
+                        MinigameFlagRound(
+                            subPhase = "ROUND_REVEAL",
+                            roundIndex = flagRoundIndex,
+                            totalRounds = 5,
+                            flagCode = flagCode,
+                            options = flagOptions,
+                            correctName = flagCorrectName,
+                            timerEndMillis = guessTimerEndMillis,
+                            timerDurationSeconds = guessTimerDurationSeconds,
+                            mySubmittedIndex = guessSubmissions[myPlayerId],
+                            myScore = flagScores[myPlayerId] ?: 0,
+                            onSelectOption = onSubmitGuess
+                        )
+                    } else {
+                        MinigamePlayingScreen(
+                            questionText = guessQuestionText,
+                            timerEndMillis = guessTimerEndMillis,
+                            timerDurationSeconds = guessTimerDurationSeconds,
+                            guessSubmissions = guessSubmissions,
+                            guessSubmissionTimes = guessSubmissionTimes,
+                            allPlayers = allPlayers,
+                            playerAvatars = listOf(targetPlayerAvatar) + opponentPlayerAvatars,
+                            myGuessSubmitted = myGuessSubmitted,
+                            myPlayerId = myPlayerId,
+                            onSubmitGuess = onSubmitGuess
+                        )
+                    }
                 }
 
                 effectiveSubPhase == "RESULT" -> {
