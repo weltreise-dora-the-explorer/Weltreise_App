@@ -1,19 +1,23 @@
 package at.aau.serg.websocketbrokerdemo.ui.theme
 
+import android.media.MediaPlayer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.R
 import at.aau.serg.websocketbrokerdemo.models.GameOverMessage
 
 private val GradientBackground = Brush.linearGradient(
@@ -32,6 +36,19 @@ fun GameOverScreen(
     onPlayAgainClick: () -> Unit = {},
     onLeaveClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    DisposableEffect(Unit) {
+        val player = MediaPlayer.create(context, R.raw.victoryscreen)?.apply {
+            setVolume(1f, 1f)
+            setOnCompletionListener { release() }
+            start()
+        }
+        onDispose {
+            runCatching { player?.stop() }
+            runCatching { player?.release() }
+        }
+    }
+
     val winner = winnerId?.takeIf { it.isNotBlank() }
         ?: results.maxByOrNull { it.score }?.playerName
     // Echten Sieger immer auf Platz 1, restliche Spieler nach Score absteigend.
