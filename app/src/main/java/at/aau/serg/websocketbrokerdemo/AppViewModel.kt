@@ -81,6 +81,27 @@ open class AppViewModel(
     private val _minigameWinnerPlayerId = MutableStateFlow<String?>(null)
     val minigameWinnerPlayerId: StateFlow<String?> = _minigameWinnerPlayerId.asStateFlow()
 
+    private val _reactionReadyPlayerIds = MutableStateFlow<List<String>>(emptyList())
+    val reactionReadyPlayerIds: StateFlow<List<String>> = _reactionReadyPlayerIds.asStateFlow()
+
+    private val _reactionReadyEndsAtMs = MutableStateFlow<Long?>(null)
+    val reactionReadyEndsAtMs: StateFlow<Long?> = _reactionReadyEndsAtMs.asStateFlow()
+
+    private val _reactionStartTimeMs = MutableStateFlow<Long?>(null)
+    val reactionStartTimeMs: StateFlow<Long?> = _reactionStartTimeMs.asStateFlow()
+
+    private val _reactionButtonVisibleAtMs = MutableStateFlow<Long?>(null)
+    val reactionButtonVisibleAtMs: StateFlow<Long?> = _reactionButtonVisibleAtMs.asStateFlow()
+
+    private val _reactionRoundEndsAtMs = MutableStateFlow<Long?>(null)
+    val reactionRoundEndsAtMs: StateFlow<Long?> = _reactionRoundEndsAtMs.asStateFlow()
+
+    private val _serverNowMs = MutableStateFlow<Long?>(null)
+    val serverNowMs: StateFlow<Long?> = _serverNowMs.asStateFlow()
+
+    private val _reactionPressTimesMs = MutableStateFlow<Map<String, Long>>(emptyMap())
+    val reactionPressTimesMs: StateFlow<Map<String, Long>> = _reactionPressTimesMs.asStateFlow()
+
     private val _ownedCities = MutableStateFlow<List<City>>(emptyList())
     val ownedCities: StateFlow<List<City>> = _ownedCities.asStateFlow()
 
@@ -426,6 +447,20 @@ open class AppViewModel(
             lobbyId = _lobbyId.value,
             playerId = _playerName.value,
             winnerPlayerId = winnerPlayerId
+        )
+    }
+
+    fun reactionReady() {
+        stomp.reactionReady(
+            lobbyId = _lobbyId.value,
+            playerId = _playerName.value
+        )
+    }
+
+    fun reactionPress() {
+        stomp.reactionPress(
+            lobbyId = _lobbyId.value,
+            playerId = _playerName.value
         )
     }
 
@@ -889,6 +924,46 @@ open class AppViewModel(
                             pendingReportTarget = null
                         }
                     }
+
+                    val readyArray = stateJson.optJSONArray("reactionReadyPlayerIds")
+                    val readyIds = mutableListOf<String>()
+                    if (readyArray != null) {
+                        for (i in 0 until readyArray.length()) {
+                            readyIds.add(readyArray.getString(i))
+                        }
+                    }
+                    _reactionReadyPlayerIds.value = readyIds
+
+                    _reactionReadyEndsAtMs.value =
+                        if (stateJson.isNull("reactionReadyEndsAtMs")) null
+                        else stateJson.optLong("reactionReadyEndsAtMs")
+
+                    _reactionStartTimeMs.value =
+                        if (stateJson.isNull("reactionStartTimeMs")) null
+                        else stateJson.optLong("reactionStartTimeMs")
+
+                    _reactionButtonVisibleAtMs.value =
+                        if (stateJson.isNull("reactionButtonVisibleAtMs")) null
+                        else stateJson.optLong("reactionButtonVisibleAtMs")
+
+                    _reactionRoundEndsAtMs.value =
+                        if (stateJson.isNull("reactionRoundEndsAtMs")) null
+                        else stateJson.optLong("reactionRoundEndsAtMs")
+
+                    _serverNowMs.value =
+                        if (stateJson.isNull("serverNowMs")) null
+                        else stateJson.optLong("serverNowMs")
+
+                    val pressTimesObject = stateJson.optJSONObject("reactionPressTimesMs")
+                    val pressTimes = mutableMapOf<String, Long>()
+                    if (pressTimesObject != null) {
+                        val keys = pressTimesObject.keys()
+                        while (keys.hasNext()) {
+                            val playerId = keys.next()
+                            pressTimes[playerId] = pressTimesObject.optLong(playerId)
+                        }
+                    }
+                    _reactionPressTimesMs.value = pressTimes
 
                     when {
                         commandType == "LOBBY_CLOSED" -> {
