@@ -113,7 +113,7 @@ fun MinigameOverlay(
     }
 
     LaunchedEffect(Unit) {
-        delay(2000)
+        delay(4000)
         showVsScreen = false
     }
 
