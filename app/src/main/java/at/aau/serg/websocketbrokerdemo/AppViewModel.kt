@@ -111,6 +111,9 @@ open class AppViewModel(
     private val _playerCityCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val playerCityCounts: StateFlow<Map<String, Int>> = _playerCityCounts.asStateFlow()
 
+    private val _playerReachedCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val playerReachedCounts: StateFlow<Map<String, Int>> = _playerReachedCounts.asStateFlow()
+
     private val _allPlayerOwnedCities = MutableStateFlow<Map<String, List<City>>>(emptyMap())
     val allPlayerOwnedCities: StateFlow<Map<String, List<City>>> = _allPlayerOwnedCities.asStateFlow()
 
@@ -187,6 +190,9 @@ open class AppViewModel(
 
     private val _playerFreePassCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val playerFreePassCounts: StateFlow<Map<String, Int>> = _playerFreePassCounts.asStateFlow()
+
+    private val _freePassReceivedEvent = MutableStateFlow(0)
+    val freePassReceivedEvent: StateFlow<Int> = _freePassReceivedEvent.asStateFlow()
 
     private val _minigameSubPhase = MutableStateFlow<String?>(null)
     val minigameSubPhase: StateFlow<String?> = _minigameSubPhase.asStateFlow()
@@ -422,7 +428,8 @@ open class AppViewModel(
         }
     }
 
-    fun startMinigame() {
+    fun startMinigame(force: Boolean = false) {
+        if (minigameStartSent && !force) return
         minigameStartSent = true
         stomp.startMinigame(
             lobbyId = _lobbyId.value,
@@ -467,6 +474,7 @@ open class AppViewModel(
             _ownedCities.value = emptyList()
             _startCity.value = null
             _playerCityCounts.value = emptyMap()
+            _playerReachedCounts.value = emptyMap()
             _playerCurrentCities.value = emptyMap()
             _diceValue.value = null
             _currentTurnPlayerId.value = null
@@ -507,6 +515,7 @@ open class AppViewModel(
         _ownedCities.value = emptyList()
         _startCity.value = null
         _playerCityCounts.value = emptyMap()
+        _playerReachedCounts.value = emptyMap()
         _allPlayerOwnedCities.value = emptyMap()
         _playerCurrentCities.value = emptyMap()
         _diceValue.value = null
@@ -607,6 +616,7 @@ open class AppViewModel(
                         val playersArray = stateJson.getJSONArray("players")
                         val newList = mutableListOf<String>()
                         val cityCountsMap = mutableMapOf<String, Int>()
+                        val reachedCountsMap = mutableMapOf<String, Int>()
                         val allOwnedMap = _allPlayerOwnedCities.value.toMutableMap()
                         val currentCitiesMap = mutableMapOf<String, City?>()
                         val freePassCountsMap = mutableMapOf<String, Int>()
@@ -620,7 +630,11 @@ open class AppViewModel(
                             newList.add(pId)
                             freePassCountsMap[pId] = playerObj.optInt("freePassCount", 0)
                             if(pId == _playerName.value){
-                                _freePassCount.value = playerObj.optInt("freePassCount", 0)
+                                val newCount = playerObj.optInt("freePassCount", 0)
+                                if (newCount > _freePassCount.value) {
+                                    _freePassReceivedEvent.value += 1
+                                }
+                                _freePassCount.value = newCount
                             }
                             if (pId == stateJson.optString("currentPlayerId")) {
                                 val playerRs = playerObj.optInt("remainingSteps", -1)
@@ -659,6 +673,8 @@ open class AppViewModel(
                             if (playerObj.has("ownedCities")) {
                                 val citiesArray = playerObj.getJSONArray("ownedCities")
                                 cityCountsMap[pId] = citiesArray.length()
+                                val visitedCount = if (playerObj.has("visitedCities")) playerObj.getJSONArray("visitedCities").length() else 0
+                                reachedCountsMap[pId] = visitedCount
 
                                 val cities = mutableListOf<City>()
                                 for (j in 0 until citiesArray.length()) {
@@ -721,6 +737,7 @@ open class AppViewModel(
                         _playerStartCityNames.value = startCityNamesMap
                         _playersList.value = newList
                         _playerCityCounts.value = cityCountsMap
+                        _playerReachedCounts.value = reachedCountsMap
                         _allPlayerOwnedCities.value = allOwnedMap
                         _playerCurrentCities.value = currentCitiesMap
                         _playerFreePassCounts.value = freePassCountsMap
@@ -780,7 +797,6 @@ open class AppViewModel(
                         else stateJson.optString("minigameSubPhase").ifBlank { null }
 
                     if (prevPhase != GameConstants.PHASE_MINIGAME && phase == GameConstants.PHASE_MINIGAME) {
-                        minigameStartSent = false
                         _myGuessSubmitted.value = false
                         _minigameSubPhase.value = null
                         _selectedMinigame.value = null
@@ -880,10 +896,10 @@ open class AppViewModel(
                         _flagTotalTimeMs.value = emptyMap()
                     }
 
-                    // Auto-trigger startMinigame for the current turn player on first MINIGAME entry
+                    // Auto-trigger startMinigame for the current turn player on first MINIGAME entry.
+                    // Skip if player has a free pass — they must choose via the dialog first.
                     if (phase == GameConstants.PHASE_MINIGAME && subPhase == null && !minigameStartSent) {
-                        if (newCurrentPlayerId == _playerName.value) {
-                            minigameStartSent = true
+                        if (newCurrentPlayerId == _playerName.value && _freePassCount.value == 0) {
                             startMinigame()
                         }
                     }

@@ -110,6 +110,8 @@ fun GameScreen(viewModel: AppViewModel) {
     val allCities by viewModel.allCities.collectAsState()
     val startCity by viewModel.startCity.collectAsState()
     val playerCityCounts by viewModel.playerCityCounts.collectAsState()
+    val playerReachedCounts by viewModel.playerReachedCounts.collectAsState()
+    val playerStartCityNames by viewModel.playerStartCityNames.collectAsState()
     val allPlayerOwnedCities by viewModel.allPlayerOwnedCities.collectAsState()
     val playerCurrentCities by viewModel.playerCurrentCities.collectAsState()
     val reportFeedback by viewModel.lastReportFeedback.collectAsState()
@@ -138,6 +140,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val remainingSteps by viewModel.remainingSteps.collectAsState()
     val isGameOver by viewModel.isGameOver.collectAsState()
     val freePassCount by viewModel.freePassCount.collectAsState()
+    val freePassReceivedEvent by viewModel.freePassReceivedEvent.collectAsState()
     val goalReachedMessage by viewModel.goalReachedMessage.collectAsState()
     val lastConqueredCityId = remember(goalReachedMessage) {
         goalReachedMessage?.let { msg ->
@@ -254,6 +257,18 @@ fun GameScreen(viewModel: AppViewModel) {
         }
     }
 
+    var showFreePassReceivedOverlay by remember { mutableStateOf(false) }
+    val freePassReceivedAlpha = remember { Animatable(0f) }
+    LaunchedEffect(freePassReceivedEvent) {
+        if (freePassReceivedEvent > 0) {
+            showFreePassReceivedOverlay = true
+            freePassReceivedAlpha.snapTo(1f)
+            delay(2500)
+            freePassReceivedAlpha.animateTo(0f, animationSpec = tween(800))
+            showFreePassReceivedOverlay = false
+        }
+    }
+
     // Würfelergebnis fade-out nach 5 Sekunden
     var showDiceOverlay by remember { mutableStateOf(false) }
     val diceAlpha = remember { Animatable(0f) }
@@ -273,13 +288,28 @@ fun GameScreen(viewModel: AppViewModel) {
     // Goal-Reached fade-out nach 4 Sekunden
     var showGoalReachedOverlay by remember { mutableStateOf(false) }
     val goalReachedAlpha = remember { Animatable(0f) }
+    var showAllReachedOverlay by remember { mutableStateOf(false) }
+    var allReachedPlayerName by remember { mutableStateOf("") }
+    var allReachedStartCityName by remember { mutableStateOf("") }
+    val allReachedAlpha = remember { Animatable(0f) }
     LaunchedEffect(goalReachedMessage) {
         if (goalReachedMessage != null) {
             showGoalReachedOverlay = true
             goalReachedAlpha.snapTo(1f)
+            if (goalReachedMessage!!.reached >= goalReachedMessage!!.total) {
+                allReachedPlayerName = goalReachedMessage!!.playerName
+                allReachedStartCityName = playerStartCityNames[goalReachedMessage!!.playerName] ?: ""
+                showAllReachedOverlay = true
+                allReachedAlpha.snapTo(1f)
+            }
             delay(3000)
             goalReachedAlpha.animateTo(0f, animationSpec = tween(1000))
             showGoalReachedOverlay = false
+            if (showAllReachedOverlay) {
+                delay(2000)
+                allReachedAlpha.animateTo(0f, animationSpec = tween(1000))
+                showAllReachedOverlay = false
+            }
         }
     }
 
@@ -470,10 +500,7 @@ fun GameScreen(viewModel: AppViewModel) {
                             onClick = {
                                 freePassDecisionMade.value = true
                                 showFreePassDialog.value = false
-
-                                if (!isMinigamePhase) {
-                                    viewModel.startMinigame()
-                                }
+                                viewModel.startMinigame(force = true)
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF8DB6CD)
@@ -531,6 +558,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 PlayerCard(
                     name = displayName,
                     bucketListCount = playerCityCounts[playerName] ?: 0,
+                    reachedCityCount = playerReachedCounts[playerName] ?: 0,
                     avatar = avatar,
                     isActive = playerName == currentTurnPlayerId,
                     diceValue = if (playerName == currentTurnPlayerId) diceValue else null,
@@ -631,6 +659,65 @@ fun GameScreen(viewModel: AppViewModel) {
                         text = "(${msg.reached}/${msg.total})",
                         fontSize = 16.sp,
                         color = Color.White
+                    )
+                }
+            }
+        }
+
+        // Alle Ziele erreicht – Broadcast-Overlay
+        if (showAllReachedOverlay) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .offset(y = 80.dp)
+                    .alpha(allReachedAlpha.value)
+                    .background(Color(0xCC1A237E), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 32.dp, vertical = 20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "$allReachedPlayerName hat alle Ziele erreicht!",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFD4AF37)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Weiter zur Startstadt: $allReachedStartCityName",
+                        fontSize = 15.sp,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+
+        // Freepass-Erhalten-Animation – nur für den lokalen Spieler sichtbar
+        if (showFreePassReceivedOverlay && freePassBitmap != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(freePassReceivedAlpha.value),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .background(Color(0xCC000000), RoundedCornerShape(24.dp))
+                        .padding(horizontal = 40.dp, vertical = 28.dp)
+                ) {
+                    Image(
+                        bitmap = freePassBitmap,
+                        contentDescription = "Freepass",
+                        modifier = Modifier.size(120.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "You received a Freepass!",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFD4AF37),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             }
@@ -1489,6 +1576,7 @@ fun ZoomableMap(
 fun PlayerCard(
     name: String,
     bucketListCount: Int,
+    reachedCityCount: Int = 0,
     avatar: ImageBitmap?,
     isActive: Boolean,
     diceValue: Int? = null,
@@ -1585,7 +1673,7 @@ fun PlayerCard(
                     color = Color(0xFFC0392B),
                     fontWeight = FontWeight.Bold
                 )
-                else -> Text(text = "Bucket List: $bucketListCount", fontSize = 10.sp, color = Color.Gray)
+                else -> Text(text = "Bucket List: $reachedCityCount/$bucketListCount", fontSize = 10.sp, color = Color.Gray)
             }
         }
 
