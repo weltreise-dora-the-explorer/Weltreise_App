@@ -340,7 +340,7 @@ fun MinigameOverlay(
 
                 else -> {
                     Text(
-                        text = "Minispiel wird geladen...",
+                        text = "Loading mini-game...",
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -420,10 +420,10 @@ private fun ReactionResultInfoScreen(
 }
 
 private val KNOWN_MINIGAMES = listOf(
-    "GUESS_GAME" to "Schätzspiel",
-    "QUIZ_GAME" to "Quizspiel",
+    "GUESS_GAME" to "Guessing Game",
+    "QUIZ_GAME" to "Quiz Game",
     "FLAG_GAME" to "Guess the Flag",
-    "REACTION_GAME" to "Reaktionsspiel",
+    "REACTION_GAME" to "Reaction Game",
 )
 
 @Composable
@@ -457,7 +457,7 @@ private fun MinigameSelectingScreen(selectedMinigame: String?) {
         modifier = Modifier.widthIn(min = 280.dp)
     ) {
         Text(
-            text = if (revealed) "Minispiel ausgewählt!" else "Minispiel wird ausgewählt...",
+            text = if (revealed) "Mini-game selected!" else "Selecting mini-game...",
             color = Color.White,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
@@ -925,7 +925,7 @@ private fun MinigamePlayingScreen(
                     .height(50.dp)
             ) {
                 Text(
-                    text = "Absenden",
+                    text = "Submit",
                     color = Color(0xFF0C1622),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold
@@ -1067,7 +1067,7 @@ private fun MinigameResultScreen(
                     .height(52.dp)
             ) {
                 Text(
-                    text = "Weiter",
+                    text = "Continue",
                     color = Color(0xFF0C1622),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold
@@ -1151,7 +1151,7 @@ private fun MinigameFlagResultScreen(
                     .height(56.dp)
             ) {
                 Text(
-                    text = "Weiter",
+                    text = "Continue",
                     color = Color.White,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold

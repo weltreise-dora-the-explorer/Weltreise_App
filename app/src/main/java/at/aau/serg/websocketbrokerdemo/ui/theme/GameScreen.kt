@@ -649,7 +649,7 @@ fun GameScreen(viewModel: AppViewModel) {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "${msg.playerName} hat ${msg.cityName} erreicht!",
+                        text = "${msg.playerName} reached ${msg.cityName}!",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFD4AF37)
@@ -677,14 +677,14 @@ fun GameScreen(viewModel: AppViewModel) {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "$allReachedPlayerName hat alle Ziele erreicht!",
+                        text = "$allReachedPlayerName reached all destinations!",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFD4AF37)
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Weiter zur Startstadt: $allReachedStartCityName",
+                        text = "On to the starting city: $allReachedStartCityName",
                         fontSize = 15.sp,
                         color = Color.White
                     )
@@ -886,7 +886,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     if (winnerName != null) {
                         Text(
-                            text = "$winnerName hat gewonnen!",
+                            text = "$winnerName has won!",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFD4AF37)
@@ -894,7 +894,7 @@ fun GameScreen(viewModel: AppViewModel) {
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                     Text(
-                        text = "Spiel beendet!",
+                        text = "Game over!",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -970,7 +970,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 ) {
                     if (startCity != null) {
                         Text(
-                            text = "🏠 Startstadt",
+                            text = "🏠 Start city",
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = Color(0xFF1E56A0)
