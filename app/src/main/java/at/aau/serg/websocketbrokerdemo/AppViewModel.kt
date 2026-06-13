@@ -242,6 +242,13 @@ open class AppViewModel(
         _flagScores.value = emptyMap()
         _flagTotalTimeMs.value = emptyMap()
     }
+    private val _quizQuestionText = MutableStateFlow<String?>(null)
+    val quizQuestionText: StateFlow<String?> = _quizQuestionText.asStateFlow()
+    private val _quizAnswers = MutableStateFlow<List<String>>(emptyList())
+    val quizAnswers: StateFlow<List<String>> = _quizAnswers.asStateFlow()
+    private val _quizSelectedAnswer = MutableStateFlow<String?>(null)
+    val quizSelectedAnswer: StateFlow<String?> = _quizSelectedAnswer.asStateFlow()
+
 
     private var minigameStartSent = false
 
@@ -434,6 +441,13 @@ open class AppViewModel(
         _myGuessSubmitted.value = true
         stomp.submitGuess(_lobbyId.value, _playerName.value, guess)
     }
+
+    fun submitQuizAnswer(answer: String) {
+        _quizSelectedAnswer.value = answer
+        val index = _quizAnswers.value.indexOf(answer)
+        submitGuess(if (index >= 0) index else 0)
+    }
+
 
     fun announceMinigameResult(winnerPlayerId: String) {
         stomp.announceMinigameResult(
@@ -878,6 +892,20 @@ open class AppViewModel(
                         _flagTotalTimeMs.value = times
                     } else {
                         _flagTotalTimeMs.value = emptyMap()
+                    }
+
+                    //QUIZ_GAME Felder auslesen
+                    _quizQuestionText.value = if (stateJson.isNull("quizQuestionText")) null
+                    else stateJson.optString("quizQuestionText").ifBlank { null }
+
+                    val quizOptionsJson = stateJson.optJSONArray("quizOptions")
+                    _quizAnswers.value = if (quizOptionsJson != null) {
+                        (0 until quizOptionsJson.length()).map { quizOptionsJson.optString(it) }
+                    } else emptyList()
+
+                    // Wenn das Minispiel vorbei ist, Auswahl zurücksetzen
+                    if (phase != "MINIGAME") {
+                        _quizSelectedAnswer.value = null
                     }
 
                     // Auto-trigger startMinigame for the current turn player on first MINIGAME entry

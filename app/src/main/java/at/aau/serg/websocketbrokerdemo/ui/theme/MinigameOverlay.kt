@@ -25,10 +25,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import at.aau.serg.websocketbrokerdemo.ui.theme.minigames.quiz.QuizUiState
 import at.aau.serg.websocketbrokerdemo.ui.theme.minigames.reaction.ReactionMinigame
 import com.example.myapplication.R
 import kotlinx.coroutines.delay
 import kotlin.math.abs
+import at.aau.serg.websocketbrokerdemo.ui.theme.minigames.quiz.QuizGameScreen
+
 
 private enum class MinigameResultType {
     TARGET_PLAYER_WINS,
@@ -77,7 +80,10 @@ fun MinigameOverlay(
     flagOptions: List<String>,
     flagCorrectName: String?,
     flagScores: Map<String, Int>,
-    flagTotalTimeMs: Map<String, Long>
+    flagTotalTimeMs: Map<String, Long>,
+
+    quizQuestionText: String?,
+    quizAnswers: List<String>
 ) {
     val otherPlayerName = opponentPlayerNames.firstOrNull() ?: targetPlayerName
     var showVsScreen by remember { mutableStateOf(true) }
@@ -92,7 +98,7 @@ fun MinigameOverlay(
     }
 
     val effectiveSubPhase =
-        if (displayedSubPhase == "RESULT" && !isFlagGame && guessQuestionAnswer == null) null
+        if (displayedSubPhase == "RESULT" && !isFlagGame && selectedMinigame != "QUIZ_GAME" && guessQuestionAnswer == null) null
         else displayedSubPhase
 
     val overlayMinWidth = if (isFlagGame) 280.dp else 320.dp
@@ -224,7 +230,64 @@ fun MinigameOverlay(
                 }
 
                 effectiveSubPhase == "PLAYING" -> {
-                    if (isFlagGame) {
+                        if (selectedMinigame == "QUIZ_GAME") {
+                                //lokaler Timer
+                                var showQuizVsScreen by remember { mutableStateOf(true)}
+                                LaunchedEffect(Unit) {
+                                    delay(4000) // 4 Sekunden Drama!
+                                    showQuizVsScreen = false
+                                }
+                    //VS-Screen/Quiz
+                                    if (showQuizVsScreen) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            MinigamePlayerAvatar(targetPlayerName, targetPlayerAvatar)
+                                            Spacer(modifier = Modifier.width(36.dp))
+                                            Text(
+                                                text = stringResource(R.string.minigame_vs_title),
+                                                color = Color.White,
+                                                fontSize = 40.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Spacer(modifier = Modifier.width(36.dp))
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                opponentPlayerNames.forEachIndexed {index, opponentName ->
+                                                    MinigamePlayerAvatar(opponentName, opponentPlayerAvatars.getOrNull(index))
+                                                    if (index != opponentPlayerNames.lastIndex) {
+                                                        Spacer(modifier = Modifier.height(10.dp))
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        val selectedIndex = guessSubmissions[myPlayerId]
+                                        val uiState = QuizUiState(
+                                            question = quizQuestionText ?: "Lade Frage…",
+                                            answers = quizAnswers.takeIf { it.isNotEmpty() }
+                                                ?: listOf(
+                                                    "A", "B", "C", "D"),
+                                                            selectedAnswer = selectedIndex ?. let {
+                                                        quizAnswers.getOrNull(
+                                                            it
+                                                        )
+                                                    },
+                                                    isTimerActive = guessTimerEndMillis != null && guessTimerEndMillis > (serverNowMs
+                                                        ?: 0L),
+                                                    timeLeftProgress = 1.0f
+                                                )
+
+                                                QuizGameScreen(
+                                                        state = uiState,
+                                            onAnswerClick = { clickedText ->
+                                                val index = quizAnswers.indexOf(clickedText)
+                                                onSubmitGuess(if (index >= 0) index else 0)
+                                            }
+                                        )
+                                    }
+                                }
+                                else if (isFlagGame) {
                         MinigameFlagRound(
                             subPhase = "PLAYING",
                             roundIndex = flagRoundIndex,
