@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -964,13 +965,22 @@ private fun MinigameResultScreen(
         displayedAnswer = target
     }
 
+    // Cap height to the available window so the Continue button stays reachable
+    // (with 3-4 players the ranked rows would otherwise push it off-screen).
+    val screenHeight = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.height.toDp()
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.widthIn(max = 320.dp)
+        modifier = Modifier
+            .widthIn(max = 320.dp)
+            .heightIn(max = screenHeight - 80.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         // "THE ANSWER" label
         Text(
-            text = "DIE ANTWORT",
+            text = "THE ANSWER",
             color = GuessWhite40,
             fontSize = 10.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -1002,7 +1012,7 @@ private fun MinigameResultScreen(
         // Ranked player rows
         if (sortedEntries.isEmpty()) {
             Text(
-                text = "Keine Einsendungen",
+                text = "No submissions",
                 color = GuessWhite65,
                 fontSize = 15.sp
             )
@@ -1094,7 +1104,16 @@ private fun MinigameFlagResultScreen(
             .thenBy { flagTotalTimeMs[it] ?: Long.MAX_VALUE }
     )
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    val screenHeight = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.height.toDp()
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .heightIn(max = screenHeight - 80.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
         Text(
             text = winnerPlayerId?.let { "🏆 $it wins!" } ?: "Result",
             color = Color(0xFFD4AF37),
