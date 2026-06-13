@@ -31,7 +31,7 @@ import com.example.myapplication.R
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import at.aau.serg.websocketbrokerdemo.ui.theme.minigames.quiz.QuizGameScreen
-
+import androidx.compose.ui.tooling.preview.Preview
 
 private enum class MinigameResultType {
     TARGET_PLAYER_WINS,
@@ -264,27 +264,21 @@ fun MinigameOverlay(
                                     } else {
                                         val selectedIndex = guessSubmissions[myPlayerId]
                                         val uiState = QuizUiState(
-                                            question = quizQuestionText ?: "Lade Frage…",
-                                            answers = quizAnswers.takeIf { it.isNotEmpty() }
-                                                ?: listOf(
-                                                    "A", "B", "C", "D"),
-                                                            selectedAnswer = selectedIndex ?. let {
-                                                        quizAnswers.getOrNull(
-                                                            it
-                                                        )
-                                                    },
-                                                    isTimerActive = guessTimerEndMillis != null && guessTimerEndMillis > (serverNowMs
-                                                        ?: 0L),
-                                                    timeLeftProgress = 1.0f
-                                                )
+                                            question = quizQuestionText ?: "Lade Frage...",
+                                            answers = quizAnswers.takeIf { it.isNotEmpty() } ?: listOf("A", "B", "C", "D"),
+                                            selectedAnswer = selectedIndex?.let { quizAnswers.getOrNull(it) },
+                                            isTimerActive = guessTimerEndMillis != null && guessTimerEndMillis > (serverNowMs ?: 0L),
+                                            timeLeftProgress = 1.0f
+                                        )
 
-                                                QuizGameScreen(
-                                                        state = uiState,
+                                        QuizGameScreen(
+                                            state = uiState,
                                             onAnswerClick = { clickedText ->
                                                 val index = quizAnswers.indexOf(clickedText)
                                                 onSubmitGuess(if (index >= 0) index else 0)
                                             }
                                         )
+
                                     }
                                 }
                                 else if (isFlagGame) {
@@ -316,19 +310,25 @@ fun MinigameOverlay(
                 }
 
                 effectiveSubPhase == "ROUND_REVEAL" -> {
-                    MinigameFlagRound(
-                        subPhase = "ROUND_REVEAL",
-                        roundIndex = flagRoundIndex,
-                        totalRounds = 5,
-                        flagCode = flagCode,
-                        options = flagOptions,
-                        correctName = flagCorrectName,
-                        timerEndMillis = guessTimerEndMillis,
-                        timerDurationSeconds = guessTimerDurationSeconds,
-                        mySubmittedIndex = guessSubmissions[myPlayerId],
-                        myScore = flagScores[myPlayerId] ?: 0,
-                        onSelectOption = onSubmitGuess
-                    )
+                    if (selectedMinigame == "QUIZ_GAME") {
+                        QuizReadyScreen(
+                            onReadyClick = { onReactionReady() }
+                        )
+                    } else {
+                        MinigameFlagRound(
+                            subPhase = "ROUND_REVEAL",
+                            roundIndex = flagRoundIndex,
+                            totalRounds = 5,
+                            flagCode = flagCode,
+                            options = flagOptions,
+                            correctName = flagCorrectName,
+                            timerEndMillis = guessTimerEndMillis,
+                            timerDurationSeconds = guessTimerDurationSeconds,
+                            mySubmittedIndex = guessSubmissions[myPlayerId],
+                            myScore = flagScores[myPlayerId] ?: 0,
+                            onSelectOption = onSubmitGuess
+                        )
+                    }
                 }
 
                 effectiveSubPhase == "RESULT" -> {
@@ -894,4 +894,55 @@ private fun MinigamePlayerAvatar(
             fontWeight = FontWeight.Bold
         )
     }
+}
+@Composable
+fun QuizReadyScreen(
+    onReadyClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(16.dp)
+    ) {
+        Text(
+            text = "It's Quiz Time!",
+            color = Color.White,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "You think you're smart? The Baron of Brainstorm is ready to crush your ego. Are you?",
+            color = Color.White,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.width(280.dp)
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Button(
+            onClick = onReadyClick,
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8DB6CD)), //Hellblau
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .width(200.dp)
+                .height(56.dp)
+        ) {
+            Text(
+                text = "Ready",
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+
+@Preview(showBackground = true, widthDp = 800, heightDp = 450)
+@Composable
+fun QuizReadyScreenPreview() {
+    QuizReadyScreen(onReadyClick = {})
 }
