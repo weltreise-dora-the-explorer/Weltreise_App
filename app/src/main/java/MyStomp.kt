@@ -18,8 +18,8 @@ import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 import at.aau.serg.websocketbrokerdemo.GameConstants
 
-//private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
-private const val WEBSOCKET_URI = "ws://localhost:8080/websocket-example-broker" // physisches Gerät: adb reverse tcp:8080 tcp:8080 nötig
+private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
+//private const val WEBSOCKET_URI = "ws://localhost:8080/websocket-example-broker" // physisches Gerät
 //private const val WEBSOCKET_URI = "ws://se2-demo.aau.at:53205/websocket-example-broker"
 private const val RECONNECT_INITIAL_DELAY_MS = 2000L
 private const val RECONNECT_MAX_DELAY_MS = 30_000L
@@ -52,58 +52,55 @@ class MyStomp(val callbacks: Callbacks) {
         client = StompClient(OkHttpWebSocketClient()) // other config can be passed in here
         scope.launch {
             try {
-                val activeSession = client.connect(WEBSOCKET_URI)
-                session = activeSession
-
-                // connect to topic
-                topicFlow = activeSession.subscribeText("/topic/hello-response")
-                collector = scope.launch {
-                    collectSafely("hello-response") {
-                        topicFlow?.collect { msg ->
-                            // TODO logic
-                            callback(msg)
-                        }
-                    }
-                }
-
-                // connect to JSON topic
-                jsonFlow = activeSession.subscribeText("/topic/rcv-object")
-                jsonCollector = scope.launch {
-                    collectSafely("rcv-object") {
-                        jsonFlow?.collect { msg ->
-                            val o = JSONObject(msg)
-                            callback(o.get("text").toString())
-                        }
-                    }
-                }
-
-                val goalReachedFlow = activeSession.subscribeText("/topic/goal-reached")
-                scope.launch {
-                    collectSafely("goal-reached") {
-                        goalReachedFlow.collect { msg ->
-                            Log.d("MyStomp", "GOAL-REACHED received: $msg")
-                            callbackGoalReached(msg)
-                        }
-                    }
-                }
-                Log.d("MyStomp", "Subscribed to /topic/goal-reached")
-
-                val gameOverFlow = activeSession.subscribeText("/topic/game-over")
-                scope.launch {
-                    collectSafely("game-over") {
-                        gameOverFlow.collect { msg ->
-                            Log.d("MyStomp", "GAME-OVER received: $msg")
-                            callbackGameOver(msg)
-                        }
-                    }
-                }
-                Log.d("MyStomp", "Subscribed to /topic/game-over")
-
+                connectSession()
                 callback("connected")
-
             } catch (e: Exception) {
+                session = null
                 Log.e("MyStomp", "Connection failed", e)
                 callback("Connection error")
+                scheduleReconnect(initialConnection = true)
+            }
+        }
+    }
+
+    private suspend fun connectSession() {
+        val activeSession = client.connect(WEBSOCKET_URI)
+        session = activeSession
+
+        topicFlow = activeSession.subscribeText("/topic/hello-response")
+        collector = scope.launch {
+            collectSafely("hello-response") {
+                topicFlow?.collect(::callback)
+            }
+        }
+
+        jsonFlow = activeSession.subscribeText("/topic/rcv-object")
+        jsonCollector = scope.launch {
+            collectSafely("rcv-object") {
+                jsonFlow?.collect { msg ->
+                    val o = JSONObject(msg)
+                    callback(o.get("text").toString())
+                }
+            }
+        }
+
+        val goalReachedFlow = activeSession.subscribeText("/topic/goal-reached")
+        scope.launch {
+            collectSafely("goal-reached") {
+                goalReachedFlow.collect { msg ->
+                    Log.d("MyStomp", "GOAL-REACHED received: $msg")
+                    callbackGoalReached(msg)
+                }
+            }
+        }
+
+        val gameOverFlow = activeSession.subscribeText("/topic/game-over")
+        scope.launch {
+            collectSafely("game-over") {
+                gameOverFlow.collect { msg ->
+                    Log.d("MyStomp", "GAME-OVER received: $msg")
+                    callbackGameOver(msg)
+                }
             }
         }
     }
@@ -299,10 +296,10 @@ class MyStomp(val callbacks: Callbacks) {
         Handler(Looper.getMainLooper()).post {
             callbacks.onConnectionLost()
         }
-        scheduleReconnect()
+        scheduleReconnect(initialConnection = false)
     }
 
-    private fun scheduleReconnect() {
+    private fun scheduleReconnect(initialConnection: Boolean) {
         if (reconnecting) return
         reconnecting = true
         scope.launch {
@@ -311,15 +308,21 @@ class MyStomp(val callbacks: Callbacks) {
                 try {
                     delay(delayMs)
                     Log.i("MyStomp", "Reconnect attempt...")
-                    val activeSession = client.connect(WEBSOCKET_URI)
-                    session = activeSession
-                    Handler(Looper.getMainLooper()).post {
-                        callbacks.onReconnected()
+                    connectSession()
+                    if (initialConnection) {
+                        callback("connected")
+                    } else {
+                        Handler(Looper.getMainLooper()).post {
+                            callbacks.onReconnected()
+                        }
                     }
                     break
                 } catch (e: Exception) {
+                    session = null
                     Log.w("MyStomp", "Reconnect failed: ${e.message}")
-                    delayMs = (delayMs * 2).coerceAtMost(RECONNECT_MAX_DELAY_MS)
+                    if (!initialConnection) {
+                        delayMs = (delayMs * 2).coerceAtMost(RECONNECT_MAX_DELAY_MS)
+                    }
                 }
             }
             reconnecting = false

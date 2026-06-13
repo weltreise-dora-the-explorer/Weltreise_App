@@ -69,6 +69,8 @@ class MainActivity : ComponentActivity() {
                 val disconnectedPlayers by viewModel.disconnectedPlayers.collectAsState()
                 val secondsUntilRemoval by viewModel.secondsUntilRemoval.collectAsState()
                 val currentTurnPlayerId by viewModel.currentTurnPlayerId.collectAsState()
+                val isLoading by viewModel.isLoading.collectAsState()
+                val connectionErrorMessage by viewModel.connectionErrorMessage.collectAsState()
 
                 val turnPlayerIsDisconnected = currentTurnPlayerId != null
                         && disconnectedPlayers.contains(currentTurnPlayerId)
@@ -81,7 +83,9 @@ class MainActivity : ComponentActivity() {
                                 onJoinClick = { typedName ->
                                     viewModel.setPlayerName(typedName)
                                     viewModel.navigateTo("lobby")
-                                }
+                                },
+                                isLoading = isLoading,
+                                connectionErrorMessage = connectionErrorMessage
                             )
                         }
                         "host" -> {
@@ -129,4 +133,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-

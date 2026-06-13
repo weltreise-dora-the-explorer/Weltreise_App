@@ -54,6 +54,9 @@ open class AppViewModel(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    private val _connectionErrorMessage = MutableStateFlow<String?>(null)
+    val connectionErrorMessage: StateFlow<String?> = _connectionErrorMessage.asStateFlow()
+
     private val _isHost = MutableStateFlow(false)
     val isHost: StateFlow<Boolean> = _isHost.asStateFlow()
 
@@ -335,7 +338,6 @@ open class AppViewModel(
         _isHost.value = false
         _isLoading.value = true
         _errorMessage.value = null
-        prefs?.setLobbyId(pin)
         stomp.joinMultiplayerLobby(pin, _playerName.value, clientId.takeIf { it.isNotBlank() })
         // Navigation passiert jetzt in onResponse() nach Server-Bestätigung
     }
@@ -347,7 +349,7 @@ open class AppViewModel(
         _isHost.value = true
         _isLoading.value = true
         _errorMessage.value = null
-        prefs?.setLobbyId(randomPin)
+        _connectionErrorMessage.value = null
         prefs?.setPlayerName(name)
         stomp.createMultiplayerLobby(randomPin, name, clientId.takeIf { it.isNotBlank() })
         // Navigation passiert jetzt in onResponse() nach Server-Bestätigung
@@ -562,13 +564,23 @@ open class AppViewModel(
 
         // Initialer Connect erfolgreich → versuchen automatisch rejoinen falls Prefs Daten haben
         if (res == "connected") {
+            _connectionErrorMessage.value = null
             attemptAutoRejoinFromPrefs()
+            return
+        }
+
+        if (res == "Connection error"
+            || res == "Error: Not connected"
+            || res == "Error: Lobby Creation Failed"
+        ) {
+            _connectionErrorMessage.value = "Not connected to server"
             return
         }
 
         try {
             if (res.startsWith("{")) {
                 val rootJson = JSONObject(res)
+                val commandType = rootJson.optString("commandType", "")
 
                 // Prüfe success-Flag für Error-Handling
                 if (rootJson.has("success") && !rootJson.getBoolean("success")) {
@@ -606,6 +618,10 @@ open class AppViewModel(
                 // Erfolgreiche Response
                 if (rootJson.has("state") && !rootJson.isNull("state")) {
                     val stateJson = rootJson.getJSONObject("state")
+
+                    if (commandType == "CREATE_LOBBY" || commandType == "JOIN_LOBBY") {
+                        prefs?.setLobbyId(_lobbyId.value)
+                    }
 
                     if(stateJson.has("gameMode") && !stateJson.isNull("gameMode")){
                         _gameMode.value = stateJson.getString("gameMode")
@@ -782,7 +798,6 @@ open class AppViewModel(
                     }
 
                     // Navigation (dein bestehender Code)
-                    val commandType = rootJson.optString("commandType", "")
                     val prevPhase = _gamePhase.value
                     val phase = stateJson.optString("phase", "LOBBY")
                     _gamePhase.value = phase
