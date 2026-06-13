@@ -2,7 +2,7 @@ package at.aau.serg.websocketbrokerdemo
 
 import MyStomp
 import android.content.Context
-import android.util.Log
+import at.aau.serg.websocketbrokerdemo.logging.DebugLog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.aau.serg.websocketbrokerdemo.models.City
@@ -53,6 +53,9 @@ open class AppViewModel(
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    private val _connectionErrorMessage = MutableStateFlow<String?>(null)
+    val connectionErrorMessage: StateFlow<String?> = _connectionErrorMessage.asStateFlow()
 
     private val _isHost = MutableStateFlow(false)
     val isHost: StateFlow<Boolean> = _isHost.asStateFlow()
@@ -285,9 +288,9 @@ open class AppViewModel(
                 ))
             }
             _allCities.value = cities
-            Log.d("AppViewModel", "Alle Städte geladen: ${cities.size}")
+            DebugLog.d("AppViewModel") { "Alle Städte geladen: ${cities.size}" }
         } catch (e: Exception) {
-            Log.e("AppViewModel", "Fehler beim Laden der Städte", e)
+            DebugLog.e("AppViewModel", e) { "Fehler beim Laden der Städte" }
         }
     }
 
@@ -335,7 +338,6 @@ open class AppViewModel(
         _isHost.value = false
         _isLoading.value = true
         _errorMessage.value = null
-        prefs?.setLobbyId(pin)
         stomp.joinMultiplayerLobby(pin, _playerName.value, clientId.takeIf { it.isNotBlank() })
         // Navigation passiert jetzt in onResponse() nach Server-Bestätigung
     }
@@ -347,7 +349,7 @@ open class AppViewModel(
         _isHost.value = true
         _isLoading.value = true
         _errorMessage.value = null
-        prefs?.setLobbyId(randomPin)
+        _connectionErrorMessage.value = null
         prefs?.setPlayerName(name)
         stomp.createMultiplayerLobby(randomPin, name, clientId.takeIf { it.isNotBlank() })
         // Navigation passiert jetzt in onResponse() nach Server-Bestätigung
@@ -374,7 +376,9 @@ open class AppViewModel(
     }
 
     fun onMoveToCity(targetCityId: String) {
-        Log.d("CityTap", "onMoveToCity: lobbyId='${_lobbyId.value}' player='${_playerName.value}' target='$targetCityId'")
+        DebugLog.d("CityTap") {
+            "onMoveToCity: lobbyId='${_lobbyId.value}' player='${_playerName.value}' target='$targetCityId'"
+        }
         stomp.moveToCity(_lobbyId.value, _playerName.value, targetCityId)
     }
 
@@ -398,7 +402,9 @@ open class AppViewModel(
     }
 
     fun onShakeCheat() {
-        Log.d("ShakeCheat", "phase=${_gamePhase.value} player=${_currentTurnPlayerId.value} me=${_playerName.value} steps=${_remainingSteps.value}")
+        DebugLog.d("ShakeCheat") {
+            "phase=${_gamePhase.value} player=${_currentTurnPlayerId.value} me=${_playerName.value} steps=${_remainingSteps.value}"
+        }
         if (_gamePhase.value != "IN_TURN") return
         if (_currentTurnPlayerId.value != _playerName.value) return
         if (_remainingSteps.value != 1) return
@@ -556,19 +562,32 @@ open class AppViewModel(
     }
 
     override fun onResponse(res: String) {
-        Log.i("AppViewModel", "Received from server: $res")
-        Log.d("CityTap", "onResponse: commandType=${runCatching { JSONObject(res).optString("commandType") }.getOrDefault("?")} validMoveIds=${runCatching { JSONObject(res).optJSONObject("state")?.optJSONArray("validMoveIds") }.getOrDefault("?")}")
+        DebugLog.i("AppViewModel") { "Received from server: $res" }
+        DebugLog.d("CityTap") {
+            "onResponse: commandType=${runCatching { JSONObject(res).optString("commandType") }.getOrDefault("?")} " +
+                "validMoveIds=${runCatching { JSONObject(res).optJSONObject("state")?.optJSONArray("validMoveIds") }.getOrDefault("?")}"
+        }
         _isLoading.value = false
 
         // Initialer Connect erfolgreich → versuchen automatisch rejoinen falls Prefs Daten haben
         if (res == "connected") {
+            _connectionErrorMessage.value = null
             attemptAutoRejoinFromPrefs()
+            return
+        }
+
+        if (res == "Connection error"
+            || res == "Error: Not connected"
+            || res == "Error: Lobby Creation Failed"
+        ) {
+            _connectionErrorMessage.value = "Not connected to server"
             return
         }
 
         try {
             if (res.startsWith("{")) {
                 val rootJson = JSONObject(res)
+                val commandType = rootJson.optString("commandType", "")
 
                 // Prüfe success-Flag für Error-Handling
                 if (rootJson.has("success") && !rootJson.getBoolean("success")) {
@@ -578,7 +597,7 @@ open class AppViewModel(
                     // Versteckter Shake-Cheat: Fehler nicht im UI anzeigen,
                     // damit Mitspieler / der Spieler selbst nichts vom Versuch sieht.
                     if (failedCommandType == GameConstants.COMMAND_USE_SHAKE_CHEAT) {
-                        Log.d("AppViewModel", "Shake-Cheat abgelehnt: $errorMsg")
+                        DebugLog.d("AppViewModel") { "Shake-Cheat abgelehnt: $errorMsg" }
                         return
                     }
 
@@ -589,8 +608,8 @@ open class AppViewModel(
                     }
 
                     _errorMessage.value = errorMsg
-                    Log.e("CityTap", "Server-Fehler nach MOVE_TO_CITY: $errorMsg")
-                    Log.e("AppViewModel", "Server-Fehler: $errorMsg")
+                    DebugLog.e("CityTap") { "Server-Fehler nach MOVE_TO_CITY: $errorMsg" }
+                    DebugLog.e("AppViewModel") { "Server-Fehler: $errorMsg" }
 
                     // REJOIN fehlgeschlagen (z.B. nach Grace Period Timeout)
                     // → lobbyId aus Prefs loeschen und zurueck zum Login
@@ -606,6 +625,10 @@ open class AppViewModel(
                 // Erfolgreiche Response
                 if (rootJson.has("state") && !rootJson.isNull("state")) {
                     val stateJson = rootJson.getJSONObject("state")
+
+                    if (commandType == "CREATE_LOBBY" || commandType == "JOIN_LOBBY") {
+                        prefs?.setLobbyId(_lobbyId.value)
+                    }
 
                     if(stateJson.has("gameMode") && !stateJson.isNull("gameMode")){
                         _gameMode.value = stateJson.getString("gameMode")
@@ -715,7 +738,9 @@ open class AppViewModel(
                                         )
                                     }
 
-                                    Log.d("AppViewModel", "Eigene Städte empfangen: ${cities.map { it.name }}")
+                                    DebugLog.d("AppViewModel") {
+                                        "Eigene Städte empfangen: ${cities.map { it.name }}"
+                                    }
 
                                     if (playerObj.has("startCity") && !playerObj.isNull("startCity")) {
                                         val sc = playerObj.getJSONObject("startCity")
@@ -782,7 +807,6 @@ open class AppViewModel(
                     }
 
                     // Navigation (dein bestehender Code)
-                    val commandType = rootJson.optString("commandType", "")
                     val prevPhase = _gamePhase.value
                     val phase = stateJson.optString("phase", "LOBBY")
                     _gamePhase.value = phase
@@ -1001,7 +1025,7 @@ open class AppViewModel(
                 _errorMessage.value = res
             }
         } catch (e: Exception) {
-            Log.e("AppViewModel", "Failed to parse JSON", e)
+            DebugLog.e("AppViewModel", e) { "Failed to parse JSON" }
             _errorMessage.value = "Fehler bei Server-Kommunikation"
         }
     }
@@ -1016,7 +1040,7 @@ open class AppViewModel(
                 total = json.optInt("total")
             )
         } catch (e: Exception) {
-            Log.e("AppViewModel", "Failed to parse goal-reached", e)
+            DebugLog.e("AppViewModel", e) { "Failed to parse goal-reached" }
         }
     }
 
@@ -1026,7 +1050,7 @@ open class AppViewModel(
             _minigameLostCityName.value = json.optString("lostCityName").ifBlank { null }
             _minigameNewCityName.value = json.optString("newCityName").ifBlank { null }
         } catch (e: Exception) {
-            Log.e("AppViewModel", "Failed to parse minigame-lost", e)
+            DebugLog.e("AppViewModel", e) { "Failed to parse minigame-lost" }
         }
     }
 
@@ -1096,7 +1120,7 @@ open class AppViewModel(
             _gameOverMessage.value = GameOverMessage(winnerId, results)
             navigateTo("gameover")
         } catch (e: Exception) {
-            Log.e("AppViewModel", "Failed to parse game-over", e)
+            DebugLog.e("AppViewModel", e) { "Failed to parse game-over" }
         }
     }
 }

@@ -3,7 +3,7 @@ package at.aau.serg.websocketbrokerdemo.ui.theme
 import android.content.Context
 import at.aau.serg.websocketbrokerdemo.models.Continent
 import android.graphics.BitmapFactory
-import android.util.Log
+import at.aau.serg.websocketbrokerdemo.logging.DebugLog
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -1168,14 +1168,18 @@ fun ZoomableMap(
                 .pointerInput(validMoveIdSet, isMyTurn) {
                     if (!isMyTurn) return@pointerInput
                     detectTapGestures { tapOffset ->
-                        Log.d("CityTap", "tap received: $tapOffset")
+                        DebugLog.d("CityTap") { "tap received: $tapOffset" }
                         val dbgCityWorld = allCities.firstOrNull()?.let {
                             Offset(xOffset + it.x_relativ * renderedWidth, yOffset + it.y_relativ * renderedHeight)
                         }
-                        Log.d("CityTap", "tapOffset=$tapOffset  scale=$currentScale  firstCityWorld=$dbgCityWorld")
-                        Log.d("CityTap", "scale=$currentScale offset=$currentOffset")
+                        DebugLog.d("CityTap") {
+                            "tapOffset=$tapOffset scale=$currentScale firstCityWorld=$dbgCityWorld"
+                        }
+                        DebugLog.d("CityTap") { "scale=$currentScale offset=$currentOffset" }
                         if (isLocalPlayerAnimating) return@detectTapGestures
-                        Log.d("CityTap", "isMyTurn=$isMyTurn, validMoveIds=$validMoveIdSet")
+                        DebugLog.d("CityTap") {
+                            "isMyTurn=$isMyTurn, validMoveIds=$validMoveIdSet"
+                        }
                         val canvasX = (tapOffset.x - currentOffset.x - screenWidth / 2f) / currentScale + screenWidth / 2f
                         val canvasY = (tapOffset.y - currentOffset.y - screenHeight / 2f) / currentScale + screenHeight / 2f
                         val hitRadius = 60f / currentScale
@@ -1189,9 +1193,11 @@ fun ZoomableMap(
                             if (dist < closestDist) { closestDist = dist; closestCity = city }
                         }
 
-                        Log.d("CityTap", "closestCity=${closestCity?.id}, dist=$closestDist, hitRadius=$hitRadius")
+                        DebugLog.d("CityTap") {
+                            "closestCity=${closestCity?.id}, dist=$closestDist, hitRadius=$hitRadius"
+                        }
                         if (closestDist <= hitRadius) closestCity?.let { targetCity ->
-                            Log.d("CityTap", "calling onCityClick: ${targetCity.id}")
+                            DebugLog.d("CityTap") { "calling onCityClick: ${targetCity.id}" }
                             coroutineScope.launch {
                                 val cityMap = allCities.associateBy { it.id }
                                 val fromId = playerCurrentCities[myPlayerId]?.id
