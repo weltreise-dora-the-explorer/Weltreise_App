@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -340,7 +341,7 @@ fun MinigameOverlay(
 
                 else -> {
                     Text(
-                        text = "Minispiel wird geladen...",
+                        text = "Loading mini-game...",
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -420,10 +421,10 @@ private fun ReactionResultInfoScreen(
 }
 
 private val KNOWN_MINIGAMES = listOf(
-    "GUESS_GAME" to "Schätzspiel",
-    "QUIZ_GAME" to "Quizspiel",
+    "GUESS_GAME" to "Guessing Game",
+    "QUIZ_GAME" to "Quiz Game",
     "FLAG_GAME" to "Guess the Flag",
-    "REACTION_GAME" to "Reaktionsspiel",
+    "REACTION_GAME" to "Reaction Game",
 )
 
 @Composable
@@ -457,7 +458,7 @@ private fun MinigameSelectingScreen(selectedMinigame: String?) {
         modifier = Modifier.widthIn(min = 280.dp)
     ) {
         Text(
-            text = if (revealed) "Minispiel ausgewählt!" else "Minispiel wird ausgewählt...",
+            text = if (revealed) "Mini-game selected!" else "Selecting mini-game...",
             color = Color.White,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
@@ -925,7 +926,7 @@ private fun MinigamePlayingScreen(
                     .height(50.dp)
             ) {
                 Text(
-                    text = "Absenden",
+                    text = "Submit",
                     color = Color(0xFF0C1622),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold
@@ -964,13 +965,22 @@ private fun MinigameResultScreen(
         displayedAnswer = target
     }
 
+    // Cap height to the available window so the Continue button stays reachable
+    // (with 3-4 players the ranked rows would otherwise push it off-screen).
+    val screenHeight = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.height.toDp()
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.widthIn(max = 320.dp)
+        modifier = Modifier
+            .widthIn(max = 320.dp)
+            .heightIn(max = screenHeight - 80.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         // "THE ANSWER" label
         Text(
-            text = "DIE ANTWORT",
+            text = "THE ANSWER",
             color = GuessWhite40,
             fontSize = 10.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -1002,7 +1012,7 @@ private fun MinigameResultScreen(
         // Ranked player rows
         if (sortedEntries.isEmpty()) {
             Text(
-                text = "Keine Einsendungen",
+                text = "No submissions",
                 color = GuessWhite65,
                 fontSize = 15.sp
             )
@@ -1067,7 +1077,7 @@ private fun MinigameResultScreen(
                     .height(52.dp)
             ) {
                 Text(
-                    text = "Weiter",
+                    text = "Continue",
                     color = Color(0xFF0C1622),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold
@@ -1094,7 +1104,16 @@ private fun MinigameFlagResultScreen(
             .thenBy { flagTotalTimeMs[it] ?: Long.MAX_VALUE }
     )
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    val screenHeight = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.height.toDp()
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .heightIn(max = screenHeight - 80.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
         Text(
             text = winnerPlayerId?.let { "🏆 $it wins!" } ?: "Result",
             color = Color(0xFFD4AF37),
@@ -1151,7 +1170,7 @@ private fun MinigameFlagResultScreen(
                     .height(56.dp)
             ) {
                 Text(
-                    text = "Weiter",
+                    text = "Continue",
                     color = Color.White,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold

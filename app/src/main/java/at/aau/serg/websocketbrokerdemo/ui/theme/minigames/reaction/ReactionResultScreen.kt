@@ -3,8 +3,10 @@ package at.aau.serg.websocketbrokerdemo.ui.theme.minigames.reaction
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -14,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,7 +49,18 @@ fun ReactionResultScreen(
     canFinishMinigame: Boolean,
     onContinueClick: () -> Unit
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    // Cap height to the available window so the Continue button stays reachable
+    // (with 3-4 players the result rows would otherwise push it off-screen).
+    val screenHeight = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.height.toDp()
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .heightIn(max = screenHeight - 80.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
         Text(
             text = stringResource(R.string.reaction_result_title),
             color = ReactionResultStyle.titleColor,
