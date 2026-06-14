@@ -193,7 +193,8 @@ fun TravellerItem(name: String, avatar: ImageBitmap? = null, disconnected: Boole
     }
 }
 
-// @Preview(showBackground = true, widthDp = 850, heightDp = 480)
-// @Composable
-// fun WaitingScreenPreview() {
-// }
+ @Preview(showBackground = true, widthDp = 850, heightDp = 480)
+ @Composable
+ fun WaitingScreenPreview() {
+
+}

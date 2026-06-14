@@ -55,6 +55,10 @@ import androidx.core.graphics.get
 import androidx.core.graphics.scale
 import androidx.core.graphics.withSave
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
 import android.media.MediaPlayer
 import at.aau.serg.websocketbrokerdemo.AppViewModel
 import at.aau.serg.websocketbrokerdemo.models.City
@@ -64,6 +68,8 @@ import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
 import com.example.myapplication.R
 import at.aau.serg.websocketbrokerdemo.GameConstants
 import at.aau.serg.websocketbrokerdemo.NewDestinationMessage
@@ -382,6 +388,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 MinigameOverlay(
                     targetPlayerName = minigameTargetPlayer,
                     opponentPlayerNames = playersList.filter { it != minigameTargetPlayer },
+                    playersInLobbyOrder = playersList,
                     targetCityName = playerCurrentCities[minigameTargetPlayer]?.name ?: "",
                     targetPlayerAvatar = minigameTargetAvatar,
                     opponentPlayerAvatars = playersList.filter { it != minigameTargetPlayer }
@@ -427,7 +434,9 @@ fun GameScreen(viewModel: AppViewModel) {
                     flagOptions = flagOptions,
                     flagCorrectName = flagCorrectName,
                     flagScores = flagScores,
-                    flagTotalTimeMs = flagTotalTimeMs
+                    flagTotalTimeMs = flagTotalTimeMs,
+                    quizQuestionText = viewModel.quizQuestionText.collectAsState().value,
+                    quizAnswers = viewModel.quizAnswers.collectAsState().value
                 )
             }
         }
@@ -954,7 +963,7 @@ fun GameScreen(viewModel: AppViewModel) {
                         color = Color.White,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -995,12 +1004,12 @@ fun GameScreen(viewModel: AppViewModel) {
 @Composable
 fun ZoomableMap(
     mapBitmap: ImageBitmap,
-    rawBitmap: android.graphics.Bitmap? = null,
+    rawBitmap: Bitmap? = null,
     allCities: List<City> = emptyList(),
     ownedCities: List<City> = emptyList(),
     playersList: List<String> = emptyList(),
     playerCurrentCities: Map<String, City?> = emptyMap(),
-    rawAvatars: List<android.graphics.Bitmap?> = emptyList(),
+    rawAvatars: List<Bitmap?> = emptyList(),
     validMoveIds: List<String> = emptyList(),
     isMyTurn: Boolean = false,
     myPlayerId: String = "",
@@ -1438,15 +1447,15 @@ fun ZoomableMap(
                             else -> if (isMinorEuropean) 7f else 9f
                         }
 
-                        val paint = android.graphics.Paint().apply {
+                        val paint = Paint().apply {
                             color = if (isOcean) android.graphics.Color.WHITE
                                     else android.graphics.Color.rgb(20, 20, 20)
                             textSize = labelSize
                             isAntiAlias = true
                             textAlign = when {
-                                labelAbove || labelBelowCenter -> android.graphics.Paint.Align.CENTER
-                                labelLeft -> android.graphics.Paint.Align.RIGHT
-                                else -> android.graphics.Paint.Align.LEFT
+                                labelAbove || labelBelowCenter -> Paint.Align.CENTER
+                                labelLeft -> Paint.Align.RIGHT
+                                else -> Paint.Align.LEFT
                             }
                             setShadowLayer(1.5f, 0.5f, 0.5f,
                                 if (isOcean) android.graphics.Color.BLACK
@@ -1477,23 +1486,23 @@ fun ZoomableMap(
                     cityGroups.getOrPut(key) { mutableListOf() }.add(index)
                 }
 
-                fun drawPlayerIcon(nativeCanvas: android.graphics.Canvas, cx: Float, cy: Float, playerIndex: Int) {
+                fun drawPlayerIcon(nativeCanvas: Canvas, cx: Float, cy: Float, playerIndex: Int) {
                     val avatarBmp = scaledAvatars.getOrNull(playerIndex % scaledAvatars.size)
-                    val bgPaint = android.graphics.Paint().apply { color = android.graphics.Color.WHITE; isAntiAlias = true }
+                    val bgPaint = Paint().apply { color = android.graphics.Color.WHITE; isAntiAlias = true }
                     nativeCanvas.drawCircle(cx, cy, effectiveIconRadius + 2f, bgPaint)
                     nativeCanvas.withSave {
                         val clip = android.graphics.Path()
                         clip.addCircle(cx, cy, effectiveIconRadius, android.graphics.Path.Direction.CW)
                         clipPath(clip)
                         if (avatarBmp != null) {
-                            val dstRect = android.graphics.RectF(cx - effectiveIconRadius, cy - effectiveIconRadius, cx + effectiveIconRadius, cy + effectiveIconRadius)
+                            val dstRect = RectF(cx - effectiveIconRadius, cy - effectiveIconRadius, cx + effectiveIconRadius, cy + effectiveIconRadius)
                             drawBitmap(avatarBmp, null, dstRect, null)
                         } else {
-                            val fp = android.graphics.Paint().apply { color = android.graphics.Color.rgb(100, 100, 200); isAntiAlias = true }
+                            val fp = Paint().apply { color = android.graphics.Color.rgb(100, 100, 200); isAntiAlias = true }
                             drawCircle(cx, cy, effectiveIconRadius, fp)
                         }
                     }
-                    val borderPaint = android.graphics.Paint().apply { color = android.graphics.Color.WHITE; style = android.graphics.Paint.Style.STROKE; strokeWidth = 2.5f; isAntiAlias = true }
+                    val borderPaint = Paint().apply { color = android.graphics.Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2.5f; isAntiAlias = true }
                     nativeCanvas.drawCircle(cx, cy, effectiveIconRadius, borderPaint)
                 }
 
@@ -1648,7 +1657,7 @@ fun PlayerCard(
                     text = "(reconnecting)",
                     fontSize = 9.sp,
                     color = Color.Black,
-                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                    fontStyle = FontStyle.Italic
                 )
                 mustSkip -> Text(
                     text = "skip turn",
@@ -1733,7 +1742,7 @@ fun loadAssetBitmap(context: Context, fileName: String): ImageBitmap? {
     }
 }
 
-fun loadRawBitmap(context: Context, fileName: String): android.graphics.Bitmap? {
+fun loadRawBitmap(context: Context, fileName: String): Bitmap? {
     return try {
         context.assets.open(fileName).use { inputStream ->
             BitmapFactory.decodeStream(inputStream)
