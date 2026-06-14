@@ -1,6 +1,7 @@
 package at.aau.serg.websocketbrokerdemo.ui.theme
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
@@ -117,6 +118,10 @@ fun WeltreiseBucketList(
                             .zIndex(if (isDragging) 1f else 0f)
                             .graphicsLayer {
                                 translationX = if (isDragging) dragOffsetX.value else 0f
+                                // Beim Ziehen die Karte optisch "anheben" (leicht vergrößern)
+                                val s = if (isDragging) 1.08f else 1f
+                                scaleX = s
+                                scaleY = s
                             }
                             .then(dragModifier)
                     ) {
@@ -126,6 +131,7 @@ fun WeltreiseBucketList(
                             canMoveRight = index < cities.size - 1,
                             isChosen = city == chosenCity,
                             isVisited = visitedCities.contains(city),
+                            isDragging = isDragging,
                             onCardClick = {
                                 if (!visitedCities.contains(city)) {
                                     if (chosenCity == city) onCityChosen(null)
@@ -161,22 +167,33 @@ fun CityCard(
     canMoveRight: Boolean,
     isChosen: Boolean,
     isVisited: Boolean,
+    isDragging: Boolean = false,
     onCardClick: () -> Unit,
     toTheLeftClick: () -> Unit,
     toTheRightClick: () -> Unit
 ) {
+    val displayText = if (isVisited) "$name ✓" else name.uppercase()
+    // Breite an die Wortlänge anpassen: ~12 dp pro Zeichen + Rand,
+    // begrenzt nach unten (Platz für die Pfeile) und nach oben (kein Überlauf).
+    val cardWidth = (displayText.length * 12 + 48).coerceIn(100, 240).dp
+    val cardShape = RoundedCornerShape(16.dp)
     Box(
         modifier = Modifier
-            .size(width = 120.dp, height = 160.dp)
+            .width(cardWidth)
+            .height(160.dp)
             .background(
                 color = if (isChosen) Color(0xFF6200EE) else Color(0xFFD9E2E8),
-                shape = RoundedCornerShape(16.dp)
+                shape = cardShape
+            )
+            // Beim Ziehen die Karte mit einem goldenen Rahmen markieren
+            .then(
+                if (isDragging) Modifier.border(3.dp, Color(0xFFD4AF37), cardShape)
+                else Modifier
             )
             .clickable { onCardClick() }
     ) {
         Text(
-            text = if (isVisited) "$name ✓"
-            else name.uppercase(),
+            text = displayText,
             modifier = Modifier
                 .align(Alignment.Center)
                 .padding(horizontal = 8.dp),
