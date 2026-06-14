@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -13,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -23,12 +25,19 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun QuizReadyScreen(
-    onReadyClick: () -> Unit
+    onReadyClick: () -> Unit,
+    allPlayers: List<String>,
+    readyPlayerIds: List<String>
 ) {
     val context = LocalContext.current
+
     val foxBitmap = remember {
-        context.assets.open("baron_fox.png").use { inputStream ->
-            BitmapFactory.decodeStream(inputStream).asImageBitmap()
+        try {
+            context.assets
+                .open("baron_fox.png")
+                .use { BitmapFactory.decodeStream(it).asImageBitmap() }
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -42,61 +51,111 @@ fun QuizReadyScreen(
             modifier = Modifier
                 .fillMaxWidth(0.6f)
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFF1558B5)) // QuizGameStyle.cardBackgroundColor
+                .background(Color(0xFF1558B5))
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
-                bitmap = foxBitmap,
-                contentDescription = "Baron of Brainstorm",
-                modifier = Modifier.size(120.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
+            // Fox Bild
+            if (foxBitmap != null) {
+                Image(
+                    bitmap = foxBitmap,
+                    contentDescription = null,
+                    modifier = Modifier.size(100.dp)
+                )
+            }
 
             Text(
                 text = "It's Quiz Time!",
                 color = Color.White,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = "You think you're smart? The Baron of Brainstorm is ready to crush your ego. Are you?",
-                color = Color.White,
-                fontSize = 18.sp,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
+            // Ready-Button
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .height(60.dp)
+                    .fillMaxWidth(0.5f)
+                    .height(50.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF65B5FF)) // QuizGameStyle.defaultButtonColor
+                    .background(Color(0xFF65B5FF))
                     .clickable { onReadyClick() },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "Ready",
                     color = Color.White,
-                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Spielerliste unten rechts
+            Row(
+                modifier = Modifier.align(Alignment.End),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                allPlayers.forEach { name ->
+                    val isReady = readyPlayerIds.contains(name)
+                    val avatar = loadAvatar(name)
+
+                    Box(contentAlignment = Alignment.BottomEnd) {
+                        if (avatar != null) {
+                            Image(
+                                bitmap = avatar,
+                                contentDescription = name,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(Color.Gray, CircleShape)
+                            )
+                        }
+
+                        // Haken-Icon
+                        if (isReady) {
+                            Text(
+                                "✔️",
+                                fontSize = 12.sp,
+                                modifier = Modifier
+                                    .background(Color.White, CircleShape)
+                                    .padding(2.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
+@Composable
+private fun loadAvatar(playerName: String): ImageBitmap? {
+    val context = LocalContext.current
 
-@Preview(showBackground = true, backgroundColor = 0xFF0B213E, device = "spec:parent=pixel_7, orientation=landscape")
+    val fileName = when {
+        playerName.contains("Dora") -> "pp_turtle.png"
+        playerName.contains("Jerry") -> "pp_duck.png"
+        playerName.contains("Captain") -> "pp_bear.png"
+        else -> "pp_pig.png"
+    }
+
+    return remember(playerName) {
+        try {
+            context.assets.open(fileName).use { inputStream ->
+                BitmapFactory.decodeStream(inputStream).asImageBitmap()
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+}
+
+@Preview(showBackground = true, device = "spec:parent=pixel_7, orientation=landscape")
 @Composable
 fun QuizReadyScreenPreview() {
-    QuizReadyScreen(
-        onReadyClick = {}
-    )
+    QuizReadyScreen(onReadyClick = {}, allPlayers = listOf("Dora", "Jerry", "Captain"), readyPlayerIds = listOf("Dora"))
 }
