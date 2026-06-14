@@ -24,8 +24,74 @@
     <string name="rule_minigame_title">🧩 Minigames</string>
     <string name="rule_minigame_content">Each destination city has a minigame. Winning completes it, losing replaces it with a new one.</string>
 
+    <string name="rule_cheat_title">🤫 Cheating &amp; Reporting</string>
+    <string name="rule_cheat_content">If you have exactly 1 movement point left, you can secretly shake your phone to gain an extra step. But watch out: every player can report a suspected cheater. A correct report makes the cheater skip their next turn — a false accusation costs you your own next turn instead.</string>
+
     <string name="rule_end_title">🏁 End of the Game</string>
     <string name="rule_end_content">After completing all destinations, return to your starting city. The first player to do so wins.</string>
 
     <string name="back_button_description">Back to start screen</string>
+
+    <string name="minigame_win_button">Win Mini-Game</string>
+
+    <string name="minigame_popup_title">Mini-Game</string>
+
+    <string name="minigame_vs_title">VS</string>
+    <string name="minigame_vs_subtitle">Get ready for the mini-game!</string>
+
+    <string name="minigame_vs_opponents">Everyone</string>
+
+    <string name="minigame_target_player_wins_button">Target player wins</string>
+    <string name="minigame_other_player_wins_button">Other player wins</string>
+
+    <string name="minigame_result_target_wins_title">Solo Survivor!</string>
+    <string name="minigame_result_target_wins_text">%1$s won the mini-game and claimed %2$s.</string>
+
+    <string name="minigame_result_other_wins_title">Detour ahead!</string>
+    <string name="minigame_result_other_wins_text">%1$s won the mini-game. %2$s loses %3$s and %1$s receives a Free Pass.</string>
+
+    <string name="minigame_result_continue_button">Continue</string>
+
+    <string name="minigame_visa_denied_title">Visa Denied!</string>
+    <string name="minigame_visa_denied_text">%1$s receives a new destination. %2$s can use the Free Pass later for one of their own target cities.</string>
+    <string name="minigame_visa_denied_continue_button">Back to Map</string>
+
+    <string name="free_pass_button">FREEPASS</string>
+    <string name="free_pass_count">Freepass %1$d</string>
+
+    <string name="free_pass_dialog_title">Use Free Pass?</string>
+    <string name="free_pass_dialog_city_text">You reached your target city %1$s.</string>
+    <string name="free_pass_dialog_question">Do you want to use your Free Pass or play the mini-game?</string>
+    <string name="free_pass_use_button">Use Free Pass</string>
+    <string name="free_pass_play_minigame_button">Play Mini-Game</string>
+
+    <string name="reaction_game_title">Reaction Game</string>
+    <string name="reaction_countdown_hint">Get ready...</string>
+
+    <string name="reaction_status_pressed">Pressed</string>
+    <string name="reaction_status_ready">Ready</string>
+    <string name="reaction_status_waiting">Waiting...</string>
+
+    <string name="reaction_minigame_title">Minigame</string>
+    <string name="reaction_lobby_subtitle">A reaction game starts!</string>
+    <string name="reaction_lobby_ready_hint">Press Ready when you are prepared.</string>
+    <string name="reaction_ready_button">Ready</string>
+
+    <string name="reaction_now_title">Now</string>
+    <string name="reaction_wait_title">Wait...</string>
+    <string name="reaction_now_hint">Press as fast as you can!</string>
+    <string name="reaction_wait_hint">Do not press too early!</string>
+
+    <string name="reaction_press_symbol">!</string>
+
+    <string name="reaction_result_title">Result</string>
+    <string name="reaction_continue_button">Continue</string>
+    <string name="reaction_result_seconds">%1$.3fs</string>
+
+    <string name="reaction_ready_checkmark">✓</string>
+    <string name="reaction_round_ended_title">Round ended</string>
+    <string name="reaction_round_ended_trophy">🏆</string>
+    <string name="reaction_result_winner_crown">👑</string>
+    <string name="reaction_avatar_fallback_description">Player avatar</string>
+    <string name="reaction_game_button_empty_description">Reaction button</string>
 </resources>

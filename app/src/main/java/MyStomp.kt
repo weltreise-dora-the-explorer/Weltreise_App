@@ -1,7 +1,7 @@
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import at.aau.serg.websocketbrokerdemo.Callbacks
+import at.aau.serg.websocketbrokerdemo.logging.DebugLog
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,8 +16,10 @@ import org.hildan.krossbow.stomp.sendText
 import org.hildan.krossbow.stomp.subscribeText
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
+import at.aau.serg.websocketbrokerdemo.GameConstants
 
 //private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
+//private const val WEBSOCKET_URI = "ws://localhost:8080/websocket-example-broker" // physisches Gerät
 private const val WEBSOCKET_URI = "ws://se2-demo.aau.at:53205/websocket-example-broker"
 private const val RECONNECT_INITIAL_DELAY_MS = 2000L
 private const val RECONNECT_MAX_DELAY_MS = 30_000L
@@ -31,14 +33,14 @@ class MyStomp(val callbacks: Callbacks) {
     private lateinit var client: StompClient
     private var session: StompSession? = null
 
-    /**
+    /**3
      * Defensiver Coroutine-Scope:
      *  - SupervisorJob: ein abstuerzender Topic-Flow cancelt nicht alle anderen
      *  - CoroutineExceptionHandler: unhandled Exceptions werden nur geloggt,
      *    statt durchgereicht zu werden -> Android killt den Prozess nicht mehr.
      */
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-        Log.e("MyStomp", "Uncaught coroutine exception", throwable)
+        DebugLog.e("MyStomp", throwable) { "Uncaught coroutine exception" }
     }
     private val scope: CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.IO + exceptionHandler)
@@ -46,64 +48,59 @@ class MyStomp(val callbacks: Callbacks) {
     @Volatile
     private var reconnecting: Boolean = false
 
-    fun isConnected(): Boolean = session != null
-
     fun connect() {
         client = StompClient(OkHttpWebSocketClient()) // other config can be passed in here
         scope.launch {
             try {
-                val activeSession = client.connect(WEBSOCKET_URI)
-                session = activeSession
-
-                // connect to topic
-                topicFlow = activeSession.subscribeText("/topic/hello-response")
-                collector = scope.launch {
-                    collectSafely("hello-response") {
-                        topicFlow?.collect { msg ->
-                            // TODO logic
-                            callback(msg)
-                        }
-                    }
-                }
-
-                // connect to JSON topic
-                jsonFlow = activeSession.subscribeText("/topic/rcv-object")
-                jsonCollector = scope.launch {
-                    collectSafely("rcv-object") {
-                        jsonFlow?.collect { msg ->
-                            val o = JSONObject(msg)
-                            callback(o.get("text").toString())
-                        }
-                    }
-                }
-
-                val goalReachedFlow = activeSession.subscribeText("/topic/goal-reached")
-                scope.launch {
-                    collectSafely("goal-reached") {
-                        goalReachedFlow.collect { msg ->
-                            Log.d("MyStomp", "GOAL-REACHED received: $msg")
-                            callbackGoalReached(msg)
-                        }
-                    }
-                }
-                Log.d("MyStomp", "Subscribed to /topic/goal-reached")
-
-                val gameOverFlow = activeSession.subscribeText("/topic/game-over")
-                scope.launch {
-                    collectSafely("game-over") {
-                        gameOverFlow.collect { msg ->
-                            Log.d("MyStomp", "GAME-OVER received: $msg")
-                            callbackGameOver(msg)
-                        }
-                    }
-                }
-                Log.d("MyStomp", "Subscribed to /topic/game-over")
-
+                connectSession()
                 callback("connected")
-
             } catch (e: Exception) {
-                Log.e("MyStomp", "Connection failed", e)
+                session = null
+                DebugLog.e("MyStomp", e) { "Connection failed" }
                 callback("Connection error")
+                scheduleReconnect(initialConnection = true)
+            }
+        }
+    }
+
+    private suspend fun connectSession() {
+        val activeSession = client.connect(WEBSOCKET_URI)
+        session = activeSession
+
+        topicFlow = activeSession.subscribeText("/topic/hello-response")
+        collector = scope.launch {
+            collectSafely("hello-response") {
+                topicFlow?.collect(::callback)
+            }
+        }
+
+        jsonFlow = activeSession.subscribeText("/topic/rcv-object")
+        jsonCollector = scope.launch {
+            collectSafely("rcv-object") {
+                jsonFlow?.collect { msg ->
+                    val o = JSONObject(msg)
+                    callback(o.get("text").toString())
+                }
+            }
+        }
+
+        val goalReachedFlow = activeSession.subscribeText("/topic/goal-reached")
+        scope.launch {
+            collectSafely("goal-reached") {
+                goalReachedFlow.collect { msg ->
+                    DebugLog.d("MyStomp") { "GOAL-REACHED received: $msg" }
+                    callbackGoalReached(msg)
+                }
+            }
+        }
+
+        val gameOverFlow = activeSession.subscribeText("/topic/game-over")
+        scope.launch {
+            collectSafely("game-over") {
+                gameOverFlow.collect { msg ->
+                    DebugLog.d("MyStomp") { "GAME-OVER received: $msg" }
+                    callbackGameOver(msg)
+                }
             }
         }
     }
@@ -126,6 +123,12 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
+    private fun callbackMinigameLost(msg: String) {
+        Handler(Looper.getMainLooper()).post {
+            callbacks.onMinigameLost(msg)
+        }
+    }
+
     fun joinMultiplayerLobby(lobbyId: String, playerId: String, clientId: String? = null) {
         scope.launch {
             try {
@@ -137,12 +140,13 @@ class MyStomp(val callbacks: Callbacks) {
                 }
 
                 if (session == null) {
-                    Log.e("MyStomp", "ABBRUCH: Keine StompSession! Ist der Server an?")
+                    DebugLog.e("MyStomp") { "ABBRUCH: Keine StompSession! Ist der Server an?" }
                     return@launch
                 }
 
                 // 1. Subscribe to lobby events
                 subscribeLobbyEvents(lobbyId)
+                subscribePlayerEvents(lobbyId, playerId)
 
                 // 2. Warten, damit der Server das Subscribe sicher verarbeitet hat
                 delay(500)
@@ -156,10 +160,10 @@ class MyStomp(val callbacks: Callbacks) {
                 }
 
                 session?.sendText("/app/lobby/$lobbyId/command", joinCommand.toString())
-                Log.i("Lobby", "Join-Befehl an Server geschickt für Spieler: $playerId")
+                DebugLog.i("Lobby") { "Join-Befehl an Server geschickt für Spieler: $playerId" }
 
             } catch (e: Exception) {
-                Log.e("MyStomp", "Fehler beim Lobby Join", e)
+                DebugLog.e("MyStomp", e) { "Fehler beim Lobby Join" }
                 callback("Error: Lobby Join Failed")
             }
         }
@@ -176,13 +180,14 @@ class MyStomp(val callbacks: Callbacks) {
                 }
 
                 if (session == null) {
-                    Log.e("MyStomp", "ABBRUCH: Keine StompSession! Ist der Server an?")
+                    DebugLog.e("MyStomp") { "ABBRUCH: Keine StompSession! Ist der Server an?" }
                     callback("Error: Not connected")
                     return@launch
                 }
 
                 // 1. Subscribe to lobby events
                 subscribeLobbyEvents(lobbyId)
+                subscribePlayerEvents(lobbyId, playerId)
 
                 // 2. Warten, damit der Server das Subscribe sicher verarbeitet hat
                 delay(500)
@@ -196,10 +201,10 @@ class MyStomp(val callbacks: Callbacks) {
                 }
 
                 session?.sendText("/app/lobby/$lobbyId/command", createCommand.toString())
-                Log.i("Lobby", "Create-Befehl an Server geschickt für Spieler: $playerId")
+                DebugLog.i("Lobby") { "Create-Befehl an Server geschickt für Spieler: $playerId" }
 
             } catch (e: Exception) {
-                Log.e("MyStomp", "Fehler beim Lobby erstellen", e)
+                DebugLog.e("MyStomp", e) { "Fehler beim Lobby erstellen" }
                 callback("Error: Lobby Creation Failed")
             }
         }
@@ -218,11 +223,12 @@ class MyStomp(val callbacks: Callbacks) {
                     attempts++
                 }
                 if (session == null) {
-                    Log.e("MyStomp", "ABBRUCH: rejoinLobby ohne Session.")
+                    DebugLog.e("MyStomp") { "ABBRUCH: rejoinLobby ohne Session." }
                     return@launch
                 }
 
                 subscribeLobbyEvents(lobbyId)
+                subscribePlayerEvents(lobbyId, playerId)
                 delay(500)
 
                 val rejoinCommand = JSONObject()
@@ -231,10 +237,22 @@ class MyStomp(val callbacks: Callbacks) {
                 rejoinCommand.put("clientId", clientId)
 
                 session?.sendText("/app/lobby/$lobbyId/command", rejoinCommand.toString())
-                Log.i("MyStomp", "REJOIN_LOBBY sent for lobby=$lobbyId player=$playerId")
+                DebugLog.i("MyStomp") { "REJOIN_LOBBY sent for lobby=$lobbyId player=$playerId" }
             } catch (e: Exception) {
-                Log.e("MyStomp", "Fehler beim Rejoin", e)
+                DebugLog.e("MyStomp", e) { "Fehler beim Rejoin" }
                 callback("Error: Lobby Rejoin Failed")
+            }
+        }
+    }
+
+    private suspend fun subscribePlayerEvents(lobbyId: String, playerId: String) {
+        val playerFlow = session?.subscribeText("/topic/lobby/$lobbyId/player/$playerId/events") ?: return
+        scope.launch {
+            collectSafely("player-events-$playerId") {
+                playerFlow.collect { msg ->
+                    DebugLog.d("MyStomp") { "PLAYER-EVENT received for $playerId: $msg" }
+                    callbackMinigameLost(msg)
+                }
             }
         }
     }
@@ -248,11 +266,11 @@ class MyStomp(val callbacks: Callbacks) {
         scope.launch {
             try {
                 lobbyFlow.collect { msg ->
-                    Log.i("Lobby-Update", "Vom Server gesynctes Spielfeld: $msg")
+                    DebugLog.i("Lobby-Update") { "Vom Server gesynctes Spielfeld: $msg" }
                     callback(msg)
                 }
             } catch (e: Exception) {
-                Log.w("MyStomp", "Lobby events flow ended with exception: ${e.message}")
+                DebugLog.w("MyStomp", e) { "Lobby events flow ended with exception: ${e.message}" }
                 handleConnectionLost()
             }
         }
@@ -268,7 +286,7 @@ class MyStomp(val callbacks: Callbacks) {
         try {
             block()
         } catch (e: Exception) {
-            Log.w("MyStomp", "Topic $topicName ended with exception: ${e.message}")
+            DebugLog.w("MyStomp", e) { "Topic $topicName ended with exception: ${e.message}" }
             handleConnectionLost()
         }
     }
@@ -278,10 +296,10 @@ class MyStomp(val callbacks: Callbacks) {
         Handler(Looper.getMainLooper()).post {
             callbacks.onConnectionLost()
         }
-        scheduleReconnect()
+        scheduleReconnect(initialConnection = false)
     }
 
-    private fun scheduleReconnect() {
+    private fun scheduleReconnect(initialConnection: Boolean) {
         if (reconnecting) return
         reconnecting = true
         scope.launch {
@@ -289,31 +307,38 @@ class MyStomp(val callbacks: Callbacks) {
             while (session == null) {
                 try {
                     delay(delayMs)
-                    Log.i("MyStomp", "Reconnect attempt...")
-                    val activeSession = client.connect(WEBSOCKET_URI)
-                    session = activeSession
-                    Handler(Looper.getMainLooper()).post {
-                        callbacks.onReconnected()
+                    DebugLog.i("MyStomp") { "Reconnect attempt..." }
+                    connectSession()
+                    if (initialConnection) {
+                        callback("connected")
+                    } else {
+                        Handler(Looper.getMainLooper()).post {
+                            callbacks.onReconnected()
+                        }
                     }
                     break
                 } catch (e: Exception) {
-                    Log.w("MyStomp", "Reconnect failed: ${e.message}")
-                    delayMs = (delayMs * 2).coerceAtMost(RECONNECT_MAX_DELAY_MS)
+                    session = null
+                    DebugLog.w("MyStomp", e) { "Reconnect failed: ${e.message}" }
+                    if (!initialConnection) {
+                        delayMs = (delayMs * 2).coerceAtMost(RECONNECT_MAX_DELAY_MS)
+                    }
                 }
             }
             reconnecting = false
         }
     }
 
-    fun startGameCmd(lobbyId: String, stops: Int) {
+    fun startGameCmd(lobbyId: String, playerId: String, stops: Int) {
         scope.launch {
             try {
                 val command = JSONObject()
                 command.put("type", "START_GAME")
+                command.put("playerId", playerId)
                 command.put("stops", stops)
                 session?.sendText("/app/lobby/$lobbyId/command", command.toString())
             } catch (e: Exception) {
-                Log.e("MyStomp", "Fehler beim Spielstart", e)
+                DebugLog.e("MyStomp", e) { "Fehler beim Spielstart" }
             }
         }
     }
@@ -327,9 +352,9 @@ class MyStomp(val callbacks: Callbacks) {
                 command.put("gameMode", gameMode)
 
                 session?.sendText("/app/lobby/$lobbyId/command", command.toString())
-                Log.i("Lobby", "Game mode update sent: $gameMode by player: $playerId")
+                DebugLog.i("Lobby") { "Game mode update sent: $gameMode by player: $playerId" }
             } catch (e: Exception){
-                Log.e("MyStomp", "Fehler beim Aktualisieren des Spielmodus", e)
+                DebugLog.e("MyStomp", e) { "Fehler beim Aktualisieren des Spielmodus" }
             }
         }
     }
@@ -341,9 +366,9 @@ class MyStomp(val callbacks: Callbacks) {
                 command.put("type", "RESET_LOBBY")
                 command.put("playerId", playerId)
                 session?.sendText("/app/lobby/$lobbyId/command", command.toString())
-                Log.i("MyStomp", "RESET_LOBBY sent for lobby: $lobbyId by: $playerId")
+                DebugLog.i("MyStomp") { "RESET_LOBBY sent for lobby: $lobbyId by: $playerId" }
             } catch (e: Exception) {
-                Log.e("MyStomp", "Fehler beim Reset der Lobby", e)
+                DebugLog.e("MyStomp", e) { "Fehler beim Reset der Lobby" }
             }
         }
     }
@@ -356,7 +381,7 @@ class MyStomp(val callbacks: Callbacks) {
                 command.put("playerId", playerId)
                 session?.sendText("/app/lobby/$lobbyId/command", command.toString())
             } catch (e: Exception) {
-                Log.e("MyStomp", "Fehler beim Lobby verlassen", e)
+                DebugLog.e("MyStomp", e) { "Fehler beim Lobby verlassen" }
             }
         }
     }
@@ -369,7 +394,7 @@ class MyStomp(val callbacks: Callbacks) {
                 command.put("playerId", playerId)
                 session?.sendText("/app/lobby/$lobbyId/command", command.toString())
             } catch (e: Exception) {
-                Log.e("MyStomp", "Fehler beim Würfeln", e)
+                DebugLog.e("MyStomp", e) { "Fehler beim Würfeln" }
             }
         }
     }
@@ -382,7 +407,7 @@ class MyStomp(val callbacks: Callbacks) {
                 command.put("playerId", playerId)
                 session?.sendText("/app/lobby/$lobbyId/command", command.toString())
             } catch (e: Exception) {
-                Log.e("MyStomp", "Fehler beim Zug beenden", e)
+                DebugLog.e("MyStomp", e) { "Fehler beim Zug beenden" }
             }
         }
     }
@@ -391,21 +416,224 @@ class MyStomp(val callbacks: Callbacks) {
         scope.launch {
             try {
                 val dest = "/app/lobby/$lobbyId/command"
-                Log.d("CityTap", "moveToCity: session=${session != null}, dest=$dest")
+                DebugLog.d("CityTap") { "moveToCity: session=${session != null}, dest=$dest" }
                 val command = JSONObject()
                 command.put("type", "MOVE_TO_CITY")
                 command.put("playerId", playerId)
                 command.put("targetCityId", targetCityId)
                 if (session == null) {
-                    Log.e("CityTap", "moveToCity ABGEBROCHEN: session ist null!")
+                    DebugLog.e("CityTap") { "moveToCity ABGEBROCHEN: session ist null!" }
                     return@launch
                 }
                 session!!.sendText(dest, command.toString())
-                Log.d("CityTap", "moveToCity: gesendet → $command")
+                DebugLog.d("CityTap") { "moveToCity: gesendet -> $command" }
             } catch (e: Exception) {
-                Log.e("CityTap", "moveToCity Exception: ${e.message}", e)
+                DebugLog.e("CityTap", e) { "moveToCity Exception: ${e.message}" }
             }
         }
     }
 
+    fun announceMinigameResult(lobbyId: String, playerId: String, winnerPlayerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_ANNOUNCE_MINIGAME_RESULT)
+                command.put("playerId", playerId)
+                command.put("winnerPlayerId", winnerPlayerId)
+
+                if(session == null) {
+                    DebugLog.e("MyStomp") { "announceMinigameResult ABGEBROCHEN: session ist null!" }
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                DebugLog.d("MyStomp") { "announceMinigameResult gesendet -> $command" }
+            } catch (e: Exception) {
+                DebugLog.e("MyStomp", e) { "Fehler beim Ankuendigen des Minigame-Ergebnisses" }
+            }
+        }
+    }
+
+    fun finishMinigame(lobbyId: String, playerId: String, winnerPlayerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_FINISH_MINIGAME)
+                command.put("playerId", playerId)
+                command.put("winnerPlayerId", winnerPlayerId)
+
+                if(session == null) {
+                    DebugLog.e("MyStomp") { "finishMinigame ABGEBROCHEN: session ist null!" }
+                    return@launch
+                }
+
+                session!!.sendText(dest,command.toString())
+                DebugLog.d("MyStomp") { "finishMinigame gesendet -> $command" }
+            }catch (e : Exception) {
+                DebugLog.e("MyStomp", e) { "Fehler beim Beenden des Minigames" }
+            }
+        }
+    }
+
+    fun reactionReady(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_REACTION_READY)
+                command.put("playerId", playerId)
+
+                if (session == null) {
+                    DebugLog.e("MyStomp") { "reactionReady ABGEBROCHEN: session ist null!" }
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                DebugLog.d("MyStomp") { "reactionReady gesendet -> $command" }
+
+            } catch (e: Exception) {
+                DebugLog.e("MyStomp", e) { "Fehler bei reactionReady" }
+            }
+        }
+    }
+
+    fun reactionPress(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_REACTION_PRESS)
+                command.put("playerId", playerId)
+
+                if (session == null) {
+                    DebugLog.e("MyStomp") { "reactionPress ABGEBROCHEN: session ist null!" }
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                DebugLog.d("MyStomp") { "reactionPress gesendet -> $command" }
+
+            } catch (e: Exception) {
+                DebugLog.e("MyStomp", e) { "Fehler bei reactionPress" }
+            }
+        }
+    }
+
+    fun useFreePass(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_USE_FREE_PASS)
+                command.put("playerId", playerId)
+
+                if(session == null) {
+                    DebugLog.e("MyStomp") { "useFreePass ABGEBROCHEN: session ist null!" }
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                DebugLog.d("MyStomp") { "useFreePass gesendet -> $command" }
+            } catch (e : Exception) {
+                DebugLog.e("MyStomp", e) { "Fehler beim Verwenden des Freepasses" }
+            }
+        }
+    }
+
+    fun reportCheat(lobbyId: String, playerId: String, reportedPlayerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_REPORT_CHEAT)
+                command.put("playerId", playerId)
+                command.put("reportedPlayerId", reportedPlayerId)
+
+                if (session == null) {
+                    DebugLog.e("MyStomp") { "reportCheat ABGEBROCHEN: session ist null!" }
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                DebugLog.d("MyStomp") { "reportCheat gesendet -> $command" }
+            } catch (e: Exception) {
+                DebugLog.e("MyStomp", e) { "Fehler beim Report-Cheat" }
+            }
+        }
+    }
+
+    fun useShakeCheat(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_USE_SHAKE_CHEAT)
+                command.put("playerId", playerId)
+
+                if (session == null) {
+                    DebugLog.e("MyStomp") { "useShakeCheat ABGEBROCHEN: session ist null!" }
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                DebugLog.d("MyStomp") { "useShakeCheat gesendet -> $command" }
+            } catch (e: Exception) {
+                DebugLog.e("MyStomp", e) { "Fehler beim Shake-Cheat" }
+            }
+        }
+    }
+
+    fun startMinigame(lobbyId: String, playerId: String) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_START_MINIGAME)
+                command.put("playerId", playerId)
+
+                if (session == null) {
+                    DebugLog.e("MyStomp") { "startMinigame ABGEBROCHEN: session ist null!" }
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                DebugLog.d("MyStomp") { "startMinigame gesendet -> $command" }
+            } catch (e: Exception) {
+                DebugLog.e("MyStomp", e) { "Fehler beim Starten des Minigames" }
+            }
+        }
+    }
+
+    fun submitGuess(lobbyId: String, playerId: String, guess: Int) {
+        scope.launch {
+            try {
+                val dest = "/app/lobby/$lobbyId/command"
+
+                val command = JSONObject()
+                command.put("type", GameConstants.COMMAND_SUBMIT_GUESS)
+                command.put("playerId", playerId)
+                command.put("guess", guess)
+
+                if (session == null) {
+                    DebugLog.e("MyStomp") { "submitGuess ABGEBROCHEN: session ist null!" }
+                    return@launch
+                }
+
+                session!!.sendText(dest, command.toString())
+                DebugLog.d("MyStomp") { "submitGuess gesendet -> $command" }
+            } catch (e: Exception) {
+                DebugLog.e("MyStomp", e) { "Fehler beim Einreichen der Schätzung" }
+            }
+        }
+    }
 }

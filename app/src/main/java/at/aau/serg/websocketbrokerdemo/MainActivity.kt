@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import at.aau.serg.websocketbrokerdemo.preferences.PreferencesHelper
+import at.aau.serg.websocketbrokerdemo.sensor.ShakeDetector
 import at.aau.serg.websocketbrokerdemo.ui.theme.GameOverScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.GameScreen
 import at.aau.serg.websocketbrokerdemo.ui.theme.HostScreen
@@ -33,6 +34,18 @@ class MainActivity : ComponentActivity() {
                 return AppViewModel(prefs = PreferencesHelper(applicationContext)) as T
             }
         }
+    }
+
+    private val shakeDetector = ShakeDetector(onShake = { viewModel.onShakeCheat() })
+
+    override fun onResume() {
+        super.onResume()
+        shakeDetector.start(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        shakeDetector.stop()
     }
 
     override fun onStop() {
@@ -56,6 +69,8 @@ class MainActivity : ComponentActivity() {
                 val disconnectedPlayers by viewModel.disconnectedPlayers.collectAsState()
                 val secondsUntilRemoval by viewModel.secondsUntilRemoval.collectAsState()
                 val currentTurnPlayerId by viewModel.currentTurnPlayerId.collectAsState()
+                val isLoading by viewModel.isLoading.collectAsState()
+                val connectionErrorMessage by viewModel.connectionErrorMessage.collectAsState()
 
                 val turnPlayerIsDisconnected = currentTurnPlayerId != null
                         && disconnectedPlayers.contains(currentTurnPlayerId)
@@ -68,7 +83,9 @@ class MainActivity : ComponentActivity() {
                                 onJoinClick = { typedName ->
                                     viewModel.setPlayerName(typedName)
                                     viewModel.navigateTo("lobby")
-                                }
+                                },
+                                isLoading = isLoading,
+                                connectionErrorMessage = connectionErrorMessage
                             )
                         }
                         "host" -> {
@@ -91,6 +108,7 @@ class MainActivity : ComponentActivity() {
                             val playerName by viewModel.playerName.collectAsState()
                             GameOverScreen(
                                 currentPlayerName = playerName,
+                                winnerId = gameOverMessage?.winnerId,
                                 results = gameOverMessage?.results ?: emptyList(),
                                 onPlayAgainClick = { viewModel.playAgain() },
                                 onLeaveClick = { viewModel.leaveLobby() }
@@ -115,4 +133,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-

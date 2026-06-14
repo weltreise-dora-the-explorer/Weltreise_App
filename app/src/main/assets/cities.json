@@ -221,11 +221,10 @@
       "singapore",
       "manila",
       "taipei",
-      "peking",
-      "moskava"
+      "peking"
     ],
     "x": 1621.6,
-    "y": 534.0,
+    "y": 534,
     "x_relativ": 0.844583,
     "y_relativ": 0.494444
   },
@@ -310,7 +309,7 @@
       "rangoon"
     ],
     "x": 1486.4,
-    "y": 535.0,
+    "y": 535,
     "x_relativ": 0.774167,
     "y_relativ": 0.49537
   },
@@ -376,10 +375,10 @@
     "flightConnections": [
       "tananarive"
     ],
-    "x": 1232.9,
-    "y": 704.1,
-    "x_relativ": 0.642135,
-    "y_relativ": 0.651944
+    "x": 1241.7,
+    "y": 705.3,
+    "x_relativ": 0.64669950965922,
+    "y_relativ": 0.6530373307975069
   },
   {
     "id": "mecca",
@@ -395,7 +394,7 @@
       "cairo"
     ],
     "x": 1241.7,
-    "y": 545.0,
+    "y": 545,
     "x_relativ": 0.646719,
     "y_relativ": 0.50463
   },
@@ -413,28 +412,6 @@
     "y": 336.8,
     "x_relativ": 0.644062,
     "y_relativ": 0.311852
-  },
-  {
-    "id": "moskava",
-    "name": "Moskava",
-    "continent": "ASIA",
-    "color": "ORANGE",
-    "trainConnections": [
-      "vladivostok",
-      "peking",
-      "leningrad",
-      "volgograd"
-    ],
-    "flightConnections": [
-      "sanfrancisco",
-      "hongkong",
-      "bangkok",
-      "murmansk"
-    ],
-    "x": 1653.5,
-    "y": 440.0,
-    "x_relativ": 0.861198,
-    "y_relativ": 0.407407
   },
   {
     "id": "hochiminhcity",
@@ -482,22 +459,6 @@
     "y_relativ": 0.538056
   },
   {
-    "id": "bangkok",
-    "name": "Bangkok",
-    "continent": "ASIA",
-    "color": "ORANGE",
-    "trainConnections": [
-      "volgograd"
-    ],
-    "flightConnections": [
-      "moskava"
-    ],
-    "x": 1250.5,
-    "y": 417.2,
-    "x_relativ": 0.651302,
-    "y_relativ": 0.386296
-  },
-  {
     "id": "murmansk",
     "name": "Murmansk",
     "continent": "ASIA",
@@ -506,7 +467,7 @@
       "leningrad"
     ],
     "flightConnections": [
-      "moskava",
+      "moskva",
       "moskva"
     ],
     "x": 1170.9,
@@ -526,10 +487,10 @@
       "lusaka"
     ],
     "flightConnections": [],
-    "x": 1201.4,
-    "y": 757.7,
-    "x_relativ": 0.625729,
-    "y_relativ": 0.701574
+    "x": 1203.9,
+    "y": 764.9,
+    "x_relativ": 0.6270309564788101,
+    "y_relativ": 0.7082251319569968
   },
   {
     "id": "aden",
@@ -604,14 +565,14 @@
       "riga",
       "helsinki",
       "murmansk",
-      "moskava",
+      "moskva",
       "moskva"
     ],
     "flightConnections": [],
-    "x": 1162.5,
-    "y": 320.8,
-    "x_relativ": 0.605469,
-    "y_relativ": 0.297037
+    "x": 1163,
+    "y": 326.3,
+    "x_relativ": 0.605703609656679,
+    "y_relativ": 0.30211032037113156
   },
   {
     "id": "urumchi",
@@ -624,7 +585,7 @@
     ],
     "flightConnections": [],
     "x": 1467.3,
-    "y": 432.0,
+    "y": 432,
     "x_relativ": 0.764219,
     "y_relativ": 0.4
   },
@@ -634,15 +595,14 @@
     "continent": "ASIA",
     "color": "ORANGE",
     "trainConnections": [
-      "moskava",
+      "moskva",
       "tiffis",
       "samarkand",
-      "bangkok",
       "moskva"
     ],
     "flightConnections": [],
     "x": 1256.7,
-    "y": 382.0,
+    "y": 382,
     "x_relativ": 0.654531,
     "y_relativ": 0.353704
   },
@@ -657,7 +617,7 @@
       "perth"
     ],
     "x": 1455.2,
-    "y": 619.0,
+    "y": 619,
     "x_relativ": 0.757917,
     "y_relativ": 0.573148
   },
@@ -688,7 +648,7 @@
       "baghdad"
     ],
     "x": 1303.1,
-    "y": 457.0,
+    "y": 457,
     "x_relativ": 0.678698,
     "y_relativ": 0.423148
   },
@@ -748,8 +708,7 @@
     "color": "ORANGE",
     "trainConnections": [
       "singapore",
-      "hochiminhcity",
-      "volgograd"
+      "hochiminhcity"
     ],
     "flightConnections": [
       "manila",
@@ -784,7 +743,7 @@
       "shanghai",
       "ulanbator",
       "seoul",
-      "moskava"
+      "moskva"
     ],
     "flightConnections": [
       "hongkong"
@@ -829,7 +788,7 @@
       "frankurt",
       "frankfurt"
     ],
-    "x": 1209.0,
+    "x": 1209,
     "y": 355.7,
     "x_relativ": 0.629687,
     "y_relativ": 0.329352
@@ -845,7 +804,7 @@
     ],
     "flightConnections": [],
     "x": 1497.3,
-    "y": 384.0,
+    "y": 384,
     "x_relativ": 0.779844,
     "y_relativ": 0.355556
   },
@@ -931,10 +890,10 @@
       "kiyev"
     ],
     "flightConnections": [],
-    "x": 1194.3,
-    "y": 385.9,
-    "x_relativ": 0.622031,
-    "y_relativ": 0.357315
+    "x": 1201.6,
+    "y": 395,
+    "x_relativ": 0.6258461038775807,
+    "y_relativ": 0.36572374002825364
   },
   {
     "id": "delhi",
@@ -962,7 +921,7 @@
       "moskva"
     ],
     "flightConnections": [],
-    "x": 1180.0,
+    "x": 1180,
     "y": 369.3,
     "x_relativ": 0.614583,
     "y_relativ": 0.341944
@@ -1010,10 +969,10 @@
       "narvik"
     ],
     "flightConnections": [],
-    "x": 1090.6,
-    "y": 294.0,
-    "x_relativ": 0.568021,
-    "y_relativ": 0.272222
+    "x": 1102.9,
+    "y": 295.3,
+    "x_relativ": 0.57442350098422,
+    "y_relativ": 0.27346321747918256
   },
   {
     "id": "arkhangelsk",
@@ -1024,8 +983,8 @@
       "moskva"
     ],
     "flightConnections": [],
-    "x": 1208.0,
-    "y": 295.0,
+    "x": 1208,
+    "y": 295,
     "x_relativ": 0.629167,
     "y_relativ": 0.273148
   },
@@ -1040,10 +999,10 @@
       "stockholm"
     ],
     "flightConnections": [],
-    "x": 1132.7,
-    "y": 284.0,
-    "x_relativ": 0.589948,
-    "y_relativ": 0.262963
+    "x": 1144.3,
+    "y": 289,
+    "x_relativ": 0.595987818326597,
+    "y_relativ": 0.2675652845308401
   },
   {
     "id": "narvik",
@@ -1055,10 +1014,10 @@
       "lulea"
     ],
     "flightConnections": [],
-    "x": 1108.9,
-    "y": 272.9,
-    "x_relativ": 0.577552,
-    "y_relativ": 0.252685
+    "x": 1124.7,
+    "y": 270.8,
+    "x_relativ": 0.5857980859560232,
+    "y_relativ": 0.25071404753557597
   },
   {
     "id": "london",
@@ -1068,17 +1027,17 @@
     "trainConnections": [
       "dublin",
       "edinburgh",
-      "amsterdam"
+      "paris"
     ],
     "flightConnections": [
       "newyork",
       "caracas",
       "lisboa"
     ],
-    "x": 1045.1,
-    "y": 363.6,
-    "x_relativ": 0.544323,
-    "y_relativ": 0.336667
+    "x": 1049.2,
+    "y": 364.5,
+    "x_relativ": 0.5464609795952036,
+    "y_relativ": 0.33749791806118623
   },
   {
     "id": "bergen",
@@ -1093,10 +1052,10 @@
       "frankurt",
       "frankfurt"
     ],
-    "x": 1069.1,
-    "y": 315.0,
-    "x_relativ": 0.556823,
-    "y_relativ": 0.291667
+    "x": 1073.3,
+    "y": 317.6,
+    "x_relativ": 0.5590204171682364,
+    "y_relativ": 0.2941059827983811
   },
   {
     "id": "kobenhaven",
@@ -1108,10 +1067,10 @@
       "stockholm"
     ],
     "flightConnections": [],
-    "x": 1054.1,
-    "y": 293.8,
-    "x_relativ": 0.54901,
-    "y_relativ": 0.272037
+    "x": 1093.8,
+    "y": 347.7,
+    "x_relativ": 0.569684090579302,
+    "y_relativ": 0.3219105238405669
   },
   {
     "id": "hamburg",
@@ -1122,14 +1081,14 @@
       "frankurt",
       "berlin",
       "kobenhaven",
-      "amsterdam",
+
       "frankfurt"
     ],
     "flightConnections": [],
-    "x": 1080.9,
-    "y": 348.2,
-    "x_relativ": 0.562969,
-    "y_relativ": 0.322407
+    "x": 1084.7,
+    "y": 358.1,
+    "x_relativ": 0.5649446801743838,
+    "y_relativ": 0.3315999851128438
   },
   {
     "id": "dublin",
@@ -1142,28 +1101,10 @@
     "flightConnections": [
       "edinburgh"
     ],
-    "x": 1009.7,
-    "y": 358.6,
-    "x_relativ": 0.525885,
-    "y_relativ": 0.332037
-  },
-  {
-    "id": "amsterdam",
-    "name": "Amsterdam",
-    "continent": "EUROPE_AFRICA",
-    "color": "GREEN",
-    "trainConnections": [
-      "london",
-      "hamburg",
-      "frankurt",
-      "paris",
-      "frankfurt"
-    ],
-    "flightConnections": [],
-    "x": 1060.2,
-    "y": 365.3,
-    "x_relativ": 0.552188,
-    "y_relativ": 0.338241
+    "x": 1016.9,
+    "y": 359.9,
+    "x_relativ": 0.5296360726577445,
+    "y_relativ": 0.33328510881237017
   },
   {
     "id": "oslo",
@@ -1175,10 +1116,10 @@
       "stockholm"
     ],
     "flightConnections": [],
-    "x": 1092.4,
-    "y": 320.0,
-    "x_relativ": 0.568958,
-    "y_relativ": 0.296296
+    "x": 1097,
+    "y": 322.2,
+    "x_relativ": 0.5713428842210232,
+    "y_relativ": 0.29831879204719713
   },
   {
     "id": "gdansk",
@@ -1192,7 +1133,7 @@
     ],
     "flightConnections": [],
     "x": 1121.9,
-    "y": 349.0,
+    "y": 349,
     "x_relativ": 0.584323,
     "y_relativ": 0.323148
   },
@@ -1206,7 +1147,7 @@
       "lisboa",
       "madrid"
     ],
-    "x": 959.0,
+    "x": 959,
     "y": 481.5,
     "x_relativ": 0.499479,
     "y_relativ": 0.445833
@@ -1224,10 +1165,10 @@
     "flightConnections": [
       "alger"
     ],
-    "x": 1069.9,
-    "y": 410.6,
-    "x_relativ": 0.55724,
-    "y_relativ": 0.380185
+    "x": 1066,
+    "y": 413.2,
+    "x_relativ": 0.555228888844302,
+    "y_relativ": 0.3825749770235178
   },
   {
     "id": "lisboa",
@@ -1242,10 +1183,10 @@
       "london",
       "dakar"
     ],
-    "x": 995.3,
-    "y": 436.7,
-    "x_relativ": 0.518385,
-    "y_relativ": 0.404352
+    "x": 999.2,
+    "y": 438.2,
+    "x_relativ": 0.5203942223681544,
+    "y_relativ": 0.4057454278920059
   },
   {
     "id": "madrid",
@@ -1279,10 +1220,10 @@
     "flightConnections": [
       "roma"
     ],
-    "x": 1085.9,
-    "y": 448.3,
-    "x_relativ": 0.565573,
-    "y_relativ": 0.415093
+    "x": 1089.2,
+    "y": 455.5,
+    "x_relativ": 0.5673143853768429,
+    "y_relativ": 0.4217541030375068
   },
   {
     "id": "milano",
@@ -1297,10 +1238,10 @@
       "roma"
     ],
     "flightConnections": [],
-    "x": 1090.5,
-    "y": 400.9,
-    "x_relativ": 0.567969,
-    "y_relativ": 0.371204
+    "x": 1092.4,
+    "y": 405.4,
+    "x_relativ": 0.5689731790185643,
+    "y_relativ": 0.37541320130053046
   },
   {
     "id": "bordeaux",
@@ -1313,10 +1254,10 @@
       "paris"
     ],
     "flightConnections": [],
-    "x": 1039.1,
-    "y": 400.6,
-    "x_relativ": 0.541198,
-    "y_relativ": 0.370926
+    "x": 1044.7,
+    "y": 405.9,
+    "x_relativ": 0.5440912743927445,
+    "y_relativ": 0.37583448222541205
   },
   {
     "id": "alger",
@@ -1331,10 +1272,10 @@
     "flightConnections": [
       "marseille"
     ],
-    "x": 1054.1,
-    "y": 452.0,
-    "x_relativ": 0.54901,
-    "y_relativ": 0.418519
+    "x": 1053.8,
+    "y": 462.8,
+    "x_relativ": 0.5488306847976626,
+    "y_relativ": 0.42849459783561245
   },
   {
     "id": "paris",
@@ -1345,20 +1286,19 @@
       "marseille",
       "bordeaux",
       "brest",
-      "amsterdam",
-      "frankurt",
-      "bern",
-      "frankfurt"
+      "london",
+      "frankfurt",
+      "bern"
     ],
     "flightConnections": [
       "nairobi",
       "caracas",
       "newyork"
     ],
-    "x": 1043.6,
-    "y": 380.2,
-    "x_relativ": 0.543542,
-    "y_relativ": 0.352037
+    "x": 1050.1,
+    "y": 388.6,
+    "x_relativ": 0.5469349206356954,
+    "y_relativ": 0.3598258070799112
   },
   {
     "id": "rabat",
@@ -1370,10 +1310,10 @@
       "alger"
     ],
     "flightConnections": [],
-    "x": 1007.2,
-    "y": 465.9,
-    "x_relativ": 0.524583,
-    "y_relativ": 0.431389
+    "x": 1007.8,
+    "y": 477.8,
+    "x_relativ": 0.5248966622528265,
+    "y_relativ": 0.44239686835670533
   },
   {
     "id": "bern",
@@ -1382,17 +1322,15 @@
     "color": "GREEN",
     "trainConnections": [
       "paris",
-      "frankfurt",
       "milano"
     ],
     "flightConnections": [
-      "roma",
-      "frankfurt"
+      "roma"
     ],
-    "x": 1063.7,
-    "y": 392.5,
-    "x_relativ": 0.55401,
-    "y_relativ": 0.363426
+    "x": 1069.7,
+    "y": 397.7,
+    "x_relativ": 0.5571246530062691,
+    "y_relativ": 0.3682514255775432
   },
   {
     "id": "tripoli",
@@ -1453,13 +1391,11 @@
       "sofiya",
       "ankara"
     ],
-    "flightConnections": [
-      "frankfurt"
-    ],
-    "x": 1169.9,
-    "y": 416.6,
-    "x_relativ": 0.609323,
-    "y_relativ": 0.385741
+    "flightConnections": [],
+    "x": 1176.6,
+    "y": 424.6,
+    "x_relativ": 0.6128127252640561,
+    "y_relativ": 0.3931070001455578
   },
   {
     "id": "bucuresti",
@@ -1486,10 +1422,10 @@
       "cairo"
     ],
     "flightConnections": [],
-    "x": 1137.5,
-    "y": 480.3,
-    "x_relativ": 0.592448,
-    "y_relativ": 0.444722
+    "x": 1147,
+    "y": 486,
+    "x_relativ": 0.5974096414480724,
+    "y_relativ": 0.44997992500457423
   },
   {
     "id": "sofiya",
@@ -1501,10 +1437,10 @@
       "istanbul"
     ],
     "flightConnections": [],
-    "x": 1158.8,
-    "y": 409.0,
-    "x_relativ": 0.603542,
-    "y_relativ": 0.378704
+    "x": 1151.6,
+    "y": 412.3,
+    "x_relativ": 0.5997793466505315,
+    "y_relativ": 0.3817324151737545
   },
   {
     "id": "beograd",
@@ -1531,7 +1467,7 @@
     "trainConnections": [
       "milano",
       "frankurt",
-      "praha",
+
       "budapest",
       "frankfurt"
     ],
@@ -1552,10 +1488,10 @@
     "flightConnections": [
       "cairo"
     ],
-    "x": 1150.4,
-    "y": 437.9,
-    "x_relativ": 0.599167,
-    "y_relativ": 0.405463
+    "x": 1152.9,
+    "y": 450.5,
+    "x_relativ": 0.6004902582112692,
+    "y_relativ": 0.4171200128638092
   },
   {
     "id": "dakar",
@@ -1571,10 +1507,10 @@
       "lisboa",
       "abidjan"
     ],
-    "x": 953.4,
-    "y": 578.4,
-    "x_relativ": 0.496562,
-    "y_relativ": 0.535556
+    "x": 956.4,
+    "y": 586.5,
+    "x_relativ": 0.49811899346503963,
+    "y_relativ": 0.5430830094034085
   },
   {
     "id": "bamako",
@@ -1587,10 +1523,10 @@
       "niamey"
     ],
     "flightConnections": [],
-    "x": 995.3,
-    "y": 584.0,
-    "x_relativ": 0.518385,
-    "y_relativ": 0.540741
+    "x": 1002.8,
+    "y": 589.3,
+    "x_relativ": 0.5222899865301216,
+    "y_relativ": 0.5456106949526981
   },
   {
     "id": "accra",
@@ -1602,10 +1538,10 @@
       "abidjan",
       "lagos"
     ],
-    "x": 1029.2,
-    "y": 633.1,
-    "x_relativ": 0.536042,
-    "y_relativ": 0.586204
+    "x": 1029.6,
+    "y": 642,
+    "x_relativ": 0.5362712472246298,
+    "y_relativ": 0.5944792822389641
   },
   {
     "id": "niamey",
@@ -1619,10 +1555,10 @@
       "lagos"
     ],
     "flightConnections": [],
-    "x": 1035.7,
-    "y": 587.2,
-    "x_relativ": 0.539427,
-    "y_relativ": 0.543704
+    "x": 1050.6,
+    "y": 586.1,
+    "x_relativ": 0.5471718911559412,
+    "y_relativ": 0.5426617284785269
   },
   {
     "id": "abidjan",
@@ -1634,10 +1570,10 @@
       "dakar",
       "accra"
     ],
-    "x": 1007.1,
-    "y": 636.5,
-    "x_relativ": 0.524531,
-    "y_relativ": 0.589352
+    "x": 998.7,
+    "y": 646.1,
+    "x_relativ": 0.5201572518479085,
+    "y_relativ": 0.5982708105628984
   },
   {
     "id": "tamanrasset",
@@ -1667,10 +1603,10 @@
     "flightConnections": [
       "kinshasa"
     ],
-    "x": 1090.9,
-    "y": 646.0,
-    "x_relativ": 0.568177,
-    "y_relativ": 0.598148
+    "x": 1099.3,
+    "y": 653,
+    "x_relativ": 0.5725277368222527,
+    "y_relativ": 0.6045900244361225
   },
   {
     "id": "timbuktu",
@@ -1682,10 +1618,10 @@
       "tamanrasset"
     ],
     "flightConnections": [],
-    "x": 1026.9,
-    "y": 555.4,
-    "x_relativ": 0.534844,
-    "y_relativ": 0.514259
+    "x": 1030.1,
+    "y": 562.9,
+    "x_relativ": 0.5365082177448757,
+    "y_relativ": 0.5211764013095651
   },
   {
     "id": "edinburgh",
@@ -1699,10 +1635,10 @@
       "reykjavik",
       "dublin"
     ],
-    "x": 1025.6,
-    "y": 338.2,
-    "x_relativ": 0.534167,
-    "y_relativ": 0.313148
+    "x": 1034.6,
+    "y": 345.8,
+    "x_relativ": 0.5388779229473347,
+    "y_relativ": 0.32022540014104045
   },
   {
     "id": "berlin",
@@ -1710,17 +1646,17 @@
     "continent": "EUROPE_AFRICA",
     "color": "GREEN",
     "trainConnections": [
-      "praha",
+
       "hamburg",
       "gdansk",
       "warszawa",
       "frankfurt"
     ],
     "flightConnections": [],
-    "x": 1103.9,
-    "y": 356.3,
-    "x_relativ": 0.574948,
-    "y_relativ": 0.329907
+    "x": 1103.8,
+    "y": 369,
+    "x_relativ": 0.5748974420247118,
+    "y_relativ": 0.34171072731000224
   },
   {
     "id": "frankfurt",
@@ -1729,9 +1665,8 @@
     "color": "GREEN",
     "trainConnections": [
       "hamburg",
-      "amsterdam",
+
       "paris",
-      "bern",
       "milano",
       "wien",
       "berlin"
@@ -1740,14 +1675,13 @@
       "bergen",
       "helsinki",
       "moskva",
-      "istanbul",
       "bern",
       "madrid"
     ],
-    "x": 1070.3,
-    "y": 376.1,
-    "x_relativ": 0.557448,
-    "y_relativ": 0.348241
+    "x": 1079.2,
+    "y": 379.5,
+    "x_relativ": 0.5621010339314332,
+    "y_relativ": 0.3514001885822791
   },
   {
     "id": "brest",
@@ -1760,7 +1694,7 @@
     ],
     "flightConnections": [],
     "x": 1024.1,
-    "y": 382.0,
+    "y": 382,
     "x_relativ": 0.533385,
     "y_relativ": 0.353704
   },
@@ -1802,7 +1736,7 @@
     "continent": "EUROPE_AFRICA",
     "color": "GREEN",
     "trainConnections": [
-      "praha",
+
       "berlin",
       "gdansk",
       "moskva"
@@ -1812,22 +1746,6 @@
     "y": 369.3,
     "x_relativ": 0.593958,
     "y_relativ": 0.341944
-  },
-  {
-    "id": "praha",
-    "name": "Praha",
-    "continent": "EUROPE_AFRICA",
-    "color": "GREEN",
-    "trainConnections": [
-      "wien",
-      "berlin",
-      "warszawa"
-    ],
-    "flightConnections": [],
-    "x": 1115.1,
-    "y": 376.0,
-    "x_relativ": 0.580781,
-    "y_relativ": 0.348148
   },
   {
     "id": "helsinki",
@@ -1843,10 +1761,10 @@
       "frankurt",
       "frankfurt"
     ],
-    "x": 1142.7,
-    "y": 313.8,
-    "x_relativ": 0.595156,
-    "y_relativ": 0.290556
+    "x": 1145.7,
+    "y": 319,
+    "x_relativ": 0.5966987298873347,
+    "y_relativ": 0.29536982557302593
   },
   {
     "id": "windhoek",
@@ -1894,7 +1812,7 @@
       "nairobi"
     ],
     "x": 1131.9,
-    "y": 864.0,
+    "y": 864,
     "x_relativ": 0.589531,
     "y_relativ": 0.8
   },
@@ -1910,10 +1828,10 @@
     "flightConnections": [
       "accra"
     ],
-    "x": 1055.2,
-    "y": 627.6,
-    "x_relativ": 0.549583,
-    "y_relativ": 0.581111
+    "x": 1061.5,
+    "y": 633.4,
+    "x_relativ": 0.5528591836418429,
+    "y_relativ": 0.5864749446662136
   },
   {
     "id": "palermo",
@@ -1924,10 +1842,10 @@
       "roma"
     ],
     "flightConnections": [],
-    "x": 1102.3,
-    "y": 443.0,
-    "x_relativ": 0.574115,
-    "y_relativ": 0.410185
+    "x": 1107,
+    "y": 450.9,
+    "x_relativ": 0.576556235666433,
+    "y_relativ": 0.4175412937886908
   },
   {
     "id": "roma",
@@ -1943,10 +1861,10 @@
       "jerusalem",
       "bern"
     ],
-    "x": 1099.5,
-    "y": 421.3,
-    "x_relativ": 0.572656,
-    "y_relativ": 0.390093
+    "x": 1110.2,
+    "y": 428.2,
+    "x_relativ": 0.5782150293081544,
+    "y_relativ": 0.3964772475446106
   },
   {
     "id": "aswan",
@@ -1974,7 +1892,7 @@
       "yaounde"
     ],
     "flightConnections": [],
-    "x": 1110.0,
+    "x": 1110,
     "y": 600.4,
     "x_relativ": 0.578125,
     "y_relativ": 0.555926
@@ -2005,10 +1923,10 @@
       "salisbury"
     ],
     "flightConnections": [],
-    "x": 1175.9,
-    "y": 808.1,
-    "x_relativ": 0.612448,
-    "y_relativ": 0.748241
+    "x": 1180.2,
+    "y": 814,
+    "x_relativ": 0.6147084894260233,
+    "y_relativ": 0.75372347184421
   },
   {
     "id": "lusaka",
@@ -2054,10 +1972,10 @@
       "minneapolis"
     ],
     "flightConnections": [],
-    "x": 557.8,
-    "y": 348.4,
-    "x_relativ": 0.290521,
-    "y_relativ": 0.322593
+    "x": 540.5,
+    "y": 339.5,
+    "x_relativ": 0.2815279379602854,
+    "y_relativ": 0.314327467192698
   },
   {
     "id": "edmonton",
@@ -2070,10 +1988,10 @@
       "calgary"
     ],
     "flightConnections": [],
-    "x": 573.4,
-    "y": 323.9,
-    "x_relativ": 0.298646,
-    "y_relativ": 0.299907
+    "x": 552.4,
+    "y": 298.1,
+    "x_relativ": 0.28768917148667883,
+    "y_relativ": 0.2759909030284722
   },
   {
     "id": "godthaab",
@@ -2101,7 +2019,7 @@
     ],
     "flightConnections": [],
     "x": 1669.4,
-    "y": 384.0,
+    "y": 384,
     "x_relativ": 0.869479,
     "y_relativ": 0.355556
   },
@@ -2165,10 +2083,10 @@
       "montreal"
     ],
     "flightConnections": [],
-    "x": 618.8,
-    "y": 350.8,
-    "x_relativ": 0.322292,
-    "y_relativ": 0.324815
+    "x": 606.5,
+    "y": 333.6,
+    "x_relativ": 0.3158886633959412,
+    "y_relativ": 0.3088508151692372
   },
   {
     "id": "losangeles",
@@ -2199,10 +2117,10 @@
       "denver"
     ],
     "flightConnections": [],
-    "x": 503.9,
-    "y": 398.6,
-    "x_relativ": 0.262448,
-    "y_relativ": 0.369074
+    "x": 507.8,
+    "y": 413.2,
+    "x_relativ": 0.26446606050258054,
+    "y_relativ": 0.3825749770235178
   },
   {
     "id": "sanfrancisco",
@@ -2217,11 +2135,10 @@
     "flightConnections": [
       "newyork",
       "wellington",
-      "seoul",
-      "moskava"
+      "seoul"
     ],
     "x": 443.3,
-    "y": 440.0,
+    "y": 440,
     "x_relativ": 0.230885,
     "y_relativ": 0.407407
   },
@@ -2235,7 +2152,7 @@
       "vancouver"
     ],
     "flightConnections": [],
-    "x": 461.0,
+    "x": 461,
     "y": 395.6,
     "x_relativ": 0.240104,
     "y_relativ": 0.366296
@@ -2252,7 +2169,7 @@
     ],
     "flightConnections": [],
     "x": 519.7,
-    "y": 462.0,
+    "y": 462,
     "x_relativ": 0.270677,
     "y_relativ": 0.427778
   },
@@ -2270,7 +2187,7 @@
     ],
     "flightConnections": [],
     "x": 538.7,
-    "y": 440.0,
+    "y": 440,
     "x_relativ": 0.280573,
     "y_relativ": 0.407407
   },
@@ -2285,10 +2202,10 @@
       "neworleans"
     ],
     "flightConnections": [],
-    "x": 620.1,
-    "y": 470.9,
-    "x_relativ": 0.322969,
-    "y_relativ": 0.436019
+    "x": 639.3,
+    "y": 475.1,
+    "x_relativ": 0.33295054085364606,
+    "y_relativ": 0.43986918280741577
   },
   {
     "id": "stlouis",
@@ -2320,10 +2237,10 @@
       "stlouis"
     ],
     "flightConnections": [],
-    "x": 637.6,
-    "y": 410.2,
-    "x_relativ": 0.332083,
-    "y_relativ": 0.379815
+    "x": 681.1,
+    "y": 371.8,
+    "x_relativ": 0.35475182871626904,
+    "y_relativ": 0.34423841285929185
   },
   {
     "id": "neworleans",
@@ -2336,10 +2253,10 @@
       "jacksonville"
     ],
     "flightConnections": [],
-    "x": 583.8,
-    "y": 479.9,
-    "x_relativ": 0.304062,
-    "y_relativ": 0.444352
+    "x": 600.1,
+    "y": 490.1,
+    "x_relativ": 0.31257107611249857,
+    "y_relativ": 0.4537714533285086
   },
   {
     "id": "houston",
@@ -2353,10 +2270,10 @@
       "mexicocity"
     ],
     "flightConnections": [],
-    "x": 552.0,
-    "y": 486.9,
-    "x_relativ": 0.2875,
-    "y_relativ": 0.450833
+    "x": 558.3,
+    "y": 494.6,
+    "x_relativ": 0.2907697882498756,
+    "y_relativ": 0.45798426257732466
   },
   {
     "id": "duluth",
@@ -2368,10 +2285,10 @@
       "chicago"
     ],
     "flightConnections": [],
-    "x": 654.4,
-    "y": 371.9,
-    "x_relativ": 0.340833,
-    "y_relativ": 0.344352
+    "x": 657.5,
+    "y": 345.4,
+    "x_relativ": 0.3424293616634822,
+    "y_relativ": 0.31980411921615887
   },
   {
     "id": "minneapolis",
@@ -2386,10 +2303,10 @@
       "denver"
     ],
     "flightConnections": [],
-    "x": 602.3,
-    "y": 380.2,
-    "x_relativ": 0.313698,
-    "y_relativ": 0.352037
+    "x": 591,
+    "y": 358.6,
+    "x_relativ": 0.3078316657075805,
+    "y_relativ": 0.3320212660377254
   },
   {
     "id": "elpasto",
@@ -2418,10 +2335,10 @@
       "jacksonville"
     ],
     "flightConnections": [],
-    "x": 655.0,
-    "y": 441.1,
-    "x_relativ": 0.341146,
-    "y_relativ": 0.408426
+    "x": 696.6,
+    "y": 425.9,
+    "x_relativ": 0.3628088264046297,
+    "y_relativ": 0.39437084292020264
   },
   {
     "id": "newyork",
@@ -2440,10 +2357,10 @@
       "paris",
       "london"
     ],
-    "x": 680.3,
-    "y": 423.4,
-    "x_relativ": 0.354323,
-    "y_relativ": 0.392037
+    "x": 740.3,
+    "y": 407.7,
+    "x_relativ": 0.3855579963482363,
+    "y_relativ": 0.3775196059249385
   },
   {
     "id": "halifax",
@@ -2455,10 +2372,10 @@
       "newyork"
     ],
     "flightConnections": [],
-    "x": 735.9,
-    "y": 399.0,
-    "x_relativ": 0.383281,
-    "y_relativ": 0.369444
+    "x": 792.1,
+    "y": 385,
+    "x_relativ": 0.41257263565626906,
+    "y_relativ": 0.35645555968085835
   },
   {
     "id": "montreal",
@@ -2473,10 +2390,10 @@
     "flightConnections": [
       "godthaab"
     ],
-    "x": 700.1,
-    "y": 379.2,
-    "x_relativ": 0.364635,
-    "y_relativ": 0.351111
+    "x": 738.9,
+    "y": 342.7,
+    "x_relativ": 0.3848470847874986,
+    "y_relativ": 0.31727643366686925
   },
   {
     "id": "managua",
@@ -2488,10 +2405,10 @@
       "panamacity"
     ],
     "flightConnections": [],
-    "x": 590.8,
-    "y": 599.4,
-    "x_relativ": 0.307708,
-    "y_relativ": 0.555
+    "x": 597.9,
+    "y": 604.7,
+    "x_relativ": 0.31138622351126904,
+    "y_relativ": 0.5599342463986726
   },
   {
     "id": "guatemale",
@@ -2503,10 +2420,10 @@
       "managua"
     ],
     "flightConnections": [],
-    "x": 562.2,
-    "y": 577.5,
-    "x_relativ": 0.292813,
-    "y_relativ": 0.534722
+    "x": 560.6,
+    "y": 587,
+    "x_relativ": 0.2919546408511051,
+    "y_relativ": 0.5435042903282901
   },
   {
     "id": "mexicocity",
@@ -2519,10 +2436,10 @@
       "losangeles"
     ],
     "flightConnections": [],
-    "x": 527.6,
-    "y": 549.9,
-    "x_relativ": 0.274792,
-    "y_relativ": 0.509167
+    "x": 534.6,
+    "y": 549.2,
+    "x_relativ": 0.2784473211970887,
+    "y_relativ": 0.508537973563117
   },
   {
     "id": "miami",
@@ -2535,9 +2452,9 @@
     "flightConnections": [
       "newyork"
     ],
-    "x": 620.1,
+    "x": 631,
     "y": 504.4,
-    "x_relativ": 0.322969,
+    "x_relativ": 0.328646,
     "y_relativ": 0.467037
   },
   {
@@ -2549,10 +2466,10 @@
     "flightConnections": [
       "kingston"
     ],
-    "x": 610.6,
-    "y": 530.1,
-    "x_relativ": 0.318021,
-    "y_relativ": 0.490833
+    "x": 622.4,
+    "y": 540.6,
+    "x_relativ": 0.32418263160454774,
+    "y_relativ": 0.5005336359903665
   },
   {
     "id": "panamacity",
@@ -2564,10 +2481,10 @@
       "managua"
     ],
     "flightConnections": [],
-    "x": 626.0,
-    "y": 618.4,
-    "x_relativ": 0.326042,
-    "y_relativ": 0.572593
+    "x": 635.6,
+    "y": 627,
+    "x_relativ": 0.3310547766916789,
+    "y_relativ": 0.5805770117178711
   },
   {
     "id": "kingston",
@@ -2579,10 +2496,10 @@
       "caracas",
       "havana"
     ],
-    "x": 639.8,
-    "y": 557.1,
-    "x_relativ": 0.333229,
-    "y_relativ": 0.515833
+    "x": 657.9,
+    "y": 566.1,
+    "x_relativ": 0.34266633218372805,
+    "y_relativ": 0.5241253677837363
   },
   {
     "id": "bogota",
@@ -2595,10 +2512,10 @@
       "caracas"
     ],
     "flightConnections": [],
-    "x": 646.7,
-    "y": 628.7,
-    "x_relativ": 0.336823,
-    "y_relativ": 0.58213
+    "x": 655.2,
+    "y": 637.9,
+    "x_relativ": 0.3412445090622526,
+    "y_relativ": 0.5906877539150296
   },
   {
     "id": "caracas",
@@ -2615,10 +2532,10 @@
       "paris",
       "london"
     ],
-    "x": 691.5,
-    "y": 605.0,
-    "x_relativ": 0.360156,
-    "y_relativ": 0.560185
+    "x": 707.1,
+    "y": 615.6,
+    "x_relativ": 0.36825914837028545,
+    "y_relativ": 0.5700449885958311
   },
   {
     "id": "vladivostok",
@@ -2629,13 +2546,13 @@
       "khabarovsk",
       "irkutsk",
       "seoul",
-      "moskava"
+      "moskva"
     ],
     "flightConnections": [],
-    "x": 1671.3,
-    "y": 409.5,
-    "x_relativ": 0.870469,
-    "y_relativ": 0.379167
+    "x": 1679.7,
+    "y": 419,
+    "x_relativ": 0.8748669316228388,
+    "y_relativ": 0.38799094960219677
   },
   {
     "id": "quito",
@@ -2647,10 +2564,10 @@
       "lima"
     ],
     "flightConnections": [],
-    "x": 625.0,
-    "y": 662.0,
-    "x_relativ": 0.325521,
-    "y_relativ": 0.612963
+    "x": 632,
+    "y": 667.1,
+    "x_relativ": 0.32915901252971164,
+    "y_relativ": 0.6176497331074522
   },
   {
     "id": "lima",
@@ -2666,10 +2583,10 @@
       "santiago",
       "losangeles"
     ],
-    "x": 608.0,
-    "y": 727.8,
-    "x_relativ": 0.316667,
-    "y_relativ": 0.673889
+    "x": 635.2,
+    "y": 718.5,
+    "x_relativ": 0.330817806171433,
+    "y_relativ": 0.6652544776190733
   },
   {
     "id": "lapaz",
@@ -2682,10 +2599,10 @@
       "santiago"
     ],
     "flightConnections": [],
-    "x": 693.3,
-    "y": 762.7,
-    "x_relativ": 0.361094,
-    "y_relativ": 0.706204
+    "x": 702.5,
+    "y": 764.4,
+    "x_relativ": 0.3658894431678264,
+    "y_relativ": 0.7078038510321153
   },
   {
     "id": "manaus",
@@ -2712,10 +2629,10 @@
       "lapaz"
     ],
     "flightConnections": [],
-    "x": 652.1,
-    "y": 734.7,
-    "x_relativ": 0.339635,
-    "y_relativ": 0.680278
+    "x": 671.6,
+    "y": 748.5,
+    "x_relativ": 0.3497754477911051,
+    "y_relativ": 0.6930590186612592
   },
   {
     "id": "asuncion",
@@ -2743,10 +2660,10 @@
       "riodejaneiro"
     ],
     "flightConnections": [],
-    "x": 840.4,
-    "y": 714.7,
-    "x_relativ": 0.437708,
-    "y_relativ": 0.661759
+    "x": 853.6,
+    "y": 720.7,
+    "x_relativ": 0.4445636558894658,
+    "y_relativ": 0.6673608822434813
   },
   {
     "id": "riodejaneiro",
@@ -2761,10 +2678,10 @@
     "flightConnections": [
       "dakar"
     ],
-    "x": 807.9,
-    "y": 790.1,
-    "x_relativ": 0.420781,
-    "y_relativ": 0.731574
+    "x": 819.9,
+    "y": 807.2,
+    "x_relativ": 0.42702783739126904,
+    "y_relativ": 0.7474042579709859
   },
   {
     "id": "brasilia",
@@ -2778,10 +2695,10 @@
     "flightConnections": [
       "caracas"
     ],
-    "x": 765.7,
-    "y": 752.8,
-    "x_relativ": 0.398802,
-    "y_relativ": 0.697037
+    "x": 782.6,
+    "y": 771.3,
+    "x_relativ": 0.40759625473110517,
+    "y_relativ": 0.7141230649053393
   },
   {
     "id": "belem",
@@ -2856,10 +2773,10 @@
     "flightConnections": [
       "caracas"
     ],
-    "x": 741.9,
-    "y": 867.0,
-    "x_relativ": 0.386406,
-    "y_relativ": 0.802778
+    "x": 756.7,
+    "y": 877.3,
+    "x_relativ": 0.3940889350770887,
+    "y_relativ": 0.8122815204027528
   },
   {
     "id": "puntaarenas",
@@ -2870,10 +2787,10 @@
       "santiago"
     ],
     "flightConnections": [],
-    "x": 716.2,
-    "y": 962.1,
-    "x_relativ": 0.373021,
-    "y_relativ": 0.890833
+    "x": 725.3,
+    "y": 990.1,
+    "x_relativ": 0.37773796918012154,
+    "y_relativ": 0.9167591897733904
   },
   {
     "id": "santiago",
@@ -2955,7 +2872,7 @@
     ],
     "flightConnections": [],
     "x": 1729.7,
-    "y": 874.0,
+    "y": 874,
     "x_relativ": 0.900885,
     "y_relativ": 0.809259
   },
