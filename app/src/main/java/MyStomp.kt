@@ -18,9 +18,9 @@ import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 import at.aau.serg.websocketbrokerdemo.GameConstants
 
-private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
+//private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/websocket-example-broker"
 //private const val WEBSOCKET_URI = "ws://localhost:8080/websocket-example-broker" // physisches Gerät
-//private const val WEBSOCKET_URI = "ws://se2-demo.aau.at:53205/websocket-example-broker"
+private const val WEBSOCKET_URI = "ws://se2-demo.aau.at:53205/websocket-example-broker"
 private const val RECONNECT_INITIAL_DELAY_MS = 2000L
 private const val RECONNECT_MAX_DELAY_MS = 30_000L
 
