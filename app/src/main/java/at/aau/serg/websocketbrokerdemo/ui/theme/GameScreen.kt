@@ -88,6 +88,7 @@ private fun playSound(context: Context, name: String, volume: Float = 1.0f) {
     }
 }
 
+
 @Composable
 fun GameScreen(viewModel: AppViewModel) {
     val context = LocalContext.current
@@ -333,6 +334,9 @@ fun GameScreen(viewModel: AppViewModel) {
     }
 
     val showMinigameOverlay = (gamePhase == GameConstants.PHASE_MINIGAME)
+
+    var chosenCity by remember { mutableStateOf<String?>(null) }
+
 
     // Box (Schichten-Design)
     Box(
@@ -957,60 +961,33 @@ fun GameScreen(viewModel: AppViewModel) {
         }
     }
 
-    //Pop Up Bucket List
-    if (showBucketListDialog.value) {
-        AlertDialog(
-            onDismissRequest = { showBucketListDialog.value = false },
-            title = {
-                Text(text = "Bucket List", fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState())
-                ) {
-                    if (startCity != null) {
-                        Text(
-                            text = "🏠 Start city",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = Color(0xFF1E56A0)
-                        )
-                        Text(
-                            text = "${startCity!!.name}  •  ${startCity!!.continent.name.replace("_", " ")}",
-                            fontSize = 13.sp
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-                    if (ownedCities.isEmpty()) {
-                        Text(
-                            text = "No target cities assigned yet.",
-                            fontSize = 13.sp,
-                            color = Color.Gray
-                        )
-                    } else {
-                        Text(
-                            text = "📍 Target Cities (${ownedCities.size})",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = Color(0xFF1E56A0)
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        ownedCities.forEach { city ->
-                            Text(
-                                text = "${city.name}  •  ${city.continent.name.replace("_", " ")}",
-                                fontSize = 13.sp
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showBucketListDialog.value = false }) {
-                    Text("close")
-                }
-            }
-        )
+    //Pop Up Bucket List – neue Karten-UI; die Städte kommen vom Server (viewModel.ownedCities)
+    // Lokale, clientseitige Reihenfolge der Karten, synchronisiert mit den Server-Städten.
+    // (Das serverseitige Persistieren der Reihenfolge ist separat – siehe #28.)
+    var cityOrder by remember { mutableStateOf<List<String>>(emptyList()) }
+    LaunchedEffect(ownedCities) {
+        val serverNames = ownedCities.map { it.name }
+        cityOrder = cityOrder.filter { it in serverNames } + serverNames.filter { it !in cityOrder }
     }
+    // Besuchte Bucket-List-Städte des eigenen Spielers (City-IDs -> Namen) aus dem Server-State.
+    val myVisitedBucketIds = playerVisitedBucketIds[currentPlayerName] ?: emptySet()
+    val visitedCityNames = ownedCities.filter { it.id in myVisitedBucketIds }.map { it.name }.toSet()
+
+    WeltreiseBucketList(
+        drawnCities = cityOrder,
+        isVisible = showBucketListDialog.value,
+        chosenCity = chosenCity,
+        visitedCities = visitedCityNames,
+        onCityChosen = { clickedCity ->
+            chosenCity = clickedCity
+        },
+        onCityOrderChanged = { neueListe ->
+            cityOrder = neueListe
+        },
+        onDismiss = {
+            showBucketListDialog.value = false
+        }
+    )
 }
 
 
