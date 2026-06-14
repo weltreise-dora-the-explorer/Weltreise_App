@@ -106,9 +106,9 @@ fun QuizReadyScreen(
                 modifier = Modifier.align(Alignment.End),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                allPlayers.forEach { name ->
+                allPlayers.forEachIndexed { index, name ->
                     val isReady = readyPlayerIds.contains(name)
-                    val avatar = loadAvatar(name)
+                    val avatar = loadAvatar(index)
 
                     Box(contentAlignment = Alignment.BottomEnd) {
                         if (avatar != null) {
@@ -142,17 +142,18 @@ fun QuizReadyScreen(
     }
 }
 @Composable
-private fun loadAvatar(playerName: String): ImageBitmap? {
+private fun loadAvatar(playerIndex: Int): ImageBitmap? {
     val context = LocalContext.current
 
-    val fileName = when {
-        playerName.contains("Dora") -> "pp_turtle.png"
-        playerName.contains("Jerry") -> "pp_duck.png"
-        playerName.contains("Captain") -> "pp_bear.png"
-        else -> "pp_pig.png"
+    val fileName = when (playerIndex) {
+        0 -> "pp_turtle.png"
+        1 -> "pp_duck.png"
+        2 -> "pp_bear.png"
+        3 -> "pp_pig.png"
+        else -> return null
     }
 
-    return remember(playerName) {
+    return remember(playerIndex) {
         try {
             context.assets.open(fileName).use { inputStream ->
                 BitmapFactory.decodeStream(inputStream).asImageBitmap()

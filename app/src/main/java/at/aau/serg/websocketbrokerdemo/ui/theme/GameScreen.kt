@@ -354,6 +354,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 MinigameOverlay(
                     targetPlayerName = minigameTargetPlayer,
                     opponentPlayerNames = playersList.filter { it != minigameTargetPlayer },
+                    playersInLobbyOrder = playersList,
                     targetCityName = playerCurrentCities[minigameTargetPlayer]?.name ?: "",
                     targetPlayerAvatar = minigameTargetAvatar,
                     opponentPlayerAvatars = playersList.filter { it != minigameTargetPlayer }

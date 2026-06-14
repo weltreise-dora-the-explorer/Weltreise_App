@@ -89,35 +89,43 @@ fun QuizResultScreen(
                 .fillMaxWidth(0.75f)
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color(0xFF1558B5))
-                .padding(24.dp),
+                .padding(18.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Results", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            Text("Results", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
             Text("Seems like we have a winner....", color = Color.White, fontSize = 18.sp,
-                modifier = Modifier.padding(bottom = 24.dp))
+                modifier = Modifier.padding(bottom = 16.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1.5f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(modifier = Modifier.weight(1.5f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     results.forEach { PlayerResultRow(it, crown) }
                 }
-                Box(modifier = Modifier.weight(1f).height(200.dp), contentAlignment = Alignment.Center) {
-                    if (mascot != null) {
-                        Image(bitmap = mascot, contentDescription = null,
-                            contentScale = ContentScale.Fit, modifier = Modifier.fillMaxHeight(0.8f))
-                    }
-                }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            if (canFinishMinigame) {
-                Button(
-                    onClick = onFinishClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF65B5FF)),
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.width(200.dp).height(56.dp)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Let's roll", color = Color(0xFF0B213E), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Box(modifier = Modifier.height(185.dp), contentAlignment = Alignment.Center) {
+                        if (mascot != null) {
+                            Image(bitmap = mascot, contentDescription = null,
+                                contentScale = ContentScale.Fit, modifier = Modifier.fillMaxHeight(0.95f))
+                        }
+                    }
+
+                    if (canFinishMinigame) {
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Button(
+                            onClick = onFinishClick,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF65B5FF)),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .width(200.dp)
+                                .height(48.dp)
+                        ) {
+                            Text("Let's roll", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
         }
@@ -127,7 +135,7 @@ fun QuizResultScreen(
 @Composable
 private fun PlayerResultRow(result: PlayerQuizResult, crown: ImageBitmap?) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Box(modifier = Modifier.size(50.dp).clip(CircleShape).background(Color.DarkGray),
+        Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(Color.DarkGray),
             contentAlignment = Alignment.Center) {
             if (result.avatar != null)
                 Image(bitmap = result.avatar, contentDescription = null,
@@ -136,31 +144,31 @@ private fun PlayerResultRow(result: PlayerQuizResult, crown: ImageBitmap?) {
                 Text(result.playerId.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         Column(modifier = Modifier
             .weight(1f)
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFFB0C4DE))
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(horizontal = 10.dp, vertical = 4.dp)
         ) {
-            Text(result.playerId, color = Color(0xFF1558B5), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Text("Answer: ${result.answerGiven}", color = Color(0xFF1558B5), fontSize = 14.sp)
+            Text(result.playerId, color = Color(0xFF1558B5), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text("Answer: ${result.answerGiven}", color = Color(0xFF1558B5), fontSize = 13.sp)
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         Text(if (result.isCorrect) "✔️" else "❌", fontSize = 24.sp)
 
         Spacer(modifier = Modifier.width(8.dp))
 
         Text(String.format(Locale.US, "%.2fs", result.timeSeconds), color = Color.White,
-            fontSize = 18.sp, fontWeight = FontWeight.Medium, modifier = Modifier.width(60.dp),
+            fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.width(58.dp),
             textAlign = TextAlign.End)
 
         Box(modifier = Modifier.width(32.dp), contentAlignment = Alignment.Center) {
             if (result.isWinner && crown != null)
-                Image(bitmap = crown, contentDescription = "Winner", modifier = Modifier.size(24.dp))
+                Image(bitmap = crown, contentDescription = "Winner", modifier = Modifier.size(22.dp))
         }
     }
 }

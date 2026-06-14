@@ -43,6 +43,7 @@ private enum class MinigameResultType {
 fun MinigameOverlay(
     targetPlayerName: String,
     opponentPlayerNames: List<String>,
+    playersInLobbyOrder: List<String>,
     targetCityName: String,
     targetPlayerAvatar: ImageBitmap?,
     opponentPlayerAvatars: List<ImageBitmap?>,
@@ -359,7 +360,7 @@ fun MinigameOverlay(
                     if (selectedMinigame == "QUIZ_GAME") {
                         at.aau.serg.websocketbrokerdemo.ui.theme.minigames.quiz.QuizReadyScreen(
                             onReadyClick = { onReactionReady() },
-                            allPlayers = allPlayers,
+                            allPlayers = playersInLobbyOrder.ifEmpty { allPlayers },
                             readyPlayerIds = reactionReadyPlayerIds
                         )
                     } else {
@@ -414,23 +415,6 @@ fun MinigameOverlay(
                                     canFinishMinigame = canFinishMinigame,
                                     onFinishClick = { onFinishMinigame(announcedWinnerPlayerId ?: "") }
                                 )
-                            }
-
-                            if (finalViewState == 1 && canFinishMinigame) {
-                                Spacer(modifier = Modifier.height(20.dp))
-                                Button(
-                                    onClick = { onFinishMinigame(announcedWinnerPlayerId ?: "") },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF65B5FF)),
-                                    shape = RoundedCornerShape(14.dp),
-                                    modifier = Modifier.width(220.dp).height(56.dp)
-                                ) {
-                                    Text(
-                                        "Let's roll",
-                                        color = Color(0xFF0B213E),
-                                        fontSize = 17.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
                             }
                         }
                     } else if (isFlagGame) {
