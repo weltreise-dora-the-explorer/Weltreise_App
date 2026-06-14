@@ -21,7 +21,11 @@ import androidx.compose.material3.MaterialTheme
 
 
 @Composable
-fun LoginScreen(onHostClick: (String) -> Unit = {}, onJoinClick: (String) -> Unit = {}
+fun LoginScreen(
+    onHostClick: (String) -> Unit = {},
+    onJoinClick: (String) -> Unit = {},
+    isLoading: Boolean = false,
+    connectionErrorMessage: String? = null
 ){
     var playerName by remember { mutableStateOf("")}
     val isJoining = remember {mutableStateOf(false)}
@@ -86,7 +90,7 @@ fun LoginScreen(onHostClick: (String) -> Unit = {}, onJoinClick: (String) -> Uni
            Button(onClick = { onHostClick(playerName) },
            modifier = Modifier.weight(1f),
                shape = RoundedCornerShape(12.dp),
-               enabled = playerName.isNotBlank()
+               enabled = playerName.isNotBlank() && !isLoading
            ){
                Text("Host Game")
 
@@ -96,12 +100,31 @@ fun LoginScreen(onHostClick: (String) -> Unit = {}, onJoinClick: (String) -> Uni
            Button(onClick = { onJoinClick(playerName) },
                modifier = Modifier.weight(1f),
                shape = RoundedCornerShape(12.dp),
-               enabled = playerName.isNotBlank()
+               enabled = playerName.isNotBlank() && !isLoading
            ){
                Text("Join Game")
            }
        }
-   }}
+
+       if (isLoading) {
+           Spacer(modifier = Modifier.height(16.dp))
+           CircularProgressIndicator(color = Color.White)
+       }
+
+       if (!connectionErrorMessage.isNullOrBlank()) {
+           Spacer(modifier = Modifier.height(16.dp))
+           Text(
+               text = connectionErrorMessage,
+               color = MaterialTheme.colorScheme.error,
+               style = MaterialTheme.typography.bodyMedium
+           )
+       }
+   }
+        //Regel-Button
+        GameRulesButton(
+            modifier = Modifier.align(Alignment.TopEnd)
+        )
+    }
 }
 @Preview(showBackground = true, widthDp = 800, heightDp = 450)
 @Composable fun LoginScreenPreview() {

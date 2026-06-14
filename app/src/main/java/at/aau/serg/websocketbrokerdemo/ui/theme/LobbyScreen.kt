@@ -1,6 +1,5 @@
 package at.aau.serg.websocketbrokerdemo.ui.theme
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,18 +9,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.myapplication.R
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 
 import at.aau.serg.websocketbrokerdemo.AppViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LobbyScreen(viewModel: AppViewModel) {
+fun LobbyScreen(
+    viewModel: AppViewModel,
+    onBackClick: () -> Unit
+) {
     var gamePin by remember { mutableStateOf("") }
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -44,6 +47,25 @@ fun LobbyScreen(viewModel: AppViewModel) {
                 )
             )
     ) {
+        //Back Button oben links
+        Button(
+            onClick = onBackClick,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+                .size(52.dp),
+            shape = RoundedCornerShape(50.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFB71C1C)
+            ),
+            contentPadding = PaddingValues(0.dp)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_arrow),
+                contentDescription = stringResource(R.string.back_button_description),
+                modifier = Modifier.size(28.dp)
+            )
+        }
         // Bildschirm teilen
         Row(
             modifier = Modifier.fillMaxSize(),

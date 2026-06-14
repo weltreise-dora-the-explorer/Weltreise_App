@@ -25,27 +25,22 @@ class CityDistributorTest {
             Player("Charlie")
         )
 
-        //  Liste: 4 Kontinente mit je 6 Städten
+        //  Liste: 3 Kontinente mit je 6 Städten
         testCities = listOf<City>(
-            // Europa (6)
-            City("Wien", Continent.EUROPE), City("Berlin", Continent.EUROPE),
-            City("Paris", Continent.EUROPE), City("Rom", Continent.EUROPE),
-            City("Madrid", Continent.EUROPE), City("London", Continent.EUROPE),
+            // Europa & Afrika (6)
+            City(name = "Wien", continent = Continent.EUROPE_AFRICA), City(name = "Berlin", continent = Continent.EUROPE_AFRICA),
+            City(name = "Paris", continent = Continent.EUROPE_AFRICA), City(name = "Rom", continent = Continent.EUROPE_AFRICA),
+            City(name = "Madrid", continent = Continent.EUROPE_AFRICA), City(name = "London", continent = Continent.EUROPE_AFRICA),
 
             // Asien (6)
-            City("Tokio", Continent.ASIA), City("Peking", Continent.ASIA),
-            City("Bangkok", Continent.ASIA), City("Seoul", Continent.ASIA),
-            City("Neu-Delhi", Continent.ASIA), City("Singapur", Continent.ASIA),
+            City(name = "Tokio", continent = Continent.ASIA), City(name = "Peking", continent = Continent.ASIA),
+            City(name = "Bangkok", continent = Continent.ASIA), City(name = "Seoul", continent = Continent.ASIA),
+            City(name = "Neu-Delhi", continent = Continent.ASIA), City(name = "Singapur", continent = Continent.ASIA),
 
-            // Nordamerika (6)
-            City("New York", Continent.NORTH_AMERICA), City("Los Angeles", Continent.NORTH_AMERICA),
-            City("Toronto", Continent.NORTH_AMERICA), City("Chicago", Continent.NORTH_AMERICA),
-            City("Mexiko-Stadt", Continent.NORTH_AMERICA), City("Miami", Continent.NORTH_AMERICA),
-
-            // Südamerika (6)
-            City("Rio de Janeiro", Continent.SOUTH_AMERICA), City("Buenos Aires", Continent.SOUTH_AMERICA),
-            City("Lima", Continent.SOUTH_AMERICA), City("Bogota", Continent.SOUTH_AMERICA),
-            City("Santiago", Continent.SOUTH_AMERICA), City("Quito", Continent.SOUTH_AMERICA)
+            // Amerika & Ozeanien (6)
+            City(name = "New York", continent = Continent.AMERICAS_OCEANIA), City(name = "Los Angeles", continent = Continent.AMERICAS_OCEANIA),
+            City(name = "Toronto", continent = Continent.AMERICAS_OCEANIA), City(name = "Chicago", continent = Continent.AMERICAS_OCEANIA),
+            City(name = "Mexiko-Stadt", continent = Continent.AMERICAS_OCEANIA), City(name = "Miami", continent = Continent.AMERICAS_OCEANIA)
         )
     }
 
@@ -55,24 +50,22 @@ class CityDistributorTest {
         distributor.distributeByContinent(testCities, players, 2)
 
         for (player in players) {
-            assertEquals(8, player.ownedCities.size, "${player.name} sollte genau 8 Städte haben")
+            assertEquals(6, player.ownedCities.size, "${player.name} sollte genau 6 Städte haben")
 
-            val europeCount = player.ownedCities.count { it.continent == Continent.EUROPE }
+            val europeAfricaCount = player.ownedCities.count { it.continent == Continent.EUROPE_AFRICA }
             val asiaCount = player.ownedCities.count { it.continent == Continent.ASIA }
-            val naCount = player.ownedCities.count { it.continent == Continent.NORTH_AMERICA }
-            val saCount = player.ownedCities.count { it.continent == Continent.SOUTH_AMERICA }
+            val americasCount = player.ownedCities.count { it.continent == Continent.AMERICAS_OCEANIA }
 
-            assertEquals(2, europeCount, "${player.name} hat nicht 2 in Europa")
+            assertEquals(2, europeAfricaCount, "${player.name} hat nicht 2 in Europa/Afrika")
             assertEquals(2, asiaCount, "${player.name} hat nicht 2 in Asien")
-            assertEquals(2, naCount, "${player.name} hat nicht 2 in Nordamerika")
-            assertEquals(2, saCount, "${player.name} hat nicht 2 in Südamerika")
+            assertEquals(2, americasCount, "${player.name} hat nicht 2 in Amerika/Ozeanien")
         }
     }
 
     @Test
     fun `test gracefully handles not enough cities in a pool`() {
         // Randfall 1: Zu wenige Städte
-        val fewCities = listOf(City("Wien", Continent.EUROPE))
+        val fewCities = listOf(City(name = "Wien", continent = Continent.EUROPE_AFRICA))
 
         distributor.distributeByContinent(fewCities, players, 2)
 
