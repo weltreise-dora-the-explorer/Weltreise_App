@@ -3,7 +3,7 @@ package at.aau.serg.websocketbrokerdemo.ui.theme
 import android.content.Context
 import at.aau.serg.websocketbrokerdemo.models.Continent
 import android.graphics.BitmapFactory
-import android.util.Log
+import at.aau.serg.websocketbrokerdemo.logging.DebugLog
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -94,6 +94,7 @@ private fun playSound(context: Context, name: String, volume: Float = 1.0f) {
     }
 }
 
+
 @Composable
 fun GameScreen(viewModel: AppViewModel) {
     val context = LocalContext.current
@@ -116,6 +117,8 @@ fun GameScreen(viewModel: AppViewModel) {
     val allCities by viewModel.allCities.collectAsState()
     val startCity by viewModel.startCity.collectAsState()
     val playerCityCounts by viewModel.playerCityCounts.collectAsState()
+    val playerReachedCounts by viewModel.playerReachedCounts.collectAsState()
+    val playerStartCityNames by viewModel.playerStartCityNames.collectAsState()
     val allPlayerOwnedCities by viewModel.allPlayerOwnedCities.collectAsState()
     val playerCurrentCities by viewModel.playerCurrentCities.collectAsState()
     val reportFeedback by viewModel.lastReportFeedback.collectAsState()
@@ -144,6 +147,7 @@ fun GameScreen(viewModel: AppViewModel) {
     val remainingSteps by viewModel.remainingSteps.collectAsState()
     val isGameOver by viewModel.isGameOver.collectAsState()
     val freePassCount by viewModel.freePassCount.collectAsState()
+    val freePassReceivedEvent by viewModel.freePassReceivedEvent.collectAsState()
     val goalReachedMessage by viewModel.goalReachedMessage.collectAsState()
     val lastConqueredCityId = remember(goalReachedMessage) {
         goalReachedMessage?.let { msg ->
@@ -260,6 +264,18 @@ fun GameScreen(viewModel: AppViewModel) {
         }
     }
 
+    var showFreePassReceivedOverlay by remember { mutableStateOf(false) }
+    val freePassReceivedAlpha = remember { Animatable(0f) }
+    LaunchedEffect(freePassReceivedEvent) {
+        if (freePassReceivedEvent > 0) {
+            showFreePassReceivedOverlay = true
+            freePassReceivedAlpha.snapTo(1f)
+            delay(2500)
+            freePassReceivedAlpha.animateTo(0f, animationSpec = tween(800))
+            showFreePassReceivedOverlay = false
+        }
+    }
+
     // Würfelergebnis fade-out nach 5 Sekunden
     var showDiceOverlay by remember { mutableStateOf(false) }
     val diceAlpha = remember { Animatable(0f) }
@@ -279,13 +295,28 @@ fun GameScreen(viewModel: AppViewModel) {
     // Goal-Reached fade-out nach 4 Sekunden
     var showGoalReachedOverlay by remember { mutableStateOf(false) }
     val goalReachedAlpha = remember { Animatable(0f) }
+    var showAllReachedOverlay by remember { mutableStateOf(false) }
+    var allReachedPlayerName by remember { mutableStateOf("") }
+    var allReachedStartCityName by remember { mutableStateOf("") }
+    val allReachedAlpha = remember { Animatable(0f) }
     LaunchedEffect(goalReachedMessage) {
         if (goalReachedMessage != null) {
             showGoalReachedOverlay = true
             goalReachedAlpha.snapTo(1f)
+            if (goalReachedMessage!!.reached >= goalReachedMessage!!.total) {
+                allReachedPlayerName = goalReachedMessage!!.playerName
+                allReachedStartCityName = playerStartCityNames[goalReachedMessage!!.playerName] ?: ""
+                showAllReachedOverlay = true
+                allReachedAlpha.snapTo(1f)
+            }
             delay(3000)
             goalReachedAlpha.animateTo(0f, animationSpec = tween(1000))
             showGoalReachedOverlay = false
+            if (showAllReachedOverlay) {
+                delay(2000)
+                allReachedAlpha.animateTo(0f, animationSpec = tween(1000))
+                showAllReachedOverlay = false
+            }
         }
     }
 
@@ -309,6 +340,9 @@ fun GameScreen(viewModel: AppViewModel) {
     }
 
     val showMinigameOverlay = (gamePhase == GameConstants.PHASE_MINIGAME)
+
+    var chosenCity by remember { mutableStateOf<String?>(null) }
+
 
     // Box (Schichten-Design)
     Box(
@@ -479,10 +513,7 @@ fun GameScreen(viewModel: AppViewModel) {
                             onClick = {
                                 freePassDecisionMade.value = true
                                 showFreePassDialog.value = false
-
-                                if (!isMinigamePhase) {
-                                    viewModel.startMinigame()
-                                }
+                                viewModel.startMinigame(force = true)
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF8DB6CD)
@@ -540,6 +571,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 PlayerCard(
                     name = displayName,
                     bucketListCount = playerCityCounts[playerName] ?: 0,
+                    reachedCityCount = playerReachedCounts[playerName] ?: 0,
                     avatar = avatar,
                     isActive = playerName == currentTurnPlayerId,
                     diceValue = if (playerName == currentTurnPlayerId) diceValue else null,
@@ -630,7 +662,7 @@ fun GameScreen(viewModel: AppViewModel) {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "${msg.playerName} hat ${msg.cityName} erreicht!",
+                        text = "${msg.playerName} reached ${msg.cityName}!",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFD4AF37)
@@ -640,6 +672,65 @@ fun GameScreen(viewModel: AppViewModel) {
                         text = "(${msg.reached}/${msg.total})",
                         fontSize = 16.sp,
                         color = Color.White
+                    )
+                }
+            }
+        }
+
+        // Alle Ziele erreicht – Broadcast-Overlay
+        if (showAllReachedOverlay) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .offset(y = 80.dp)
+                    .alpha(allReachedAlpha.value)
+                    .background(Color(0xCC1A237E), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 32.dp, vertical = 20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "$allReachedPlayerName reached all destinations!",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFD4AF37)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "On to the starting city: $allReachedStartCityName",
+                        fontSize = 15.sp,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+
+        // Freepass-Erhalten-Animation – nur für den lokalen Spieler sichtbar
+        if (showFreePassReceivedOverlay && freePassBitmap != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(freePassReceivedAlpha.value),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .background(Color(0xCC000000), RoundedCornerShape(24.dp))
+                        .padding(horizontal = 40.dp, vertical = 28.dp)
+                ) {
+                    Image(
+                        bitmap = freePassBitmap,
+                        contentDescription = "Freepass",
+                        modifier = Modifier.size(120.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "You received a Freepass!",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFD4AF37),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             }
@@ -808,7 +899,7 @@ fun GameScreen(viewModel: AppViewModel) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     if (winnerName != null) {
                         Text(
-                            text = "$winnerName hat gewonnen!",
+                            text = "$winnerName has won!",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFD4AF37)
@@ -816,7 +907,7 @@ fun GameScreen(viewModel: AppViewModel) {
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                     Text(
-                        text = "Spiel beendet!",
+                        text = "Game over!",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -879,60 +970,33 @@ fun GameScreen(viewModel: AppViewModel) {
         }
     }
 
-    //Pop Up Bucket List
-    if (showBucketListDialog.value) {
-        AlertDialog(
-            onDismissRequest = { showBucketListDialog.value = false },
-            title = {
-                Text(text = "Bucket List", fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState())
-                ) {
-                    if (startCity != null) {
-                        Text(
-                            text = "🏠 Startstadt",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = Color(0xFF1E56A0)
-                        )
-                        Text(
-                            text = "${startCity!!.name}  •  ${startCity!!.continent.name.replace("_", " ")}",
-                            fontSize = 13.sp
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-                    if (ownedCities.isEmpty()) {
-                        Text(
-                            text = "No target cities assigned yet.",
-                            fontSize = 13.sp,
-                            color = Color.Gray
-                        )
-                    } else {
-                        Text(
-                            text = "📍 Target Cities (${ownedCities.size})",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = Color(0xFF1E56A0)
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        ownedCities.forEach { city ->
-                            Text(
-                                text = "${city.name}  •  ${city.continent.name.replace("_", " ")}",
-                                fontSize = 13.sp
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showBucketListDialog.value = false }) {
-                    Text("close")
-                }
-            }
-        )
+    //Pop Up Bucket List – neue Karten-UI; die Städte kommen vom Server (viewModel.ownedCities)
+    // Lokale, clientseitige Reihenfolge der Karten, synchronisiert mit den Server-Städten.
+    // (Das serverseitige Persistieren der Reihenfolge ist separat – siehe #28.)
+    var cityOrder by remember { mutableStateOf<List<String>>(emptyList()) }
+    LaunchedEffect(ownedCities) {
+        val serverNames = ownedCities.map { it.name }
+        cityOrder = cityOrder.filter { it in serverNames } + serverNames.filter { it !in cityOrder }
     }
+    // Besuchte Bucket-List-Städte des eigenen Spielers (City-IDs -> Namen) aus dem Server-State.
+    val myVisitedBucketIds = playerVisitedBucketIds[currentPlayerName] ?: emptySet()
+    val visitedCityNames = ownedCities.filter { it.id in myVisitedBucketIds }.map { it.name }.toSet()
+
+    WeltreiseBucketList(
+        drawnCities = cityOrder,
+        isVisible = showBucketListDialog.value,
+        chosenCity = chosenCity,
+        visitedCities = visitedCityNames,
+        onCityChosen = { clickedCity ->
+            chosenCity = clickedCity
+        },
+        onCityOrderChanged = { neueListe ->
+            cityOrder = neueListe
+        },
+        onDismiss = {
+            showBucketListDialog.value = false
+        }
+    )
 }
 
 
@@ -1090,14 +1154,18 @@ fun ZoomableMap(
                 .pointerInput(validMoveIdSet, isMyTurn) {
                     if (!isMyTurn) return@pointerInput
                     detectTapGestures { tapOffset ->
-                        Log.d("CityTap", "tap received: $tapOffset")
+                        DebugLog.d("CityTap") { "tap received: $tapOffset" }
                         val dbgCityWorld = allCities.firstOrNull()?.let {
                             Offset(xOffset + it.x_relativ * renderedWidth, yOffset + it.y_relativ * renderedHeight)
                         }
-                        Log.d("CityTap", "tapOffset=$tapOffset  scale=$currentScale  firstCityWorld=$dbgCityWorld")
-                        Log.d("CityTap", "scale=$currentScale offset=$currentOffset")
+                        DebugLog.d("CityTap") {
+                            "tapOffset=$tapOffset scale=$currentScale firstCityWorld=$dbgCityWorld"
+                        }
+                        DebugLog.d("CityTap") { "scale=$currentScale offset=$currentOffset" }
                         if (isLocalPlayerAnimating) return@detectTapGestures
-                        Log.d("CityTap", "isMyTurn=$isMyTurn, validMoveIds=$validMoveIdSet")
+                        DebugLog.d("CityTap") {
+                            "isMyTurn=$isMyTurn, validMoveIds=$validMoveIdSet"
+                        }
                         val canvasX = (tapOffset.x - currentOffset.x - screenWidth / 2f) / currentScale + screenWidth / 2f
                         val canvasY = (tapOffset.y - currentOffset.y - screenHeight / 2f) / currentScale + screenHeight / 2f
                         val hitRadius = 60f / currentScale
@@ -1111,9 +1179,11 @@ fun ZoomableMap(
                             if (dist < closestDist) { closestDist = dist; closestCity = city }
                         }
 
-                        Log.d("CityTap", "closestCity=${closestCity?.id}, dist=$closestDist, hitRadius=$hitRadius")
+                        DebugLog.d("CityTap") {
+                            "closestCity=${closestCity?.id}, dist=$closestDist, hitRadius=$hitRadius"
+                        }
                         if (closestDist <= hitRadius) closestCity?.let { targetCity ->
-                            Log.d("CityTap", "calling onCityClick: ${targetCity.id}")
+                            DebugLog.d("CityTap") { "calling onCityClick: ${targetCity.id}" }
                             coroutineScope.launch {
                                 val cityMap = allCities.associateBy { it.id }
                                 val fromId = playerCurrentCities[myPlayerId]?.id
@@ -1498,6 +1568,7 @@ fun ZoomableMap(
 fun PlayerCard(
     name: String,
     bucketListCount: Int,
+    reachedCityCount: Int = 0,
     avatar: ImageBitmap?,
     isActive: Boolean,
     diceValue: Int? = null,
@@ -1594,7 +1665,7 @@ fun PlayerCard(
                     color = Color(0xFFC0392B),
                     fontWeight = FontWeight.Bold
                 )
-                else -> Text(text = "Bucket List: $bucketListCount", fontSize = 10.sp, color = Color.Gray)
+                else -> Text(text = "Bucket List: $reachedCityCount/$bucketListCount", fontSize = 10.sp, color = Color.Gray)
             }
         }
 

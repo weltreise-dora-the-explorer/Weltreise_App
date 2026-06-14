@@ -5,7 +5,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.util.Log
+import at.aau.serg.websocketbrokerdemo.logging.DebugLog
 import kotlin.math.sqrt
 
 /**
@@ -23,23 +23,23 @@ class ShakeDetector(private val onShake: () -> Unit) : SensorEventListener {
 
     fun start(context: Context) {
         if (sensorManager != null) {
-            Log.d("ShakeDetector", "start() ignoriert – bereits registriert")
+            DebugLog.d("ShakeDetector") { "start() ignoriert - bereits registriert" }
             return
         }
         val manager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
         if (manager == null) {
-            Log.e("ShakeDetector", "start() FEHLER: kein SensorManager")
+            DebugLog.e("ShakeDetector") { "start() FEHLER: kein SensorManager" }
             return
         }
         val sensor = manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         if (sensor == null) {
-            Log.e("ShakeDetector", "start() FEHLER: kein Accelerometer")
+            DebugLog.e("ShakeDetector") { "start() FEHLER: kein Accelerometer" }
             return
         }
         sensorManager = manager
         accelerometer = sensor
         manager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)
-        Log.d("ShakeDetector", "start() – Accelerometer registriert")
+        DebugLog.d("ShakeDetector") { "start() - Accelerometer registriert" }
     }
 
     fun stop() {
@@ -57,14 +57,18 @@ class ShakeDetector(private val onShake: () -> Unit) : SensorEventListener {
         val gForce = sqrt(x * x + y * y + z * z) / SensorManager.GRAVITY_EARTH
 
         if (gForce < SHAKE_THRESHOLD_G) {
-            if (gForce > 1.5f) Log.d("ShakeDetector", "gForce=$gForce (zu schwach, Schwelle=$SHAKE_THRESHOLD_G)")
+            if (gForce > 1.5f) {
+                DebugLog.d("ShakeDetector") {
+                    "gForce=$gForce (zu schwach, Schwelle=$SHAKE_THRESHOLD_G)"
+                }
+            }
             return
         }
 
         val now = System.currentTimeMillis()
         if (now - lastShakeAt < DEBOUNCE_MS) return
         lastShakeAt = now
-        Log.d("ShakeDetector", "SHAKE erkannt! gForce=$gForce")
+        DebugLog.d("ShakeDetector") { "SHAKE erkannt! gForce=$gForce" }
         onShake()
     }
 

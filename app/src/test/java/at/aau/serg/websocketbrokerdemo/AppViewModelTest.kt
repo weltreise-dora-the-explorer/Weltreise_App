@@ -276,6 +276,41 @@ class AppViewModelTest {
     }
 
     @Test
+    fun `connection failure sets login connection error only`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onResponse("Error: Not connected")
+
+        assertEquals("Not connected to server", viewModel.connectionErrorMessage.value)
+        assertNull(viewModel.errorMessage.value)
+    }
+
+    @Test
+    fun `successful connection clears login connection error`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onResponse("Connection error")
+        assertEquals("Not connected to server", viewModel.connectionErrorMessage.value)
+
+        viewModel.onResponse("connected")
+
+        assertNull(viewModel.connectionErrorMessage.value)
+    }
+
+    @Test
+    fun `server lobby error does not set login connection error`() {
+        val mockStomp = mockk<MyStomp>(relaxed = true)
+        val viewModel = createViewModelWithMockStomp(mockStomp)
+
+        viewModel.onResponse("""{"success":false,"message":"Lobby does not exist"}""")
+
+        assertEquals("Lobby does not exist", viewModel.errorMessage.value)
+        assertNull(viewModel.connectionErrorMessage.value)
+    }
+
+    @Test
     fun `onResponse with invalid JSON sets error`() {
         val mockStomp = mockk<MyStomp>(relaxed = true)
         val viewModel = createViewModelWithMockStomp(mockStomp)
@@ -1056,26 +1091,30 @@ class AppViewModelTest {
     }
 
     @Test
-    fun `hostLobby persists lobbyId to prefs`() {
+    fun `hostLobby persists lobbyId only after server confirmation`() {
         val mockStomp = mockk<MyStomp>(relaxed = true)
         val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
         every { mockPrefs.getOrCreateClientId() } returns "uuid-123"
         val viewModel = AppViewModel(mockStomp, mockPrefs)
 
         viewModel.hostLobby("Marco")
+        verify(exactly = 0) { mockPrefs.setLobbyId(any()) }
 
+        viewModel.onResponse("""{"success":true,"commandType":"CREATE_LOBBY","state":{"players":[{"playerId":"Marco"}],"phase":"LOBBY"}}""")
         verify { mockPrefs.setLobbyId(any()) }
     }
 
     @Test
-    fun `joinLobby persists lobbyId to prefs`() {
+    fun `joinLobby persists lobbyId only after server confirmation`() {
         val mockStomp = mockk<MyStomp>(relaxed = true)
         val mockPrefs = mockk<PreferencesHelper>(relaxed = true)
         every { mockPrefs.getOrCreateClientId() } returns "uuid-123"
         val viewModel = AppViewModel(mockStomp, mockPrefs)
 
         viewModel.joinLobby("5678")
+        verify(exactly = 0) { mockPrefs.setLobbyId(any()) }
 
+        viewModel.onResponse("""{"success":true,"commandType":"JOIN_LOBBY","state":{"players":[{"playerId":"Marco"}],"phase":"LOBBY"}}""")
         verify { mockPrefs.setLobbyId("5678") }
     }
 
