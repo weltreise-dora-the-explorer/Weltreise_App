@@ -32,6 +32,10 @@ import kotlinx.coroutines.delay
 import kotlin.math.abs
 import at.aau.serg.websocketbrokerdemo.ui.theme.minigames.quiz.QuizGameScreen
 import androidx.compose.ui.tooling.preview.Preview
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 
 private enum class MinigameResultType {
     TARGET_PLAYER_WINS,
@@ -899,50 +903,82 @@ private fun MinigamePlayerAvatar(
 fun QuizReadyScreen(
     onReadyClick: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(16.dp)
+    val context = LocalContext.current
+    val foxBitmap = remember {
+        context.assets.open("baron_fox.png").use { inputStream ->
+            BitmapFactory.decodeStream(inputStream).asImageBitmap()
+        }
+    }
+
+    //halbtransparent
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.7f)),
+        contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "It's Quiz Time!",
-            color = Color.White,
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold
-        )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "You think you're smart? The Baron of Brainstorm is ready to crush your ego. Are you?",
-            color = Color.White,
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.width(280.dp)
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Button(
-            onClick = onReadyClick,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8DB6CD)), //Hellblau
-            shape = RoundedCornerShape(12.dp),
+        //blaue Box
+        Column(
             modifier = Modifier
-                .width(200.dp)
-                .height(56.dp)
+                .fillMaxWidth(0.6f)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFF1558B5))
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Ready",
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+            Image(
+                bitmap = foxBitmap,
+                contentDescription = "Baron of Brainstorm",
+                modifier = Modifier.size(120.dp)
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "It's Quiz Time!",
+                color = Color.White,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "You think you're smart? The Baron of Brainstorm is ready to crush your ego. Are you?",
+                color = Color.White,
+                fontSize = 18.sp,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            //Ready Button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.6f)
+                    .height(60.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFF65B5FF))
+                    .clickable { onReadyClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Ready",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
 
-
-@Preview(showBackground = true, widthDp = 800, heightDp = 450)
+@Preview(showBackground = true, backgroundColor = 0xFF0B213E, device = "spec:parent=pixel_7, orientation=landscape")
 @Composable
 fun QuizReadyScreenPreview() {
-    QuizReadyScreen(onReadyClick = {})
+    QuizReadyScreen(
+        onReadyClick = {}
+    )
 }
