@@ -71,7 +71,16 @@ fun QuizReadyScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "You think you're smart? The Baron of Brainstorm is ready to crush your ego. Are you?",
+                color = Color.White,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Ready-Button
             Box(
