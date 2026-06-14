@@ -36,6 +36,7 @@ import android.graphics.BitmapFactory
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import at.aau.serg.websocketbrokerdemo.ui.theme.minigames.quiz.QuizReadyScreen
 
 private enum class MinigameResultType {
     TARGET_PLAYER_WINS,
@@ -898,87 +899,4 @@ private fun MinigamePlayerAvatar(
             fontWeight = FontWeight.Bold
         )
     }
-}
-@Composable
-fun QuizReadyScreen(
-    onReadyClick: () -> Unit
-) {
-    val context = LocalContext.current
-    val foxBitmap = remember {
-        context.assets.open("baron_fox.png").use { inputStream ->
-            BitmapFactory.decodeStream(inputStream).asImageBitmap()
-        }
-    }
-
-    //halbtransparent
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.7f)),
-        contentAlignment = Alignment.Center
-    ) {
-
-        //blaue Box
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(0.6f)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFF1558B5))
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Image(
-                bitmap = foxBitmap,
-                contentDescription = "Baron of Brainstorm",
-                modifier = Modifier.size(120.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "It's Quiz Time!",
-                color = Color.White,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "You think you're smart? The Baron of Brainstorm is ready to crush your ego. Are you?",
-                color = Color.White,
-                fontSize = 18.sp,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            //Ready Button
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .height(60.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF65B5FF))
-                    .clickable { onReadyClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Ready",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFF0B213E, device = "spec:parent=pixel_7, orientation=landscape")
-@Composable
-fun QuizReadyScreenPreview() {
-    QuizReadyScreen(
-        onReadyClick = {}
-    )
 }
