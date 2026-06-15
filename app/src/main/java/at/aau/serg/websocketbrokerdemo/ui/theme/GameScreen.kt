@@ -744,141 +744,64 @@ fun GameScreen(viewModel: AppViewModel) {
                 newCityName = minigameNewCityName ?: ""
             )
 
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
-                    .align(Alignment.Center)
+                    .fillMaxSize()
                     .alpha(newDestinationAlpha.value)
-                    .background(Color(0xCC000000), RoundedCornerShape(20.dp))
-                    .padding(start = 24.dp, end = 32.dp, top = 20.dp, bottom = 20.dp),
+                    .padding(16.dp),
                 contentAlignment = Alignment.Center
             ){
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(350.dp)
-                            .background(Color(0xDDEAF2F8), RoundedCornerShape(14.dp))
-                            .padding(horizontal = 28.dp, vertical = 24.dp)
-                    ) {
-                        Column{
-                            Text(
-                                text = "VISA DENIED!",
-                                color = Color(0xFF0050A8),
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                val compactVisaLayout = maxWidth < 640.dp || maxHeight < 420.dp
+                val contentModifier = Modifier
+                    .widthIn(max = maxWidth)
+                    .heightIn(max = maxHeight)
+                    .background(Color(0xCC000000), RoundedCornerShape(20.dp))
+                    .padding(
+                        start = if (compactVisaLayout) 16.dp else 24.dp,
+                        end = if (compactVisaLayout) 16.dp else 32.dp,
+                        top = 16.dp,
+                        bottom = 16.dp
+                    )
+                    .verticalScroll(rememberScrollState())
 
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Text(
-                                text = "Attention ${msg.playerName},",
-                                color = Color(0xFF0050A8),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Text(
-                                text = "Entry completely denied! Your mini-game skills were inspected and found to be highly insufficient.",
-                                color = Color(0xFF0050A8),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Text(
-                                text = "You lost ${msg.lostCityName}. Since you are officially locked out of this city, your Bucket List has been changed.",
-                                color = Color(0xFF0050A8),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Text(
-                                text = "Time to pull out the map, grab a pen, and figure out a new route.",
-                                color = Color(0xFF0050A8),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Text(
-                                text = "Cordially,\nThe Department of Detours",
-                                color = Color(0xFF0050A8),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(28.dp))
-
+                if (compactVisaLayout) {
                     Column(
+                        modifier = contentModifier,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = "NEW DESTINATION:",
-                            color = Color.White,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Box(
-                            modifier = Modifier
-                                .width(130.dp)
-                                .height(190.dp)
-                                .background(Color(0xFF0050A8), RoundedCornerShape(12.dp))
-                                .border(
-                                    width = 1.dp,
-                                    color = Color(0xFFD4AF37),
-                                    shape = RoundedCornerShape(12.dp)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = msg.newCityName.uppercase(),
-                                color = Color.White,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        VisaDeniedLetter(msg)
 
                         Spacer(modifier = Modifier.height(18.dp))
 
-                        if(currentPlayerName == minigameTargetPlayer) {
-                            Button(
-                                onClick = {
-                                    showNewDestinationOverlay = false
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF8DB6CD)
-                                ),
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier
-                                    .width(170.dp)
-                                    .height(50.dp)
-                            ) {
-                                Text(
-                                    text = "Accept",
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        } else {
-                            LaunchedEffect(showNewDestinationOverlay) {
-                                if(showNewDestinationOverlay) {
-                                    delay(3000)
-                                    showNewDestinationOverlay = false
-                                }
-                            }
+                        VisaDeniedDestinationCard(
+                            newCityName = msg.newCityName,
+                            showAcceptButton = currentPlayerName == minigameTargetPlayer,
+                            onAccept = { showNewDestinationOverlay = false }
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier = contentModifier,
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        VisaDeniedLetter(msg)
+
+                        Spacer(modifier = Modifier.width(28.dp))
+
+                        VisaDeniedDestinationCard(
+                            newCityName = msg.newCityName,
+                            showAcceptButton = currentPlayerName == minigameTargetPlayer,
+                            onAccept = { showNewDestinationOverlay = false }
+                        )
+                    }
+                }
+
+                if(currentPlayerName != minigameTargetPlayer) {
+                    LaunchedEffect(showNewDestinationOverlay) {
+                        if(showNewDestinationOverlay) {
+                            delay(3000)
+                            showNewDestinationOverlay = false
                         }
                     }
                 }
@@ -999,6 +922,130 @@ fun GameScreen(viewModel: AppViewModel) {
     )
 }
 
+@Composable
+private fun VisaDeniedLetter(msg: NewDestinationMessage) {
+    Box(
+        modifier = Modifier
+            .widthIn(max = 350.dp)
+            .background(Color(0xDDEAF2F8), RoundedCornerShape(14.dp))
+            .padding(horizontal = 28.dp, vertical = 24.dp)
+    ) {
+        Column {
+            Text(
+                text = "VISA DENIED!",
+                color = Color(0xFF0050A8),
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Attention ${msg.playerName},",
+                color = Color(0xFF0050A8),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "Entry completely denied! Your mini-game skills were inspected and found to be highly insufficient.",
+                color = Color(0xFF0050A8),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "You lost ${msg.lostCityName}. Since you are officially locked out of this city, your Bucket List has been changed.",
+                color = Color(0xFF0050A8),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "Time to pull out the map, grab a pen, and figure out a new route.",
+                color = Color(0xFF0050A8),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "Cordially,\nThe Department of Detours",
+                color = Color(0xFF0050A8),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun VisaDeniedDestinationCard(
+    newCityName: String,
+    showAcceptButton: Boolean,
+    onAccept: () -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "NEW DESTINATION:",
+            color = Color.White,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Box(
+            modifier = Modifier
+                .width(130.dp)
+                .height(190.dp)
+                .background(Color(0xFF0050A8), RoundedCornerShape(12.dp))
+                .border(
+                    width = 1.dp,
+                    color = Color(0xFFD4AF37),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .padding(horizontal = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = newCityName.uppercase(),
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        if(showAcceptButton) {
+            Button(
+                onClick = onAccept,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF8DB6CD)
+                ),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier
+                    .width(170.dp)
+                    .height(50.dp)
+            ) {
+                Text(
+                    text = "Accept",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
 
 //Weltkarte mit Zoom und Verschiebe Funktion
 @Composable
@@ -1218,26 +1265,27 @@ fun ZoomableMap(
                         }
                     }
                 }
-                .pointerInput(screenWidth, screenHeight) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        val adjustedZoom = if (zoom < 1f) {
-                            zoom.toDouble().pow(2.2).toFloat()
-                        } else {
-                            zoom.toDouble().pow(1.1).toFloat()
-                        }
-                        val newScale = (scale * adjustedZoom).coerceIn(1f, 8f)
-                        val maxOffsetX = ((screenWidth * newScale) - screenWidth) / 2f
-                        val maxOffsetY = ((screenHeight * newScale) - screenHeight) / 2f
-                        val panSpeed = (newScale * 1.4f).coerceIn(2.5f, 10f)
+                .pointerInput(screenWidth, screenHeight, renderedWidth, renderedHeight) {
+                    detectTransformGestures(panZoomLock = true) { centroid, pan, zoom, _ ->
+                        val oldScale = scale
+                        val newScale = (oldScale * zoom).coerceIn(1f, 8f)
+                        val viewportCenter = Offset(screenWidth / 2f, screenHeight / 2f)
+
+                        val mapPointUnderCentroid =
+                            (centroid - viewportCenter - offset) / oldScale + viewportCenter
+                        val unclampedOffset =
+                            centroid + pan - viewportCenter - (mapPointUnderCentroid - viewportCenter) * newScale
+
+                        val maxOffsetX = ((renderedWidth * newScale) - screenWidth)
+                            .coerceAtLeast(0f) / 2f
+                        val maxOffsetY = ((renderedHeight * newScale) - screenHeight)
+                            .coerceAtLeast(0f) / 2f
+
                         scale = newScale
-                        offset = if (newScale > 1f) {
-                            Offset(
-                                x = (offset.x + pan.x * panSpeed).coerceIn(-maxOffsetX, maxOffsetX),
-                                y = (offset.y + pan.y * panSpeed).coerceIn(-maxOffsetY, maxOffsetY)
-                            )
-                        } else {
-                            Offset.Zero
-                        }
+                        offset = Offset(
+                            x = unclampedOffset.x.coerceIn(-maxOffsetX, maxOffsetX),
+                            y = unclampedOffset.y.coerceIn(-maxOffsetY, maxOffsetY)
+                        )
                     }
                 }
         ) {

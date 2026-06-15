@@ -264,18 +264,22 @@ fun MinigameOverlay(
 
                 effectiveSubPhase == "PLAYING" -> {
                     if (selectedMinigame == "QUIZ_GAME") {
-                        //0 = VS Screen (4 Sekunden)
+                        //0 = Ready Screen (max. 4 Sekunden)
                         //1 = Nur die Frage (6 Sekunden)
                         //2 = Frage + Antworten
-                        var quizViewState by remember { mutableStateOf(0) }
+                        var quizViewState by remember(selectedMinigame, effectiveSubPhase) { mutableIntStateOf(0) }
 
 
-                        var questionTimeLeft by remember { mutableStateOf(6) }
+                        var questionTimeLeft by remember(selectedMinigame, effectiveSubPhase) { mutableIntStateOf(6) }
 
-                        LaunchedEffect(Unit) {
+                        LaunchedEffect(quizViewState) {
+                            if (quizViewState != 0) return@LaunchedEffect
                             delay(4000)
                             quizViewState = 1
+                        }
 
+                        LaunchedEffect(quizViewState) {
+                            if (quizViewState != 1) return@LaunchedEffect
                             while (questionTimeLeft > 0) {
                                 delay(1000)
                                 questionTimeLeft--
@@ -286,28 +290,14 @@ fun MinigameOverlay(
 
                         when (quizViewState) {
                             0 -> {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    MinigamePlayerAvatar(targetPlayerName, targetPlayerAvatar)
-                                    Spacer(modifier = Modifier.width(36.dp))
-                                    Text(
-                                        text = stringResource(R.string.minigame_vs_title),
-                                        color = Color.White,
-                                        fontSize = 40.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Spacer(modifier = Modifier.width(36.dp))
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        opponentPlayerNames.forEachIndexed { index, opponentName ->
-                                            MinigamePlayerAvatar(opponentName, opponentPlayerAvatars.getOrNull(index))
-                                            if (index != opponentPlayerNames.lastIndex) {
-                                                Spacer(modifier = Modifier.height(10.dp))
-                                            }
-                                        }
-                                    }
-                                }
+                                at.aau.serg.websocketbrokerdemo.ui.theme.minigames.quiz.QuizReadyScreen(
+                                    onReadyClick = {
+                                        onReactionReady()
+                                        quizViewState = 1
+                                    },
+                                    allPlayers = playersInLobbyOrder.ifEmpty { allPlayers },
+                                    readyPlayerIds = reactionReadyPlayerIds
+                                )
                             }
 
                             1 -> {
@@ -392,10 +382,16 @@ fun MinigameOverlay(
 
                 effectiveSubPhase == "ROUND_REVEAL" -> {
                     if (selectedMinigame == "QUIZ_GAME") {
-                        at.aau.serg.websocketbrokerdemo.ui.theme.minigames.quiz.QuizReadyScreen(
-                            onReadyClick = { onReactionReady() },
-                            allPlayers = playersInLobbyOrder.ifEmpty { allPlayers },
-                            readyPlayerIds = reactionReadyPlayerIds
+                        val avatarMap = mutableMapOf<String, ImageBitmap?>()
+                        allPlayers.forEachIndexed { index, name ->
+                            avatarMap[name] = listOf(targetPlayerAvatar).plus(opponentPlayerAvatars).getOrNull(index)
+                        }
+
+                        at.aau.serg.websocketbrokerdemo.ui.theme.minigames.quiz.QuizRoundEndedScreen(
+                            answers = quizAnswers.takeIf { it.isNotEmpty() } ?: listOf("A", "B", "C", "D"),
+                            correctAnswerIndex = guessQuestionAnswer ?: 0,
+                            submissions = guessSubmissions,
+                            avatars = avatarMap
                         )
                     } else if (isFlagGame) {
                         MinigameFlagRound(
